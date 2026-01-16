@@ -2,6 +2,9 @@
 # MAGETOOL - ROOT GITIGNORE
 # ==========================================
 
+# HF Spaces separate repo (don't include in main GitHub)
+magetool-backend/
+
 # Environment Variables (CRITICAL - NEVER COMMIT)
 .env
 .env.local
