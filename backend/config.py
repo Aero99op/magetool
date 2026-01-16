@@ -27,7 +27,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://magetool-one.vercel.app",  # Production frontend
+        "https://magetool-one.vercel.app",
+        "https://magetool-theta.vercel.app",  # New Vercel URL
     ]
     
     # File Upload Limits (in MB)
