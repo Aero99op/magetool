@@ -109,7 +109,7 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
    ```
    ENVIRONMENT = production
    DEBUG = false
-   CORS_ORIGINS = ["https://magetool.vercel.app"]
+   CORS_ORIGINS = ["https://magetool-one.vercel.app"]
    ```
 
 5. Click **Create Web Service**
@@ -139,7 +139,7 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
    ```
    ENVIRONMENT = production
    DEBUG = false
-   CORS_ORIGINS = ["https://magetool.vercel.app"]
+   CORS_ORIGINS = ["https://magetool-one.vercel.app"]
    ```
 
 6. **Note your URL**: `https://YOUR-USERNAME-magetool-backend.hf.space`
@@ -192,14 +192,14 @@ NEXT_PUBLIC_API_URL = https://magetool-api.onrender.com
 ```
 ENVIRONMENT = production
 DEBUG = false
-CORS_ORIGINS = ["https://magetool.vercel.app"]
+CORS_ORIGINS = ["https://magetool-one.vercel.app"]
 ```
 
 ### HF Spaces (Backend)
 ```
 ENVIRONMENT = production
 DEBUG = false
-CORS_ORIGINS = ["https://magetool.vercel.app"]
+CORS_ORIGINS = ["https://magetool-one.vercel.app"]
 ```
 
 ---

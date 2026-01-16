@@ -24,11 +24,10 @@ class Settings(BaseSettings):
     
     # CORS - Configure via environment variable for production
     # Set CORS_ORIGINS env var as JSON array: ["https://your-app.vercel.app"]
-    # For initial deployment, allows all origins. MUST be restricted in production!
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "*",  # Allows all origins - REPLACE with actual domains after first deploy
+        "https://magetool-one.vercel.app",  # Production frontend
     ]
     
     # File Upload Limits (in MB)
