@@ -8,6 +8,7 @@
 .env.*.local
 .env.production
 .env.development
+.env.example
 
 # Python
 __pycache__/
