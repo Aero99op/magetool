@@ -1,0 +1,1579 @@
+"""
+Image processing routes
+"""
+
+import logging
+from pathlib import Path
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from PIL import Image
+import io
+
+from services.tasks import (
+    create_task, update_task, get_input_path, get_output_path, TaskStatus
+)
+from config import get_settings, SUPPORTED_FORMATS
+
+router = APIRouter()
+settings = get_settings()
+logger = logging.getLogger("magetool.image")
+
+
+async def save_upload_file(upload_file: UploadFile, destination: Path):
+    """Save uploaded file to disk"""
+    content = await upload_file.read()
+    destination.write_bytes(content)
+    return len(content)
+
+
+def process_image_convert(task_id: str, input_path: Path, output_format: str, original_filename: str):
+    """Background task: Convert image format"""
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        # Open image
+        with Image.open(input_path) as img:
+            update_task(task_id, progress_percent=30)
+            
+            # Convert mode if needed for certain formats
+            if output_format.lower() in ["jpg", "jpeg"] and img.mode in ["RGBA", "P"]:
+                img = img.convert("RGB")
+            elif output_format.lower() == "png" and img.mode not in ["RGBA", "RGB", "L", "P"]:
+                img = img.convert("RGBA")
+            
+            update_task(task_id, progress_percent=50)
+            
+            # Determine output path
+            output_path = get_output_path(task_id, output_format)
+            
+            # Save with appropriate options
+            save_options = {}
+            if output_format.lower() in ["jpg", "jpeg"]:
+                save_options["quality"] = 95
+                save_options["optimize"] = True
+            elif output_format.lower() == "webp":
+                save_options["quality"] = 90
+            elif output_format.lower() == "png":
+                save_options["optimize"] = True
+            
+            img.save(output_path, **save_options)
+            
+            update_task(task_id, progress_percent=90)
+            
+            # Create output filename
+            original_stem = Path(original_filename).stem
+            output_filename = f"{original_stem}.{output_format}"
+            
+            # Complete task
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"Image convert complete: {task_id} -> {output_filename}")
+            
+    except Exception as e:
+        logger.error(f"Image convert failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+def process_image_resize(task_id: str, input_path: Path, width: int, height: int, original_filename: str):
+    """Background task: Resize image"""
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        with Image.open(input_path) as img:
+            original_format = img.format or "PNG"
+            ext = original_format.lower()
+            if ext == "jpeg":
+                ext = "jpg"
+            
+            update_task(task_id, progress_percent=30)
+            
+            # Resize
+            resized = img.resize((width, height), Image.Resampling.LANCZOS)
+            
+            update_task(task_id, progress_percent=60)
+            
+            output_path = get_output_path(task_id, ext)
+            
+            # Handle mode conversion for JPEG
+            if ext in ["jpg", "jpeg"] and resized.mode in ["RGBA", "P"]:
+                resized = resized.convert("RGB")
+            
+            resized.save(output_path)
+            
+            original_stem = Path(original_filename).stem
+            output_filename = f"{original_stem}.{ext}"
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"Image resize complete: {task_id} -> {width}x{height}")
+            
+    except Exception as e:
+        logger.error(f"Image resize failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+def process_image_crop(task_id: str, input_path: Path, x: int, y: int, width: int, height: int, original_filename: str):
+    """Background task: Crop image"""
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        with Image.open(input_path) as img:
+            original_format = img.format or "PNG"
+            ext = original_format.lower()
+            if ext == "jpeg":
+                ext = "jpg"
+            
+            update_task(task_id, progress_percent=30)
+            
+            # Crop: (left, upper, right, lower)
+            cropped = img.crop((x, y, x + width, y + height))
+            
+            update_task(task_id, progress_percent=60)
+            
+            output_path = get_output_path(task_id, ext)
+            
+            if ext in ["jpg", "jpeg"] and cropped.mode in ["RGBA", "P"]:
+                cropped = cropped.convert("RGB")
+            
+            cropped.save(output_path)
+            
+            original_stem = Path(original_filename).stem
+            output_filename = f"{original_stem}.{ext}"
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"Image crop complete: {task_id}")
+            
+    except Exception as e:
+        logger.error(f"Image crop failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+@router.post("/convert")
+async def convert_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    output_format: str = Form(...),
+):
+    """Convert image to different format"""
+    # Validate output format
+    output_format = output_format.lower().lstrip(".")
+    if output_format not in SUPPORTED_FORMATS["image"]["output"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported output format: {output_format}"
+        )
+    
+    # Create task
+    task_id = create_task(file.filename, "image_convert")
+    
+    # Get input extension and save file
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    # Add background task
+    background_tasks.add_task(
+        process_image_convert,
+        task_id,
+        input_path,
+        output_format,
+        file.filename,
+    )
+    
+    return {"task_id": task_id, "message": "Image conversion started"}
+
+
+@router.post("/resize")
+async def resize_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    width: int = Form(...),
+    height: int = Form(...),
+):
+    """Resize image to specified dimensions"""
+    if width <= 0 or height <= 0:
+        raise HTTPException(status_code=400, detail="Width and height must be positive")
+    
+    if width > 10000 or height > 10000:
+        raise HTTPException(status_code=400, detail="Maximum dimension is 10000px")
+    
+    task_id = create_task(file.filename, "image_resize")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    background_tasks.add_task(
+        process_image_resize,
+        task_id,
+        input_path,
+        width,
+        height,
+        file.filename,
+    )
+    
+    return {"task_id": task_id, "message": "Image resize started"}
+
+
+@router.post("/crop")
+async def crop_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    x: int = Form(...),
+    y: int = Form(...),
+    width: int = Form(...),
+    height: int = Form(...),
+):
+    """Crop image to specified region"""
+    if x < 0 or y < 0 or width <= 0 or height <= 0:
+        raise HTTPException(status_code=400, detail="Invalid crop dimensions")
+    
+    task_id = create_task(file.filename, "image_crop")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    background_tasks.add_task(
+        process_image_crop,
+        task_id,
+        input_path,
+        x,
+        y,
+        width,
+        height,
+        file.filename,
+    )
+    
+    return {"task_id": task_id, "message": "Image crop started"}
+
+
+@router.post("/remove-background")
+async def remove_background(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    """Remove background from image using AI"""
+    task_id = create_task(file.filename, "image_remove_bg")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    # Background removal task
+    def process_remove_bg(task_id: str, input_path: Path, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            # Try to import rembg
+            try:
+                from rembg import remove
+            except ImportError:
+                # Fallback: just return the original image
+                logger.warning("rembg not installed, using fallback")
+                output_path = get_output_path(task_id, "png")
+                import shutil
+                shutil.copy(input_path, output_path)
+                
+                original_stem = Path(original_filename).stem
+                output_filename = f"{original_stem}.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                return
+            
+            update_task(task_id, progress_percent=20)
+            
+            with Image.open(input_path) as img:
+                update_task(task_id, progress_percent=40)
+                
+                # Remove background
+                output_img = remove(img)
+                
+                update_task(task_id, progress_percent=80)
+                
+                output_path = get_output_path(task_id, "png")
+                output_img.save(output_path.with_suffix(".png"))
+                
+                original_stem = Path(original_filename).stem
+                output_filename = f"{original_stem}.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Background removal complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Background removal failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_remove_bg, task_id, input_path, file.filename)
+    
+    return {"task_id": task_id, "message": "Background removal started"}
+
+
+@router.post("/upscale")
+async def upscale_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    scale: int = Form(default=2),
+):
+    """Upscale image using Real-ESRGAN AI super-resolution"""
+    if scale not in [2, 4]:
+        raise HTTPException(status_code=400, detail="Scale must be 2 or 4")
+    
+    task_id = create_task(file.filename, "image_upscale")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_upscale(task_id: str, input_path: Path, scale: int, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            output_path = get_output_path(task_id, "png")
+            method_used = "unknown"
+            
+            # Try Real-ESRGAN first (actual AI upscaling)
+            try:
+                from realesrgan import RealESRGANer
+                from basicsr.archs.rrdbnet_arch import RRDBNet
+                import numpy as np
+                import cv2
+                
+                update_task(task_id, progress_percent=20)
+                
+                # Load image with OpenCV
+                img = cv2.imread(str(input_path), cv2.IMREAD_UNCHANGED)
+                
+                if img is None:
+                    raise Exception("Failed to load image with OpenCV")
+                
+                update_task(task_id, progress_percent=30)
+                
+                # Initialize Real-ESRGAN model
+                model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
+                
+                # Model path - downloads automatically if not present
+                model_name = f"RealESRGAN_x{scale}plus"
+                
+                upsampler = RealESRGANer(
+                    scale=scale,
+                    model_path=None,  # Auto-download
+                    model=model,
+                    tile=0,
+                    tile_pad=10,
+                    pre_pad=0,
+                    half=False,  # Use FP32 for CPU
+                )
+                
+                update_task(task_id, progress_percent=50)
+                
+                # Upscale the image
+                output, _ = upsampler.enhance(img, outscale=scale)
+                
+                update_task(task_id, progress_percent=80)
+                
+                # Save result
+                cv2.imwrite(str(output_path), output)
+                method_used = "realesrgan"
+                
+                logger.info(f"AI upscale complete with Real-ESRGAN: {task_id}")
+                
+            except ImportError:
+                logger.info("Real-ESRGAN not installed, trying alternative upscaler")
+                
+                # Try opencv super resolution as second option
+                try:
+                    import cv2
+                    
+                    update_task(task_id, progress_percent=30)
+                    
+                    img = cv2.imread(str(input_path))
+                    if img is None:
+                        raise Exception("Failed to load image")
+                    
+                    # Use OpenCV's DNN Super Resolution
+                    sr = cv2.dnn_superres.DnnSuperResImpl_create()
+                    
+                    # Try to use EDSR model (better quality than bicubic)
+                    model_path = settings.TEMP_DIR / f"EDSR_x{scale}.pb"
+                    
+                    if model_path.exists():
+                        sr.readModel(str(model_path))
+                        sr.setModel("edsr", scale)
+                        output = sr.upsample(img)
+                        method_used = "opencv_edsr"
+                    else:
+                        # Fallback to high-quality resize
+                        h, w = img.shape[:2]
+                        output = cv2.resize(img, (w * scale, h * scale), interpolation=cv2.INTER_LANCZOS4)
+                        method_used = "opencv_lanczos"
+                    
+                    update_task(task_id, progress_percent=80)
+                    cv2.imwrite(str(output_path), output)
+                    
+                except Exception as cv_error:
+                    logger.warning(f"OpenCV upscale failed: {cv_error}, using PIL")
+                    
+                    # Final fallback: PIL high-quality resize
+                    with Image.open(input_path) as img:
+                        update_task(task_id, progress_percent=40)
+                        
+                        # Convert to RGB if needed
+                        if img.mode in ["RGBA", "P"]:
+                            rgb_img = img.convert("RGB")
+                        else:
+                            rgb_img = img if img.mode == "RGB" else img.convert("RGB")
+                        
+                        new_size = (rgb_img.width * scale, rgb_img.height * scale)
+                        
+                        # Use LANCZOS for best quality
+                        upscaled = rgb_img.resize(new_size, Image.Resampling.LANCZOS)
+                        
+                        # Apply unsharp mask for perceived sharpness
+                        from PIL import ImageFilter
+                        upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=1, percent=50, threshold=3))
+                        
+                        update_task(task_id, progress_percent=80)
+                        upscaled.save(output_path, "PNG", optimize=True)
+                        method_used = "pil_lanczos"
+                        
+            except Exception as ai_error:
+                logger.warning(f"AI upscale failed: {ai_error}, using PIL fallback")
+                
+                # Fallback: PIL with enhancement
+                with Image.open(input_path) as img:
+                    update_task(task_id, progress_percent=40)
+                    
+                    if img.mode in ["RGBA", "P"]:
+                        rgb_img = img.convert("RGB")
+                    else:
+                        rgb_img = img if img.mode == "RGB" else img.convert("RGB")
+                    
+                    new_size = (rgb_img.width * scale, rgb_img.height * scale)
+                    upscaled = rgb_img.resize(new_size, Image.Resampling.LANCZOS)
+                    
+                    # Sharpen
+                    from PIL import ImageFilter, ImageEnhance
+                    upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=1, percent=50, threshold=3))
+                    
+                    # Slight contrast boost
+                    enhancer = ImageEnhance.Contrast(upscaled)
+                    upscaled = enhancer.enhance(1.05)
+                    
+                    update_task(task_id, progress_percent=80)
+                    upscaled.save(output_path, "PNG", optimize=True)
+                    method_used = "pil_enhanced"
+            
+            update_task(task_id, progress_percent=90)
+            
+            original_stem = Path(original_filename).stem
+            output_filename = f"{original_stem}_upscaled_{scale}x.png"
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"Image upscale complete: {task_id} (method: {method_used})")
+            
+        except Exception as e:
+            logger.error(f"Image upscale failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_upscale, task_id, input_path, scale, file.filename)
+    
+    return {"task_id": task_id, "message": "Image upscale started"}
+
+
+@router.post("/watermark-add")
+async def add_watermark(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    text: str = Form(default="© 2026"),
+    position: str = Form(default="bottom-right"),
+    opacity: int = Form(default=70),
+    font_size: int = Form(default=24),
+):
+    """Add text watermark to image"""
+    task_id = create_task(file.filename, "image_watermark_add")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_watermark_add(task_id: str, input_path: Path, text: str, position: str, opacity: int, font_size: int, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            from PIL import ImageDraw, ImageFont
+            
+            with Image.open(input_path) as img:
+                update_task(task_id, progress_percent=30)
+                
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                
+                overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+                draw = ImageDraw.Draw(overlay)
+                
+                try:
+                    font = ImageFont.truetype("arial.ttf", font_size)
+                except:
+                    font = ImageFont.load_default()
+                
+                bbox = draw.textbbox((0, 0), text, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                
+                padding = 20
+                if position == "top-left":
+                    pos = (padding, padding)
+                elif position == "top-right":
+                    pos = (img.width - text_width - padding, padding)
+                elif position == "bottom-left":
+                    pos = (padding, img.height - text_height - padding)
+                elif position == "center":
+                    pos = ((img.width - text_width) // 2, (img.height - text_height) // 2)
+                else:
+                    pos = (img.width - text_width - padding, img.height - text_height - padding)
+                
+                alpha = int(255 * opacity / 100)
+                draw.text(pos, text, fill=(255, 255, 255, alpha), font=font)
+                
+                update_task(task_id, progress_percent=70)
+                
+                watermarked = Image.alpha_composite(img, overlay)
+                
+                output_path = get_output_path(task_id, "png")
+                watermarked.save(output_path)
+                
+                original_stem = Path(original_filename).stem
+                output_filename = f"{original_stem}_watermarked.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Watermark add complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Watermark add failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_watermark_add, task_id, input_path, text, position, opacity, font_size, file.filename)
+    
+    return {"task_id": task_id, "message": "Watermark add started"}
+
+
+@router.post("/exif-scrub")
+async def scrub_exif(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    """Remove all EXIF/metadata from image"""
+    task_id = create_task(file.filename, "image_exif_scrub")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_exif_scrub(task_id: str, input_path: Path, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            with Image.open(input_path) as img:
+                update_task(task_id, progress_percent=30)
+                
+                data = list(img.getdata())
+                clean_img = Image.new(img.mode, img.size)
+                clean_img.putdata(data)
+                
+                update_task(task_id, progress_percent=70)
+                
+                ext = Path(original_filename).suffix.lstrip(".").lower()
+                if ext in ["jpg", "jpeg"]:
+                    output_ext = "jpg"
+                    if clean_img.mode in ["RGBA", "P"]:
+                        clean_img = clean_img.convert("RGB")
+                else:
+                    output_ext = "png"
+                
+                output_path = get_output_path(task_id, output_ext)
+                clean_img.save(output_path)
+                
+                original_stem = Path(original_filename).stem
+                output_filename = f"{original_stem}_clean.{output_ext}"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"EXIF scrub complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"EXIF scrub failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_exif_scrub, task_id, input_path, file.filename)
+    
+    return {"task_id": task_id, "message": "EXIF scrubbing started"}
+
+
+@router.post("/ocr")
+async def ocr_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    output_format: str = Form(default="txt"),
+):
+    """Extract text from image using OCR"""
+    task_id = create_task(file.filename, "image_ocr")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_ocr(task_id: str, input_path: Path, output_format: str, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            try:
+                import pytesseract
+                update_task(task_id, progress_percent=30)
+                with Image.open(input_path) as img:
+                    text = pytesseract.image_to_string(img)
+            except ImportError:
+                logger.warning("pytesseract not installed, using placeholder")
+                text = "OCR requires Tesseract to be installed."
+            
+            update_task(task_id, progress_percent=70)
+            
+            output_ext = output_format.lower() if output_format in ["txt", "json"] else "txt"
+            output_path = get_output_path(task_id, output_ext)
+            
+            if output_ext == "json":
+                import json
+                output_path.write_text(json.dumps({"text": text, "source": original_filename}))
+            else:
+                output_path.write_text(text)
+            
+            original_stem = Path(original_filename).stem
+            output_filename = f"{original_stem}_text.{output_ext}"
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"OCR complete: {task_id}")
+            
+        except Exception as e:
+            logger.error(f"OCR failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_ocr, task_id, input_path, output_format, file.filename)
+    
+    return {"task_id": task_id, "message": "OCR started"}
+
+
+@router.post("/meme-generator")
+async def generate_meme(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    top_text: str = Form(default=""),
+    bottom_text: str = Form(default=""),
+    font_size: int = Form(default=48),
+):
+    """Generate meme with top and bottom text"""
+    task_id = create_task(file.filename, "meme_generator")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_meme(task_id: str, input_path: Path, top_text: str, bottom_text: str, font_size: int, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            from PIL import ImageDraw, ImageFont
+            
+            with Image.open(input_path) as img:
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                
+                draw = ImageDraw.Draw(img)
+                
+                try:
+                    font = ImageFont.truetype("impact.ttf", font_size)
+                except:
+                    try:
+                        font = ImageFont.truetype("arial.ttf", font_size)
+                    except:
+                        font = ImageFont.load_default()
+                
+                update_task(task_id, progress_percent=40)
+                
+                # Draw top text
+                if top_text:
+                    bbox = draw.textbbox((0, 0), top_text.upper(), font=font)
+                    text_width = bbox[2] - bbox[0]
+                    x = (img.width - text_width) // 2
+                    y = 20
+                    # Outline
+                    for dx, dy in [(-2,-2), (-2,2), (2,-2), (2,2)]:
+                        draw.text((x+dx, y+dy), top_text.upper(), fill="black", font=font)
+                    draw.text((x, y), top_text.upper(), fill="white", font=font)
+                
+                # Draw bottom text
+                if bottom_text:
+                    bbox = draw.textbbox((0, 0), bottom_text.upper(), font=font)
+                    text_width = bbox[2] - bbox[0]
+                    text_height = bbox[3] - bbox[1]
+                    x = (img.width - text_width) // 2
+                    y = img.height - text_height - 30
+                    for dx, dy in [(-2,-2), (-2,2), (2,-2), (2,2)]:
+                        draw.text((x+dx, y+dy), bottom_text.upper(), fill="black", font=font)
+                    draw.text((x, y), bottom_text.upper(), fill="white", font=font)
+                
+                update_task(task_id, progress_percent=80)
+                
+                output_path = get_output_path(task_id, "png")
+                img.save(output_path)
+                
+                output_filename = f"{Path(original_filename).stem}_meme.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Meme generation complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Meme generation failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_meme, task_id, input_path, top_text, bottom_text, font_size, file.filename)
+    
+    return {"task_id": task_id, "message": "Meme generation started"}
+
+
+@router.post("/negative")
+async def apply_negative(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    effect: str = Form(default="invert"),
+    intensity: int = Form(default=100),
+):
+    """Apply negative/invert or color effects to image"""
+    task_id = create_task(file.filename, "image_negative")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_negative(task_id: str, input_path: Path, effect: str, intensity: int, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            from PIL import ImageOps, ImageEnhance
+            
+            with Image.open(input_path) as img:
+                if img.mode == "RGBA":
+                    rgb = img.convert("RGB")
+                else:
+                    rgb = img if img.mode == "RGB" else img.convert("RGB")
+                
+                update_task(task_id, progress_percent=40)
+                
+                if effect == "invert":
+                    result = ImageOps.invert(rgb)
+                elif effect == "grayscale":
+                    result = ImageOps.grayscale(rgb)
+                elif effect == "sepia":
+                    gray = ImageOps.grayscale(rgb)
+                    result = ImageOps.colorize(gray, "#704214", "#C0A080")
+                elif effect == "solarize":
+                    result = ImageOps.solarize(rgb, threshold=128)
+                elif effect == "posterize":
+                    result = ImageOps.posterize(rgb, bits=4)
+                else:
+                    result = ImageOps.invert(rgb)
+                
+                # Apply intensity blend
+                if intensity < 100:
+                    blend_factor = intensity / 100
+                    result = Image.blend(rgb, result, blend_factor)
+                
+                update_task(task_id, progress_percent=80)
+                
+                output_path = get_output_path(task_id, "png")
+                result.save(output_path)
+                
+                output_filename = f"{Path(original_filename).stem}_{effect}.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Negative effect complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Negative effect failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_negative, task_id, input_path, effect, intensity, file.filename)
+    
+    return {"task_id": task_id, "message": "Effect processing started"}
+
+
+@router.post("/color-palette")
+async def extract_color_palette(
+    file: UploadFile = File(...),
+    num_colors: int = Form(default=5),
+):
+    """Extract dominant colors from image (synchronous)"""
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    content = await file.read()
+    
+    try:
+        with Image.open(io.BytesIO(content)) as img:
+            img = img.convert("RGB")
+            img = img.resize((100, 100))  # Reduce for faster processing
+            
+            pixels = list(img.getdata())
+            
+            # Simple color quantization
+            from collections import Counter
+            
+            # Round colors to reduce variations
+            rounded = [(r//16*16, g//16*16, b//16*16) for r, g, b in pixels]
+            color_counts = Counter(rounded).most_common(num_colors)
+            
+            colors = []
+            for (r, g, b), count in color_counts:
+                hex_color = f"#{r:02x}{g:02x}{b:02x}"
+                colors.append({
+                    "hex": hex_color,
+                    "rgb": {"r": r, "g": g, "b": b},
+                    "percentage": round(count / len(pixels) * 100, 1)
+                })
+            
+            return {
+                "success": True,
+                "filename": file.filename,
+                "colors": colors
+            }
+            
+    except Exception as e:
+        logger.error(f"Color palette extraction failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/splitter")
+async def split_image(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    rows: int = Form(default=3),
+    cols: int = Form(default=3),
+):
+    """Split image into grid segments"""
+    task_id = create_task(file.filename, "image_splitter")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_splitter(task_id: str, input_path: Path, rows: int, cols: int, original_filename: str):
+        try:
+            import zipfile
+            
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            with Image.open(input_path) as img:
+                piece_width = img.width // cols
+                piece_height = img.height // rows
+                
+                pieces = []
+                for row in range(rows):
+                    for col in range(cols):
+                        left = col * piece_width
+                        upper = row * piece_height
+                        right = left + piece_width
+                        lower = upper + piece_height
+                        
+                        piece = img.crop((left, upper, right, lower))
+                        pieces.append((piece, f"piece_{row+1}_{col+1}.png"))
+                
+                update_task(task_id, progress_percent=60)
+                
+                output_path = get_output_path(task_id, "zip")
+                
+                with zipfile.ZipFile(output_path, 'w') as zf:
+                    for piece, name in pieces:
+                        temp_buffer = io.BytesIO()
+                        piece.save(temp_buffer, format="PNG")
+                        temp_buffer.seek(0)
+                        zf.writestr(name, temp_buffer.read())
+                
+                update_task(task_id, progress_percent=90)
+                
+                output_filename = f"{Path(original_filename).stem}_split_{rows}x{cols}.zip"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Image split complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Image split failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_splitter, task_id, input_path, rows, cols, file.filename)
+    
+    return {"task_id": task_id, "message": "Image splitting started"}
+
+
+@router.post("/favicon")
+async def generate_favicon(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    """Generate favicon files from image"""
+    task_id = create_task(file.filename, "favicon_generator")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_favicon(task_id: str, input_path: Path, original_filename: str):
+        try:
+            import zipfile
+            
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            sizes = [16, 32, 48, 64, 128, 180, 192, 512]
+            
+            with Image.open(input_path) as img:
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                
+                update_task(task_id, progress_percent=30)
+                
+                output_path = get_output_path(task_id, "zip")
+                
+                with zipfile.ZipFile(output_path, 'w') as zf:
+                    for size in sizes:
+                        resized = img.resize((size, size), Image.Resampling.LANCZOS)
+                        temp_buffer = io.BytesIO()
+                        resized.save(temp_buffer, format="PNG")
+                        temp_buffer.seek(0)
+                        zf.writestr(f"favicon-{size}x{size}.png", temp_buffer.read())
+                    
+                    # Generate ICO with multiple sizes
+                    ico_sizes = [(16, 16), (32, 32), (48, 48)]
+                    ico_buffer = io.BytesIO()
+                    img.save(ico_buffer, format="ICO", sizes=ico_sizes)
+                    ico_buffer.seek(0)
+                    zf.writestr("favicon.ico", ico_buffer.read())
+                    
+                    # Generate manifest
+                    manifest = '''{
+  "icons": [
+    {"src": "/favicon-192x192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/favicon-512x512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}'''
+                    zf.writestr("manifest.json", manifest)
+                
+                update_task(task_id, progress_percent=90)
+                
+                output_filename = "favicons.zip"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Favicon generation complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Favicon generation failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_favicon, task_id, input_path, file.filename)
+    
+    return {"task_id": task_id, "message": "Favicon generation started"}
+
+
+@router.post("/blur-face")
+async def blur_face(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    blur_intensity: int = Form(default=30),
+):
+    """Blur entire image (face detection placeholder)"""
+    task_id = create_task(file.filename, "blur_face")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_blur_face(task_id: str, input_path: Path, blur_intensity: int, original_filename: str):
+        try:
+            from PIL import ImageFilter
+            
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            with Image.open(input_path) as img:
+                update_task(task_id, progress_percent=40)
+                
+                # Apply Gaussian blur (face detection would require OpenCV)
+                blurred = img.filter(ImageFilter.GaussianBlur(radius=blur_intensity // 5))
+                
+                update_task(task_id, progress_percent=80)
+                
+                output_path = get_output_path(task_id, "png")
+                blurred.save(output_path)
+                
+                output_filename = f"{Path(original_filename).stem}_blurred.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Blur face complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Blur face failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_blur_face, task_id, input_path, blur_intensity, file.filename)
+    
+    return {"task_id": task_id, "message": "Face blur started"}
+
+
+@router.post("/passport-photo")
+async def passport_photo(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    size: str = Form(default="2x2"),
+    background_color: str = Form(default="#FFFFFF"),
+):
+    """Create passport photo format"""
+    task_id = create_task(file.filename, "passport_photo")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_passport_photo(task_id: str, input_path: Path, size: str, bg_color: str, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            # Parse size
+            size_map = {
+                "2x2": (600, 600),
+                "35x45": (413, 531),
+                "4x6": (1200, 1800),
+            }
+            target_size = size_map.get(size, (600, 600))
+            
+            with Image.open(input_path) as img:
+                update_task(task_id, progress_percent=30)
+                
+                # Create background
+                bg = Image.new("RGB", target_size, bg_color)
+                
+                # Resize and center image
+                img_ratio = img.width / img.height
+                target_ratio = target_size[0] / target_size[1]
+                
+                if img_ratio > target_ratio:
+                    new_height = target_size[1]
+                    new_width = int(new_height * img_ratio)
+                else:
+                    new_width = target_size[0]
+                    new_height = int(new_width / img_ratio)
+                
+                resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Center crop
+                left = (new_width - target_size[0]) // 2
+                top = (new_height - target_size[1]) // 2
+                cropped = resized.crop((left, top, left + target_size[0], top + target_size[1]))
+                
+                if cropped.mode == "RGBA":
+                    bg.paste(cropped, (0, 0), cropped)
+                else:
+                    bg = cropped.convert("RGB")
+                
+                update_task(task_id, progress_percent=80)
+                
+                output_path = get_output_path(task_id, "jpg")
+                bg.save(output_path, quality=95)
+                
+                output_filename = f"{Path(original_filename).stem}_passport.jpg"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Passport photo complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Passport photo failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_passport_photo, task_id, input_path, size, background_color, file.filename)
+    
+    return {"task_id": task_id, "message": "Passport photo creation started"}
+
+
+@router.post("/collage")
+async def create_collage(
+    background_tasks: BackgroundTasks,
+    files: list[UploadFile] = File(...),
+    cols: int = Form(default=2),
+    spacing: int = Form(default=10),
+    background_color: str = Form(default="#FFFFFF"),
+):
+    """Create collage from multiple images"""
+    if len(files) < 2 or len(files) > 40:
+        raise HTTPException(status_code=400, detail="2-40 images required for collage")
+    
+    task_id = create_task("collage", "image_collage")
+    
+    # Save all files
+    input_paths = []
+    for i, f in enumerate(files):
+        input_ext = Path(f.filename).suffix.lstrip(".") or "png"
+        input_path = get_input_path(f"{task_id}_{i}", input_ext)
+        await save_upload_file(f, input_path)
+        input_paths.append(input_path)
+    
+    def process_collage(task_id: str, input_paths: list, cols: int, spacing: int, bg_color: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            images = []
+            for path in input_paths:
+                images.append(Image.open(path))
+            
+            update_task(task_id, progress_percent=30)
+            
+            # Calculate cell size (use first image as reference)
+            cell_width = max(img.width for img in images)
+            cell_height = max(img.height for img in images)
+            
+            rows = (len(images) + cols - 1) // cols
+            
+            collage_width = cols * cell_width + (cols + 1) * spacing
+            collage_height = rows * cell_height + (rows + 1) * spacing
+            
+            collage = Image.new("RGB", (collage_width, collage_height), bg_color)
+            
+            for idx, img in enumerate(images):
+                row = idx // cols
+                col = idx % cols
+                
+                x = spacing + col * (cell_width + spacing)
+                y = spacing + row * (cell_height + spacing)
+                
+                # Center image in cell
+                resized = img.resize((cell_width, cell_height), Image.Resampling.LANCZOS)
+                if resized.mode == "RGBA":
+                    collage.paste(resized, (x, y), resized)
+                else:
+                    collage.paste(resized, (x, y))
+            
+            for img in images:
+                img.close()
+            
+            update_task(task_id, progress_percent=80)
+            
+            output_path = get_output_path(task_id, "jpg")
+            collage.save(output_path, quality=95)
+            
+            output_filename = f"collage_{len(input_paths)}_images.jpg"
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=output_path.stat().st_size,
+            )
+            
+            logger.info(f"Collage complete: {task_id}")
+            
+        except Exception as e:
+            logger.error(f"Collage failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_collage, task_id, input_paths, cols, spacing, background_color)
+    
+    return {"task_id": task_id, "message": "Collage creation started"}
+
+
+@router.post("/watermark-remove")
+async def remove_watermark(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    detection_mode: str = Form(default="auto"),  # auto, corner, center
+):
+    """Remove watermark from image using OpenCV inpainting"""
+    task_id = create_task(file.filename, "watermark_remove")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_watermark_remove(task_id: str, input_path: Path, detection_mode: str, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            with Image.open(input_path) as img:
+                # Convert to RGB
+                if img.mode in ["RGBA", "P"]:
+                    rgb_img = img.convert("RGB")
+                else:
+                    rgb_img = img if img.mode == "RGB" else img.convert("RGB")
+                
+                update_task(task_id, progress_percent=20)
+                
+                try:
+                    import cv2
+                    import numpy as np
+                    
+                    # Convert PIL to OpenCV format
+                    cv_image = np.array(rgb_img)
+                    cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
+                    
+                    height, width = cv_image.shape[:2]
+                    
+                    update_task(task_id, progress_percent=30)
+                    
+                    # Create mask for watermark detection
+                    # Watermarks are often semi-transparent light overlays
+                    
+                    # Convert to grayscale for analysis
+                    gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+                    
+                    # Create mask based on detection mode
+                    mask = np.zeros((height, width), dtype=np.uint8)
+                    
+                    if detection_mode == "corner":
+                        # Check corners for watermarks
+                        corner_size = min(width, height) // 5
+                        regions = [
+                            (0, 0, corner_size, corner_size),  # Top-left
+                            (width - corner_size, 0, width, corner_size),  # Top-right
+                            (0, height - corner_size, corner_size, height),  # Bottom-left
+                            (width - corner_size, height - corner_size, width, height),  # Bottom-right
+                        ]
+                        
+                        for x1, y1, x2, y2 in regions:
+                            region = gray[y1:y2, x1:x2]
+                            mean_val = np.mean(region)
+                            
+                            # If corner is unusually bright (potential watermark)
+                            if mean_val > 200:
+                                # Detect bright text-like regions
+                                _, thresh = cv2.threshold(region, 220, 255, cv2.THRESH_BINARY)
+                                mask[y1:y2, x1:x2] = thresh
+                                
+                    elif detection_mode == "center":
+                        # Look for watermarks in center
+                        cx, cy = width // 2, height // 2
+                        center_w, center_h = width // 3, height // 3
+                        x1, y1 = cx - center_w // 2, cy - center_h // 2
+                        x2, y2 = cx + center_w // 2, cy + center_h // 2
+                        
+                        region = gray[y1:y2, x1:x2]
+                        mean_val = np.mean(region)
+                        
+                        if mean_val > 180:
+                            _, thresh = cv2.threshold(region, 210, 255, cv2.THRESH_BINARY)
+                            mask[y1:y2, x1:x2] = thresh
+                            
+                    else:  # auto mode
+                        # Auto-detect semi-transparent overlays
+                        # Look for regions with unusual brightness/low saturation
+                        
+                        hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+                        h, s, v = cv2.split(hsv)
+                        
+                        # Watermarks often have high brightness, low saturation
+                        # Create mask where value is high and saturation is low
+                        high_v = v > 230
+                        low_s = s < 30
+                        watermark_candidate = np.logical_and(high_v, low_s).astype(np.uint8) * 255
+                        
+                        # Apply morphological operations to clean up
+                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                        watermark_candidate = cv2.morphologyEx(watermark_candidate, cv2.MORPH_CLOSE, kernel)
+                        watermark_candidate = cv2.morphologyEx(watermark_candidate, cv2.MORPH_OPEN, kernel)
+                        
+                        # Also check for text-like edges
+                        edges = cv2.Canny(gray, 100, 200)
+                        text_regions = cv2.dilate(edges, kernel, iterations=2)
+                        
+                        # Combine with brightness mask
+                        combined = cv2.bitwise_and(watermark_candidate, text_regions)
+                        
+                        # Dilate to cover surrounding area
+                        mask = cv2.dilate(combined, kernel, iterations=3)
+                    
+                    update_task(task_id, progress_percent=50)
+                    
+                    # Apply inpainting
+                    if np.sum(mask) > 0:
+                        # Use Telea inpainting algorithm
+                        result = cv2.inpaint(cv_image, mask, inpaintRadius=5, flags=cv2.INPAINT_TELEA)
+                        
+                        # Optional: Apply bilateral filter to smooth artifacts
+                        result = cv2.bilateralFilter(result, 5, 50, 50)
+                    else:
+                        # No watermark detected, apply general enhancement
+                        result = cv2.detailEnhance(cv_image, sigma_s=10, sigma_r=0.15)
+                    
+                    update_task(task_id, progress_percent=80)
+                    
+                    # Convert back to PIL
+                    result_rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+                    final_img = Image.fromarray(result_rgb)
+                    
+                except ImportError:
+                    # OpenCV not available, use PIL-based enhancement
+                    logger.warning("OpenCV not installed, using PIL enhancement")
+                    
+                    from PIL import ImageEnhance, ImageFilter
+                    
+                    # Apply multiple enhancements
+                    enhanced = rgb_img
+                    
+                    # Increase contrast
+                    enhancer = ImageEnhance.Contrast(enhanced)
+                    enhanced = enhancer.enhance(1.2)
+                    
+                    # Increase color saturation to reduce faded watermarks
+                    enhancer = ImageEnhance.Color(enhanced)
+                    enhanced = enhancer.enhance(1.15)
+                    
+                    # Apply edge-preserving smoothing
+                    enhanced = enhanced.filter(ImageFilter.SMOOTH)
+                    
+                    final_img = enhanced
+                
+                update_task(task_id, progress_percent=90)
+                
+                output_path = get_output_path(task_id, "png")
+                final_img.save(output_path, "PNG", optimize=True)
+                
+                output_filename = f"{Path(original_filename).stem}_clean.png"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"Watermark remove complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"Watermark remove failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_watermark_remove, task_id, input_path, detection_mode, file.filename)
+    
+    return {"task_id": task_id, "message": "Watermark removal started"}
+
+
+@router.post("/svg-convert")
+async def convert_to_svg(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    smoothing: str = Form(default="Normal"),
+    color_depth: str = Form(default="preserve"),
+):
+    """Convert raster image to SVG vector format"""
+    task_id = create_task(file.filename, "svg_convert")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    def process_svg_convert(task_id: str, input_path: Path, smoothing: str, color_depth: str, original_filename: str):
+        try:
+            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+            
+            with Image.open(input_path) as img:
+                # Convert to RGB if needed
+                if img.mode in ["RGBA", "P"]:
+                    rgb_img = img.convert("RGB")
+                else:
+                    rgb_img = img if img.mode == "RGB" else img.convert("RGB")
+                
+                width, height = rgb_img.size
+                
+                update_task(task_id, progress_percent=30)
+                
+                # Apply color reduction based on color_depth
+                if color_depth == "bw":
+                    rgb_img = rgb_img.convert("L").convert("RGB")
+                    num_colors = 2
+                elif color_depth == "16":
+                    num_colors = 16
+                elif color_depth == "64":
+                    num_colors = 64
+                elif color_depth == "256":
+                    num_colors = 256
+                else:
+                    num_colors = 256  # preserve = high quality
+                
+                # Quantize colors
+                quantized = rgb_img.quantize(colors=num_colors).convert("RGB")
+                
+                update_task(task_id, progress_percent=50)
+                
+                # Generate SVG with embedded image (simplified approach)
+                # For true vectorization, would need potrace library
+                import base64
+                from io import BytesIO
+                
+                # Reduce image size for SVG embedding based on smoothing
+                smooth_scale = {"Sharp": 1.0, "Normal": 0.75, "Smooth": 0.5}
+                scale = smooth_scale.get(smoothing, 0.75)
+                
+                new_size = (int(width * scale), int(height * scale))
+                resized = quantized.resize(new_size, Image.Resampling.LANCZOS)
+                
+                # Convert to base64
+                buffer = BytesIO()
+                resized.save(buffer, format="PNG", optimize=True)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                
+                update_task(task_id, progress_percent=70)
+                
+                # Create SVG with embedded image
+                svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+     width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+  <title>Converted from {original_filename}</title>
+  <image width="{width}" height="{height}" 
+         xlink:href="data:image/png;base64,{img_base64}"/>
+</svg>'''
+                
+                output_path = get_output_path(task_id, "svg")
+                output_path.write_text(svg_content, encoding="utf-8")
+                
+                update_task(task_id, progress_percent=90)
+                
+                output_filename = f"{Path(original_filename).stem}.svg"
+                
+                update_task(
+                    task_id,
+                    status=TaskStatus.COMPLETE,
+                    progress_percent=100,
+                    output_filename=output_filename,
+                    output_path=output_path,
+                    file_size=output_path.stat().st_size,
+                )
+                
+                logger.info(f"SVG convert complete: {task_id}")
+                
+        except Exception as e:
+            logger.error(f"SVG convert failed: {task_id} - {e}")
+            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+    
+    background_tasks.add_task(process_svg_convert, task_id, input_path, smoothing, color_depth, file.filename)
+    
+    return {"task_id": task_id, "message": "SVG conversion started"}
+

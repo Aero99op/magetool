@@ -1,0 +1,94 @@
+# ==========================================
+# MAGETOOL BACKEND - PYTHON DEPENDENCIES
+# ==========================================
+# Python 3.10+ required
+# Install: pip install -r requirements.txt
+
+# ==========================================
+# CORE FRAMEWORK
+# ==========================================
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# ==========================================
+# HTTP & ASYNC
+# ==========================================
+httpx>=0.26.0
+aiofiles>=23.2.1
+requests>=2.31.0
+
+# ==========================================
+# IMAGE PROCESSING
+# ==========================================
+Pillow>=10.0.0
+rembg>=2.0.50
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+
+# ==========================================
+# VIDEO/AUDIO PROCESSING
+# ==========================================
+# Note: FFmpeg must be installed separately on the system
+ffmpeg-python>=0.2.0
+yt-dlp
+
+# Audio Analysis (BPM Detection)
+librosa>=0.10.0
+soundfile>=0.12.0
+audioread>=3.0.0
+
+# ==========================================
+# DOCUMENT PROCESSING
+# ==========================================
+PyPDF2>=3.0.0
+pdf2image>=1.17.0
+python-docx>=1.1.0
+openpyxl>=3.1.0
+
+# ==========================================
+# OCR (Optical Character Recognition)
+# ==========================================
+# Note: Tesseract must be installed separately on the system
+pytesseract>=0.3.10
+
+# ==========================================
+# MONITORING & LOGGING
+# ==========================================
+sentry-sdk[fastapi]>=1.39.0
+
+# ==========================================
+# SECURITY
+# ==========================================
+slowapi>=0.1.9
+
+# ==========================================
+# UTILITIES
+# ==========================================
+python-magic>=0.4.27
+python-dotenv>=1.0.0
+
+# ==========================================
+# SYSTEM DEPENDENCIES (Install Separately)
+# ==========================================
+# These are NOT pip packages - install manually:
+#
+# FFmpeg (Video/Audio processing):
+#   Windows: winget install ffmpeg
+#   macOS:   brew install ffmpeg
+#   Linux:   apt install ffmpeg
+#
+# Tesseract OCR (Text extraction):
+#   Windows: winget install tesseract
+#   macOS:   brew install tesseract
+#   Linux:   apt install tesseract-ocr
+#
+# Poppler (PDF to Image):
+#   Windows: Download from https://github.com/oschwartz10612/poppler-windows
+#   macOS:   brew install poppler
+#   Linux:   apt install poppler-utils
+#
+# Ghostscript (PDF compression, optional):
+#   Download from https://www.ghostscript.com/
