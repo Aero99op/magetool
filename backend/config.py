@@ -28,7 +28,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://magetool-one.vercel.app",
-        "https://magetool-theta.vercel.app",  # New Vercel URL
+        "https://magetool-theta.vercel.app",
+        "https://clever-dango-6377a7.netlify.app",  # Netlify
     ]
     
     # File Upload Limits (in MB)
