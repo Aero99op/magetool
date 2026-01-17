@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { imageApi, pollTaskStatus, getDownloadUrl } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
 
 export default function ImageSplitterPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -33,6 +33,7 @@ export default function ImageSplitterPage() {
             const response = await imageApi.splitter(file, rows, cols);
             const taskId = response.task_id;
 
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId);
             setDownloadUrl(getDownloadUrl(taskId));
         } catch (err: any) {

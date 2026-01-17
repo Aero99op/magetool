@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -22,6 +22,7 @@ export default function WatermarkAddPage() {
     const [opacity, setOpacity] = useState(70);
     const [fontSize, setFontSize] = useState(24);
     const [error, setError] = useState('');
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const positions = ['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'];
 
@@ -38,13 +39,26 @@ export default function WatermarkAddPage() {
         try {
             const response = await imageApi.watermarkAdd(
                 file, text, position, opacity, fontSize,
-                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 30))
+                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 100))
             );
-            const taskId = response.task_id;
 
-            setStage('processing');
-            setProgress(50);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || err.message || 'Upload failed');
+            setStage('error');
+        }
+    }, [text, position, opacity, fontSize]);
 
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(50);
+
+        try {
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId, (status) => {
                 setProgress(status.progress_percent || 60);
             });
@@ -57,7 +71,7 @@ export default function WatermarkAddPage() {
             setError(err.response?.data?.detail || err.message || 'Failed to process');
             setStage('error');
         }
-    }, [text, position, opacity, fontSize]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -68,6 +82,7 @@ export default function WatermarkAddPage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WEBP | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '16px' }}>

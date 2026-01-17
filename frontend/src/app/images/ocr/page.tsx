@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 
 export default function OCRScannerPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -31,6 +31,7 @@ export default function OCRScannerPage() {
             const response = await imageApi.ocr(selectedFile, outputFormat);
             const taskId = response.task_id;
 
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId);
 
             // Fetch the extracted text from the download URL

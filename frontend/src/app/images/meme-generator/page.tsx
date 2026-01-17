@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { imageApi, pollTaskStatus, getDownloadUrl } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
 
 const FONTS = ['Impact', 'Arial Black', 'Comic Sans MS', 'Helvetica'];
 
@@ -38,6 +38,7 @@ export default function MemeGeneratorPage() {
             const response = await imageApi.meme(file, topText, bottomText, fontSize);
             const taskId = response.task_id;
 
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId);
             setDownloadUrl(getDownloadUrl(taskId));
         } catch (err: any) {

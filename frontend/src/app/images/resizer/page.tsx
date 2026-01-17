@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_FORMATS = {
     'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff'],
@@ -111,7 +111,7 @@ export default function ImageResizerPage() {
 
             setStage('processing');
             setProgress(0);
-
+            await startProcessing(response.task_id);
             const completedTask = await pollTaskStatus(
                 response.task_id,
                 (task) => {

@@ -90,7 +90,7 @@ const sanitizeFilename = (filename: string): string => {
 // ==========================================
 export interface TaskResponse {
     task_id: string;
-    status: 'queued' | 'processing' | 'complete' | 'failed' | 'cancelled';
+    status: 'queued' | 'uploaded' | 'processing' | 'complete' | 'failed' | 'cancelled';
     original_filename?: string;
     output_filename?: string;
     progress_percent?: number;
@@ -249,6 +249,19 @@ export const uploadFiles = async (
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const response = await api.get(`/api/status/${taskId}`);
     return response.data;
+};
+
+// Start processing for an uploaded task
+export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
+    try {
+        const response = await api.post(`/api/start/${taskId}`);
+        return response.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            throw new Error(parseErrorResponse(error));
+        }
+        throw error;
+    }
 };
 
 // Poll for task completion

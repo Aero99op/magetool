@@ -5,12 +5,13 @@ Audio processing routes
 import logging
 import subprocess
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from services.tasks import (
     create_task, update_task, get_input_path, get_output_path, TaskStatus
 )
 from config import get_settings, SUPPORTED_FORMATS
+from routes.core import register_processor
 
 router = APIRouter()
 settings = get_settings()
@@ -42,8 +43,10 @@ def run_ffmpeg(args: list, timeout: int = 300) -> tuple[bool, str]:
         return False, str(e)
 
 
-def process_audio_convert(task_id: str, input_path: Path, output_format: str, bitrate: str, original_filename: str):
+def process_audio_convert(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Convert audio format"""
+    output_format = params.get("output_format", "mp3")
+    bitrate = params.get("bitrate", "192k")
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
@@ -98,8 +101,12 @@ def process_audio_convert(task_id: str, input_path: Path, output_format: str, bi
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_audio_trim(task_id: str, input_path: Path, start_time: str, end_time: str, fade_in: int, fade_out: int, original_filename: str):
+def process_audio_trim(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Trim audio"""
+    start_time = params.get("start_time", "0")
+    end_time = params.get("end_time", "30")
+    fade_in = params.get("fade_in", 0)
+    fade_out = params.get("fade_out", 0)
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
@@ -152,8 +159,10 @@ def process_audio_trim(task_id: str, input_path: Path, start_time: str, end_time
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_audio_volume(task_id: str, input_path: Path, gain: float, normalize: bool, original_filename: str):
+def process_audio_volume(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Adjust audio volume"""
+    gain = params.get("gain", 0)
+    normalize = params.get("normalize", False)
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
@@ -199,7 +208,6 @@ def process_audio_volume(task_id: str, input_path: Path, gain: float, normalize:
 
 @router.post("/convert")
 async def convert_audio(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_format: str = Form(...),
     bitrate: str = Form(default="192k"),
@@ -218,21 +226,19 @@ async def convert_audio(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_audio_convert,
+    update_task(
         task_id,
-        input_path,
-        output_format,
-        bitrate,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"output_format": output_format, "bitrate": bitrate}
     )
     
-    return {"task_id": task_id, "message": "Audio conversion started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/trim")
 async def trim_audio(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
@@ -246,23 +252,19 @@ async def trim_audio(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_audio_trim,
+    update_task(
         task_id,
-        input_path,
-        start_time,
-        end_time,
-        fade_in,
-        fade_out,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"start_time": start_time, "end_time": end_time, "fade_in": fade_in, "fade_out": fade_out}
     )
     
-    return {"task_id": task_id, "message": "Audio trim started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/volume")
 async def adjust_volume(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     gain: float = Form(default=0),
     normalize: bool = Form(default=False),
@@ -280,16 +282,15 @@ async def adjust_volume(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_audio_volume,
+    update_task(
         task_id,
-        input_path,
-        gain,
-        normalize,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"gain": gain, "normalize": normalize}
     )
     
-    return {"task_id": task_id, "message": "Audio volume adjustment started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/bpm")
@@ -500,3 +501,13 @@ async def identify_song(
     except Exception as e:
         logger.error(f"Song identification failed: {e}")
         return {"success": False, "error": str(e), "filename": file.filename}
+
+
+# ============================================================================
+# PROCESSOR REGISTRATION
+# Register handlers for deferred processing via /start endpoint
+# ============================================================================
+register_processor("audio_convert", process_audio_convert)
+register_processor("audio_trim", process_audio_trim)
+register_processor("audio_volume", process_audio_volume)
+

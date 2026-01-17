@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ASPECT_RATIOS = [
     { value: 'free', label: 'Freeform', ratio: null },
@@ -75,7 +75,7 @@ export default function ImageCropperPage() {
 
             setStage('processing');
             setProgress(0);
-
+            await startProcessing(response.task_id);
             const completedTask = await pollTaskStatus(response.task_id, (task) => {
                 setProgress(task.progress_percent || 0);
             });

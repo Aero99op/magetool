@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { imageApi, pollTaskStatus, getDownloadUrl } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
 
 const EFFECTS = [
@@ -42,6 +42,7 @@ export default function NegativeInvertPage() {
             const response = await imageApi.negative(file, effect, intensity);
             const taskId = response.task_id;
 
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId);
             setDownloadUrl(getDownloadUrl(taskId));
         } catch (err: any) {

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ROTATION_OPTIONS = [
     { value: '90', label: 'Rotate 90° Clockwise' },
@@ -30,11 +30,14 @@ export default function VideoRotatePage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
+    const [originalFileName, setOriginalFileName] = useState<string>('');
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setOriginalFileName(file.name);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
@@ -67,12 +70,28 @@ export default function VideoRotatePage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
-            setEstimatedTime('Rotating video...');
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [rotation]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Rotating video...');
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -83,24 +102,25 @@ export default function VideoRotatePage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
-            setDownloadFileName(completedTask.output_filename || `rotated_${file.name}`);
+            setDownloadUrl(getDownloadUrl(taskId));
+            setDownloadFileName(completedTask.output_filename || `rotated_${originalFileName}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Rotation error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Rotation failed. Please try again.');
         }
-    }, [rotation]);
+    }, [taskId, originalFileName]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -112,6 +132,7 @@ export default function VideoRotatePage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 500MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

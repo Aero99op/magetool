@@ -18,6 +18,7 @@ export default function WatermarkRemovePage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [detectionMode, setDetectionMode] = useState('auto');
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -32,13 +33,25 @@ export default function WatermarkRemovePage() {
         try {
             const response = await imageApi.watermarkRemove(
                 file, detectionMode,
-                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 30))
+                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 100))
             );
-            const taskId = response.task_id;
 
-            setStage('processing');
-            setProgress(50);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (err: any) {
+            setErrorMessage(err.response?.data?.detail || err.message || 'Upload failed');
+            setStage('error');
+        }
+    }, [detectionMode]);
 
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(50);
+
+        try {
             const result = await pollTaskStatus(taskId, (status) => {
                 setProgress(status.progress_percent || 60);
             });
@@ -51,7 +64,7 @@ export default function WatermarkRemovePage() {
             setErrorMessage(err.response?.data?.detail || err.message || 'Failed to remove watermark');
             setStage('error');
         }
-    }, [detectionMode]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -62,6 +75,7 @@ export default function WatermarkRemovePage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WebP | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '16px' }}>

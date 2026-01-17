@@ -16,6 +16,7 @@ interface ToolLayoutProps {
     maxFiles?: number;
     supportedFormatsText?: string;
     onFilesSelected: (files: File[]) => void;
+    onProcessClick?: () => void; // Callback for manual process trigger
     configPanel?: ReactNode;
     processingStage?: ProcessingStage;
     progress?: number;
@@ -38,6 +39,7 @@ export default function ToolLayout({
     maxFiles = 40,
     supportedFormatsText,
     onFilesSelected,
+    onProcessClick,
     configPanel,
     processingStage = 'idle',
     progress = 0,
@@ -93,8 +95,8 @@ export default function ToolLayout({
                             </motion.div>
                         )}
 
-                        {/* Progress Display - During upload/processing */}
-                        {(processingStage === 'uploading' || processingStage === 'processing') && (
+                        {/* Progress Display - During upload/uploaded/processing */}
+                        {(processingStage === 'uploading' || processingStage === 'uploaded' || processingStage === 'processing') && (
                             <ProgressDisplay
                                 stage={processingStage}
                                 progress={progress}
@@ -102,6 +104,7 @@ export default function ToolLayout({
                                 estimatedTime={estimatedTime}
                                 fileName={fileName}
                                 fileSize={fileSize}
+                                onProcessClick={onProcessClick}
                             />
                         )}
 

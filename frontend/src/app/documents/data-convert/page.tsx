@@ -18,6 +18,7 @@ export default function DataConvertPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [error, setError] = useState('');
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const formats = ['json', 'csv', 'xml'];
 
@@ -40,13 +41,25 @@ export default function DataConvertPage() {
         try {
             const response = await documentApi.dataConvert(
                 file, outputFormat,
-                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 30))
+                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 100))
             );
-            const taskId = response.task_id;
 
-            setStage('processing');
-            setProgress(50);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || err.message || 'Upload failed');
+            setStage('error');
+        }
+    }, [outputFormat]);
 
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(50);
+
+        try {
             const result = await pollTaskStatus(taskId, (status) => {
                 setProgress(status.progress_percent || 60);
             });
@@ -59,7 +72,7 @@ export default function DataConvertPage() {
             setError(err.response?.data?.detail || err.message || 'Conversion failed');
             setStage('error');
         }
-    }, [outputFormat]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -70,6 +83,7 @@ export default function DataConvertPage() {
             maxFiles={1}
             supportedFormatsText="JSON, CSV, XML | Max: 10MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '16px' }}>

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const OUTPUT_FORMATS = [
     { value: 'mp4', label: 'MP4 (.mp4)' },
@@ -31,6 +31,7 @@ export default function VideoMergerPage() {
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
     const [fileCount, setFileCount] = useState(0);
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length < 2) {
@@ -73,12 +74,28 @@ export default function VideoMergerPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
-            setEstimatedTime('Merging videos... This may take several minutes');
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [outputFormat]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Merging videos... This may take several minutes');
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -89,18 +106,18 @@ export default function VideoMergerPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || `merged.${outputFormat}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Merge error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Merge failed. Please try again.');
         }
-    }, [outputFormat]);
+    }, [taskId, outputFormat]);
 
     const resetState = () => {
         setStage('idle');
@@ -108,6 +125,7 @@ export default function VideoMergerPage() {
         setDownloadReady(false);
         setErrorMessage(undefined);
         setFileCount(0);
+        setTaskId(null);
     };
 
     return (
@@ -119,6 +137,7 @@ export default function VideoMergerPage() {
             maxFiles={10}
             supportedFormatsText="Select 2-10 videos | Supported: MP4, MKV, AVI, MOV, WebM | Max: 500MB each"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

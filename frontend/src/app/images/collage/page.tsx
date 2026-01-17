@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import api, { pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
+import api, { pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
 
 const LAYOUTS = [
@@ -54,6 +54,7 @@ export default function CollageMakerPage() {
             });
 
             const taskId = response.data.task_id;
+            await startProcessing(taskId);
             await pollTaskStatus(taskId);
             setDownloadUrl(getDownloadUrl(taskId));
         } catch (err: any) {

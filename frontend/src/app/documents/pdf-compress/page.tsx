@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const QUALITY_OPTIONS = [
     { value: 'low', label: 'Maximum Compression', desc: 'Smallest file size' },
@@ -24,6 +24,7 @@ export default function PDFCompressPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -39,23 +40,36 @@ export default function PDFCompressPage() {
                 if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
             });
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (error: any) {
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed');
+        }
+    }, [quality]);
 
-            const completedTask = await pollTaskStatus(response.task_id, (task) => {
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
+            const completedTask = await pollTaskStatus(taskId, (task) => {
                 setProgress(task.progress_percent || 0);
             });
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || 'compressed.pdf');
             if (completedTask.file_size) setDownloadFileSize(formatFileSize(completedTask.file_size));
         } catch (error: any) {
             setStage('error');
             setErrorMessage(error.message || 'Compression failed');
         }
-    }, [quality]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -66,6 +80,7 @@ export default function PDFCompressPage() {
             maxFiles={1}
             supportedFormatsText="PDF files only | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Compression Level</label>

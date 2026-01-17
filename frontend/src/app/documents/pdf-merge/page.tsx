@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_FORMATS = {
     'application/pdf': ['.pdf'],
@@ -76,6 +76,7 @@ export default function PDFMergePage() {
             setStage('processing');
             setProgress(0);
 
+            await startProcessing(response.task_id);
             const completedTask = await pollTaskStatus(
                 response.task_id,
                 (task) => {

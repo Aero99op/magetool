@@ -350,7 +350,7 @@ export default function Header() {
                     {/* Mobile Menu Toggle */}
                     <button
                         className="btn btn-ghost mobile-menu-toggle"
-                        style={{ padding: '8px', display: 'none' }}
+                        style={{ padding: '8px' }}
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
                         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -440,6 +440,9 @@ export default function Header() {
 
             {/* Responsive Styles */}
             <style jsx global>{`
+        .mobile-menu-toggle {
+          display: none;
+        }
         @media (max-width: 768px) {
           .desktop-nav {
             display: none !important;

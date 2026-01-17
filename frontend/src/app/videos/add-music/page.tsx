@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_VIDEO_FORMATS = {
     'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
@@ -87,6 +87,7 @@ export default function AddMusicPage() {
             setProgress(0);
             setEstimatedTime('Adding music to video...');
 
+            await startProcessing(response.task_id);
             const completedTask = await pollTaskStatus(
                 response.task_id,
                 (task) => {

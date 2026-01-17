@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const FPS_OPTIONS = [
     { value: '10', label: '10 FPS (Smaller file)' },
@@ -41,11 +41,14 @@ export default function VideoToGifPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
+    const [originalFileName, setOriginalFileName] = useState<string>('');
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setOriginalFileName(file.name);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
@@ -81,12 +84,28 @@ export default function VideoToGifPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
-            setEstimatedTime('Converting to GIF...');
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [fps, width, startTime, duration]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Converting to GIF...');
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -97,25 +116,26 @@ export default function VideoToGifPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
-            const baseName = file.name.replace(/\.[^.]+$/, '');
+            setDownloadUrl(getDownloadUrl(taskId));
+            const baseName = originalFileName.replace(/\.[^.]+$/, '');
             setDownloadFileName(completedTask.output_filename || `${baseName}.gif`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('GIF conversion error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Conversion failed. Please try again.');
         }
-    }, [fps, width, startTime, duration]);
+    }, [taskId, originalFileName]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -127,6 +147,7 @@ export default function VideoToGifPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 100MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

@@ -11,6 +11,7 @@ from services.tasks import (
     create_task, update_task, get_input_path, get_output_path, TaskStatus
 )
 from config import get_settings, SUPPORTED_FORMATS
+from routes.core import register_processor
 
 router = APIRouter()
 settings = get_settings()
@@ -42,35 +43,38 @@ def run_ffmpeg(args: list, timeout: int = 600) -> tuple[bool, str]:
         return False, str(e)
 
 
-def process_video_convert(task_id: str, input_path: Path, output_format: str, original_filename: str, options: dict):
+def process_video_convert(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Convert video format"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        output_format = params.get("output_format", "mp4")
         output_path = get_output_path(task_id, output_format)
         
         # Build FFmpeg command
         ffmpeg_args = ["-i", str(input_path)]
         
         # Add resolution if specified
-        if options.get("resolution"):
-            res = options["resolution"]
-            if res == "360p":
+        resolution = params.get("resolution")
+        if resolution:
+            if resolution == "360p":
                 ffmpeg_args.extend(["-vf", "scale=-2:360"])
-            elif res == "480p":
+            elif resolution == "480p":
                 ffmpeg_args.extend(["-vf", "scale=-2:480"])
-            elif res == "720p":
+            elif resolution == "720p":
                 ffmpeg_args.extend(["-vf", "scale=-2:720"])
-            elif res == "1080p":
+            elif resolution == "1080p":
                 ffmpeg_args.extend(["-vf", "scale=-2:1080"])
         
         # Add framerate if specified
-        if options.get("framerate"):
-            ffmpeg_args.extend(["-r", str(options["framerate"])])
+        framerate = params.get("framerate")
+        if framerate:
+            ffmpeg_args.extend(["-r", str(framerate)])
         
         # Add bitrate if specified
-        if options.get("bitrate"):
-            ffmpeg_args.extend(["-b:v", options["bitrate"]])
+        bitrate = params.get("bitrate")
+        if bitrate:
+            ffmpeg_args.extend(["-b:v", bitrate])
         
         ffmpeg_args.append(str(output_path))
         
@@ -102,11 +106,13 @@ def process_video_convert(task_id: str, input_path: Path, output_format: str, or
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_extract_audio(task_id: str, input_path: Path, output_format: str, bitrate: str, original_filename: str):
+def process_extract_audio(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Extract audio from video"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        output_format = params.get("output_format", "mp3")
+        bitrate = params.get("bitrate", "192k")
         output_path = get_output_path(task_id, output_format)
         
         # Build FFmpeg command for audio extraction
@@ -163,11 +169,13 @@ def process_extract_audio(task_id: str, input_path: Path, output_format: str, bi
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_video_trim(task_id: str, input_path: Path, start_time: str, end_time: str, original_filename: str):
+def process_video_trim(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Trim video"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        start_time = params.get("start_time", "00:00:00")
+        end_time = params.get("end_time", "00:00:30")
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
@@ -207,11 +215,12 @@ def process_video_trim(task_id: str, input_path: Path, start_time: str, end_time
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_video_compress(task_id: str, input_path: Path, quality: str, original_filename: str):
+def process_video_compress(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Compress video"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        quality = params.get("quality", "medium")
         output_path = get_output_path(task_id, "mp4")
         
         # CRF values: lower = better quality, higher = more compression
@@ -262,7 +271,6 @@ def process_video_compress(task_id: str, input_path: Path, quality: str, origina
 
 @router.post("/convert")
 async def convert_video(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_format: str = Form(...),
     resolution: str = Form(default=None),
@@ -283,27 +291,25 @@ async def convert_video(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    options = {
-        "resolution": resolution,
-        "framerate": framerate,
-        "bitrate": bitrate,
-    }
-    
-    background_tasks.add_task(
-        process_video_convert,
+    # Store params and set status to UPLOADED (processing deferred)
+    update_task(
         task_id,
-        input_path,
-        output_format,
-        file.filename,
-        options,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={
+            "output_format": output_format,
+            "resolution": resolution,
+            "framerate": framerate,
+            "bitrate": bitrate,
+        }
     )
     
-    return {"task_id": task_id, "message": "Video conversion started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/extract-audio")
 async def extract_audio(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_format: str = Form(default="mp3"),
     bitrate: str = Form(default="192k"),
@@ -322,21 +328,22 @@ async def extract_audio(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_extract_audio,
+    update_task(
         task_id,
-        input_path,
-        output_format,
-        bitrate,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={
+            "output_format": output_format,
+            "bitrate": bitrate,
+        }
     )
     
-    return {"task_id": task_id, "message": "Audio extraction started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/trim")
 async def trim_video(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
@@ -348,21 +355,22 @@ async def trim_video(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_trim,
+    update_task(
         task_id,
-        input_path,
-        start_time,
-        end_time,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={
+            "start_time": start_time,
+            "end_time": end_time,
+        }
     )
     
-    return {"task_id": task_id, "message": "Video trim started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/compress")
 async def compress_video(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     quality: str = Form(default="medium"),
 ):
@@ -379,26 +387,29 @@ async def compress_video(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_compress,
+    update_task(
         task_id,
-        input_path,
-        quality,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={
+            "quality": quality,
+        }
     )
     
-    return {"task_id": task_id, "message": "Video compression started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 # ============================================================================
 # NEW VIDEO PROCESSING ENDPOINTS (Replacing social media downloaders)
 # ============================================================================
 
-def process_video_rotate(task_id: str, input_path: Path, rotation: str, original_filename: str):
+def process_video_rotate(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Rotate/flip video"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        rotation = params.get("rotation", "90")
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
@@ -453,7 +464,6 @@ def process_video_rotate(task_id: str, input_path: Path, rotation: str, original
 
 @router.post("/rotate")
 async def rotate_video(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     rotation: str = Form(default="90"),
 ):
@@ -471,20 +481,27 @@ async def rotate_video(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_rotate,
+    update_task(
         task_id,
-        input_path,
-        rotation,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"rotation": rotation}
     )
     
-    return {"task_id": task_id, "message": "Video rotation started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
-def process_video_merge(task_id: str, input_paths: list[Path], output_format: str, original_filenames: list[str]):
+def process_video_merge(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Merge multiple videos"""
     try:
+        input_paths = [Path(p) for p in params.get("input_paths", [])]
+        output_format = params.get("output_format", "mp4")
+        original_filenames = params.get("original_filenames", [])
+        
+        if not input_paths:
+            raise ValueError("No input files provided")
+            
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
         output_path = get_output_path(task_id, output_format)
@@ -535,7 +552,6 @@ def process_video_merge(task_id: str, input_paths: list[Path], output_format: st
 
 @router.post("/merge")
 async def merge_videos(
-    background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     output_format: str = Form(default="mp4"),
 ):
@@ -555,25 +571,36 @@ async def merge_videos(
         input_ext = Path(file.filename).suffix.lstrip(".") or "mp4"
         input_path = settings.TEMP_DIR / f"{task_id}_input_{i}.{input_ext}"
         await save_upload_file(file, input_path)
-        input_paths.append(input_path)
+        input_paths.append(str(input_path))
         original_filenames.append(file.filename)
     
-    background_tasks.add_task(
-        process_video_merge,
+    # Use first file as primary input_path (required by schema)
+    primary_input_path = Path(input_paths[0])
+    
+    update_task(
         task_id,
-        input_paths,
-        output_format,
-        original_filenames,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=primary_input_path,
+        params={
+            "input_paths": input_paths,
+            "output_format": output_format,
+            "original_filenames": original_filenames,
+        }
     )
     
-    return {"task_id": task_id, "message": "Video merge started"}
+    return {"task_id": task_id, "message": "Files uploaded successfully"}
 
 
-def process_video_to_gif(task_id: str, input_path: Path, fps: int, width: int | None, start_time: str | None, duration: str | None, original_filename: str):
+def process_video_to_gif(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Convert video to GIF"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        fps = params.get("fps", 15)
+        width = params.get("width")
+        start_time = params.get("start_time")
+        duration = params.get("duration")
         output_path = get_output_path(task_id, "gif")
         
         # Build FFmpeg command
@@ -627,7 +654,6 @@ def process_video_to_gif(task_id: str, input_path: Path, fps: int, width: int | 
 
 @router.post("/to-gif")
 async def video_to_gif(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     fps: int = Form(default=15),
     width: int = Form(default=None),
@@ -644,25 +670,24 @@ async def video_to_gif(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_to_gif,
+    update_task(
         task_id,
-        input_path,
-        fps,
-        width,
-        start_time,
-        duration,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"fps": fps, "width": width, "start_time": start_time, "duration": duration}
     )
     
-    return {"task_id": task_id, "message": "GIF conversion started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
-def process_video_speed(task_id: str, input_path: Path, speed_factor: float, preserve_audio: bool, original_filename: str):
+def process_video_speed(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Change video speed"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        speed_factor = params.get("speed_factor", 2.0)
+        preserve_audio = params.get("preserve_audio", True)
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
@@ -725,7 +750,6 @@ def process_video_speed(task_id: str, input_path: Path, speed_factor: float, pre
 
 @router.post("/speed")
 async def change_video_speed(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     speed_factor: float = Form(default=2.0),
     preserve_audio: bool = Form(default=True),
@@ -740,19 +764,18 @@ async def change_video_speed(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_speed,
+    update_task(
         task_id,
-        input_path,
-        speed_factor,
-        preserve_audio,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"speed_factor": speed_factor, "preserve_audio": preserve_audio}
     )
     
-    return {"task_id": task_id, "message": "Video speed change started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
-def process_video_mute(task_id: str, input_path: Path, original_filename: str):
+def process_video_mute(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Remove audio from video"""
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
@@ -797,7 +820,6 @@ def process_video_mute(task_id: str, input_path: Path, original_filename: str):
 
 @router.post("/mute")
 async def mute_video(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
 ):
     """Remove audio track from video"""
@@ -807,19 +829,28 @@ async def mute_video(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_video_mute,
+    update_task(
         task_id,
-        input_path,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={}
     )
     
-    return {"task_id": task_id, "message": "Video mute started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
-def process_add_music(task_id: str, video_path: Path, audio_path: Path, replace_audio: bool, audio_volume: float, original_filename: str):
-    """Background task: Add music to video"""
+def process_add_music(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Add or replace audio in video"""
     try:
+        video_path = input_path
+        audio_path = Path(params.get("audio_path", ""))
+        replace_audio = params.get("replace_audio", True)
+        audio_volume = params.get("audio_volume", 1.0)
+        
+        if not audio_path.exists():
+            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
         output_path = get_output_path(task_id, "mp4")
@@ -877,14 +908,13 @@ def process_add_music(task_id: str, video_path: Path, audio_path: Path, replace_
 
 @router.post("/add-music")
 async def add_music_to_video(
-    background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
     audio: UploadFile = File(...),
     replace_audio: bool = Form(default=True),
     audio_volume: float = Form(default=1.0),
 ):
     """Add or replace audio track in video"""
-    task_id = create_task(video.filename, "add_music")
+    task_id = create_task(video.filename, "video_add_music")
     
     # Save video
     video_ext = Path(video.filename).suffix.lstrip(".") or "mp4"
@@ -896,17 +926,19 @@ async def add_music_to_video(
     audio_path = settings.TEMP_DIR / f"{task_id}_audio.{audio_ext}"
     await save_upload_file(audio, audio_path)
     
-    background_tasks.add_task(
-        process_add_music,
+    update_task(
         task_id,
-        video_path,
-        audio_path,
-        replace_audio,
-        audio_volume,
-        video.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=video_path,
+        params={
+            "audio_path": str(audio_path),
+            "replace_audio": replace_audio,
+            "audio_volume": audio_volume,
+        }
     )
     
-    return {"task_id": task_id, "message": "Adding music to video started"}
+    return {"task_id": task_id, "message": "Files uploaded successfully"}
 
 
 @router.post("/metadata")
@@ -1068,4 +1100,23 @@ async def find_video_source(
     except Exception as e:
         logger.error(f"AI video finder failed: {e}")
         return {"success": False, "error": str(e), "filename": file.filename, "results": []}
+
+
+# ============================================================================
+# PROCESSOR REGISTRATION
+# Register handlers for deferred processing via /start endpoint
+# ============================================================================
+register_processor("video_convert", process_video_convert)
+register_processor("extract_audio", process_extract_audio)
+register_processor("video_merge", process_video_merge)
+register_processor("video_add_music", process_add_music)
+register_processor("video_trim", process_video_trim)
+register_processor("video_compress", process_video_compress)
+register_processor("video_rotate", process_video_rotate)
+register_processor("video_to_gif", process_video_to_gif)
+register_processor("video_speed", process_video_speed)
+register_processor("video_mute", process_video_mute)
+# Note: video_merge and video_add_music use multi-file upload and retain old flow
+
+
 

@@ -17,6 +17,7 @@ settings = get_settings()
 
 class TaskStatus(str, Enum):
     QUEUED = "queued"
+    UPLOADED = "uploaded"  # File uploaded, waiting for user to start processing
     PROCESSING = "processing"
     COMPLETE = "complete"
     FAILED = "failed"
@@ -44,6 +45,9 @@ def create_task(original_filename: str, task_type: str) -> str:
         "output_path": None,
         "error_message": None,
         "file_size": None,
+        # New fields for deferred processing
+        "input_path": None,
+        "params": {},  # Store processing parameters
     }
     
     return task_id
@@ -63,6 +67,8 @@ def update_task(
     output_path: Optional[Path] = None,
     error_message: Optional[str] = None,
     file_size: Optional[int] = None,
+    input_path: Optional[Path] = None,
+    params: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Update task status and fields"""
     task = task_store.get(task_id)
@@ -85,6 +91,10 @@ def update_task(
         task["error_message"] = error_message
     if file_size is not None:
         task["file_size"] = file_size
+    if input_path is not None:
+        task["input_path"] = str(input_path)
+    if params is not None:
+        task["params"] = params
     
     return True
 

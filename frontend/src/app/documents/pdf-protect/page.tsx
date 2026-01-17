@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
+import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
 
 const ACCEPT_FORMATS = { 'application/pdf': ['.pdf'] };
@@ -51,6 +51,7 @@ export default function PDFProtectPage() {
             const taskId = response.task_id;
 
             setProgress(50);
+            await startProcessing(taskId);
 
             const result = await pollTaskStatus(taskId, (status) => {
                 setProgress(status.progress_percent || 60);

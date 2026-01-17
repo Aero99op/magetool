@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const QUALITY_OPTIONS = [
     { value: 'low', label: 'Low (Smallest file)', description: 'Maximum compression, some quality loss' },
@@ -28,6 +28,7 @@ export default function VideoCompressorPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -65,12 +66,28 @@ export default function VideoCompressorPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
-            setEstimatedTime('Compressing... This may take several minutes');
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [quality]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Compressing... This may take several minutes');
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                 }
@@ -78,24 +95,25 @@ export default function VideoCompressorPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || 'compressed.mp4');
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Compression error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Compression failed. Please try again.');
         }
-    }, [quality]);
+    }, [taskId]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -107,6 +125,7 @@ export default function VideoCompressorPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 500MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

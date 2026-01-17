@@ -4,7 +4,7 @@
   publish = ".next"
 
 [build.environment]
-  NEXT_PUBLIC_API_URL = "https://notaero-magetool-backend.hf.space"
+  # NEXT_PUBLIC_API_URL = "https://notaero-magetool-backend.hf.space"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

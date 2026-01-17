@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_FORMATS = {
     'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
@@ -20,6 +20,7 @@ export default function BackgroundRemoverPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -56,11 +57,27 @@ export default function BackgroundRemoverPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, []);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                 }
@@ -68,24 +85,25 @@ export default function BackgroundRemoverPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || 'no_background.png');
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Background removal error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Background removal failed. Please try again.');
         }
-    }, []);
+    }, [taskId]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -97,6 +115,7 @@ export default function BackgroundRemoverPage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WebP | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ padding: '16px', background: 'rgba(0, 255, 255, 0.05)', borderRadius: '8px', marginBottom: '16px' }}>

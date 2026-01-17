@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_FORMATS = {
     'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
@@ -21,11 +21,14 @@ export default function MuteVideoPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setOriginalFile(file);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
@@ -57,12 +60,28 @@ export default function MuteVideoPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
-            setEstimatedTime('Removing audio...');
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, []);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId || !originalFile) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Removing audio...');
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -73,26 +92,28 @@ export default function MuteVideoPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
-            const baseName = file.name.replace(/\.[^.]+$/, '');
-            const ext = file.name.split('.').pop();
+            setDownloadUrl(getDownloadUrl(taskId));
+            const baseName = originalFile.name.replace(/\.[^.]+$/, '');
+            const ext = originalFile.name.split('.').pop();
             setDownloadFileName(completedTask.output_filename || `${baseName}_muted.${ext}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Mute error:', error);
+            console.error('Processing error:', error);
             setStage('error');
             setErrorMessage(error.message || 'Failed to mute video. Please try again.');
         }
-    }, []);
+    }, [taskId, originalFile]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
+        setOriginalFile(null);
     };
 
     return (
@@ -104,6 +125,7 @@ export default function MuteVideoPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 500MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{

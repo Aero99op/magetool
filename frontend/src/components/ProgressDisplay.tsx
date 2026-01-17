@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Loader2, Check, AlertCircle, Upload, Cog, Download } from 'lucide-react';
 
-export type ProcessingStage = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
+export type ProcessingStage = 'idle' | 'uploading' | 'uploaded' | 'processing' | 'complete' | 'error';
 
 interface ProgressDisplayProps {
     stage: ProcessingStage;
@@ -13,6 +13,7 @@ interface ProgressDisplayProps {
     fileName?: string;
     fileSize?: string;
     errorMessage?: string;
+    onProcessClick?: () => void; // Callback for Process button
 }
 
 export default function ProgressDisplay({
@@ -23,6 +24,7 @@ export default function ProgressDisplay({
     fileName,
     fileSize,
     errorMessage,
+    onProcessClick,
 }: ProgressDisplayProps) {
     if (stage === 'idle') return null;
 
@@ -30,6 +32,8 @@ export default function ProgressDisplay({
         switch (stage) {
             case 'uploading':
                 return <Upload size={24} />;
+            case 'uploaded':
+                return <Check size={24} />;
             case 'processing':
                 return <Cog size={24} className="animate-spin" style={{ animation: 'spin 2s linear infinite' }} />;
             case 'complete':
@@ -45,6 +49,8 @@ export default function ProgressDisplay({
         switch (stage) {
             case 'uploading':
                 return 'Uploading...';
+            case 'uploaded':
+                return '✓ Upload Complete!';
             case 'processing':
                 return 'Processing...';
             case 'complete':
@@ -60,6 +66,8 @@ export default function ProgressDisplay({
         switch (stage) {
             case 'uploading':
                 return '#00D9FF';
+            case 'uploaded':
+                return '#44FF44';
             case 'processing':
                 return '#0099FF';
             case 'complete':
@@ -168,6 +176,46 @@ export default function ProgressDisplay({
                 </div>
             )}
 
+            {/* Process Button - After upload is complete */}
+            {stage === 'uploaded' && onProcessClick && (
+                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                    <p
+                        style={{
+                            fontSize: '0.9rem',
+                            color: 'var(--text-secondary)',
+                            marginBottom: '16px',
+                        }}
+                    >
+                        Your file has been uploaded successfully. Click below to start processing.
+                    </p>
+                    <button
+                        onClick={onProcessClick}
+                        style={{
+                            padding: '14px 40px',
+                            background: 'linear-gradient(135deg, #00D9FF, #0099FF)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            color: '#0F0F0F',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 4px 20px rgba(0, 217, 255, 0.3)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.02)';
+                            e.currentTarget.style.boxShadow = '0 6px 30px rgba(0, 217, 255, 0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 217, 255, 0.3)';
+                        }}
+                    >
+                        🚀 Process Now
+                    </button>
+                </div>
+            )}
+
             {/* Processing Message */}
             {stage === 'processing' && (
                 <p
@@ -219,11 +267,12 @@ export default function ProgressDisplay({
                         { label: 'Download', stage: 'complete', icon: Download },
                     ].map((step, index) => {
                         const StepIcon = step.icon;
-                        const isActive = stage === step.stage;
+                        const isActive = stage === step.stage || (stage === 'uploaded' && step.stage === 'uploading');
                         const isPast =
-                            (stage === 'processing' && step.stage === 'uploading') ||
+                            (stage === 'uploaded' && step.stage === 'uploading') ||
+                            (stage === 'processing' && ['uploading'].includes(step.stage)) ||
                             (stage === 'complete' && ['uploading', 'processing'].includes(step.stage));
-                        const stepColor = isActive ? color : isPast ? '#44FF44' : 'rgba(255, 255, 255, 0.3)';
+                        const stepColor = isActive && stage !== 'uploaded' ? color : isPast ? '#44FF44' : 'rgba(255, 255, 255, 0.3)';
 
                         return (
                             <div

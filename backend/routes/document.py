@@ -14,6 +14,7 @@ from services.tasks import (
     create_task, update_task, get_input_path, get_output_path, TaskStatus
 )
 from config import get_settings
+from routes.core import register_processor
 
 router = APIRouter()
 settings = get_settings()
@@ -27,8 +28,9 @@ async def save_upload_file(upload_file: UploadFile, destination: Path):
     return len(content)
 
 
-def process_document_convert(task_id: str, input_path: Path, output_format: str, original_filename: str):
+def process_document_convert(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Convert document format"""
+    output_format = params.get("output_format", "txt")
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
@@ -101,9 +103,14 @@ def process_document_convert(task_id: str, input_path: Path, output_format: str,
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_pdf_merge(task_id: str, input_paths: List[Path], original_filename: str):
+def process_pdf_merge(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Merge multiple PDFs"""
     try:
+        input_paths = [Path(p) for p in params.get("input_paths", [])]
+        
+        if not input_paths:
+            raise ValueError("No input files provided")
+
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
         try:
@@ -144,8 +151,9 @@ def process_pdf_merge(task_id: str, input_paths: List[Path], original_filename: 
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
-def process_pdf_split(task_id: str, input_path: Path, pages: str, original_filename: str):
+def process_pdf_split(task_id: str, input_path: Path, original_filename: str, **params):
     """Background task: Split PDF pages"""
+    pages = params.get("pages", "1")
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
@@ -203,7 +211,6 @@ def process_pdf_split(task_id: str, input_path: Path, pages: str, original_filen
 
 @router.post("/document/convert")
 async def convert_document(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_format: str = Form(...),
 ):
@@ -216,20 +223,19 @@ async def convert_document(
     input_path = get_input_path(task_id, input_ext)
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_document_convert,
+    update_task(
         task_id,
-        input_path,
-        output_format,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"output_format": output_format}
     )
     
-    return {"task_id": task_id, "message": "Document conversion started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/pdf/merge")
 async def merge_pdfs(
-    background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
 ):
     """Merge multiple PDF files into one"""
@@ -252,21 +258,26 @@ async def merge_pdfs(
     for i, file in enumerate(files):
         input_path = get_input_path(f"{task_id}_{i}", "pdf")
         await save_upload_file(file, input_path)
-        input_paths.append(input_path)
+        input_paths.append(str(input_path))
     
-    background_tasks.add_task(
-        process_pdf_merge,
+    # Use first file as primary input_path
+    primary_input_path = Path(input_paths[0])
+    
+    update_task(
         task_id,
-        input_paths,
-        "merged.pdf",
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=primary_input_path,
+        params={
+            "input_paths": input_paths,
+        }
     )
     
-    return {"task_id": task_id, "message": "PDF merge started"}
+    return {"task_id": task_id, "message": "Files uploaded successfully"}
 
 
 @router.post("/pdf/split")
 async def split_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     pages: str = Form(...),
 ):
@@ -276,20 +287,109 @@ async def split_pdf(
     input_path = get_input_path(task_id, "pdf")
     await save_upload_file(file, input_path)
     
-    background_tasks.add_task(
-        process_pdf_split,
+    update_task(
         task_id,
-        input_path,
-        pages,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"pages": pages}
     )
     
-    return {"task_id": task_id, "message": "PDF split started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+def process_pdf_compress(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Compress PDF to reduce file size"""
+    try:
+        quality = params.get("quality", "medium")
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        output_path = get_output_path(task_id, "pdf")
+        original_size = input_path.stat().st_size
+        
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+            
+            update_task(task_id, progress_percent=20)
+            
+            reader = PdfReader(str(input_path))
+            writer = PdfWriter()
+            
+            update_task(task_id, progress_percent=30)
+            
+            # Copy all pages
+            for i, page in enumerate(reader.pages):
+                writer.add_page(page)
+                progress = 30 + int((i + 1) / len(reader.pages) * 40)
+                update_task(task_id, progress_percent=progress)
+            
+            update_task(task_id, progress_percent=75)
+            
+            # Remove metadata for smaller size
+            writer.add_metadata({})
+            
+            # Compress content streams
+            for page in writer.pages:
+                page.compress_content_streams()
+            
+            update_task(task_id, progress_percent=85)
+            
+            # Write compressed PDF
+            with open(output_path, "wb") as f:
+                writer.write(f)
+            
+        except ImportError:
+            # Fallback: Use Ghostscript if available
+            import subprocess
+            
+            gs_quality = {"low": "/screen", "medium": "/ebook", "high": "/printer"}.get(quality, "/ebook")
+            
+            try:
+                result = subprocess.run([
+                    "gswin64c" if Path("C:/Program Files/gs").exists() else "gs",
+                    "-sDEVICE=pdfwrite",
+                    f"-dPDFSETTINGS={gs_quality}",
+                    "-dNOPAUSE",
+                    "-dQUIET",
+                    "-dBATCH",
+                    f"-sOutputFile={output_path}",
+                    str(input_path)
+                ], capture_output=True, text=True, timeout=120)
+                
+                if result.returncode != 0:
+                    raise Exception("Ghostscript compression failed")
+                    
+            except FileNotFoundError:
+                # No Ghostscript, just copy
+                import shutil
+                shutil.copy(input_path, output_path)
+        
+        update_task(task_id, progress_percent=95)
+        
+        final_size = output_path.stat().st_size
+        compression_ratio = (1 - final_size / original_size) * 100 if original_size > 0 else 0
+        
+        original_stem = Path(original_filename).stem
+        output_filename = f"{original_stem}_compressed.pdf"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=final_size,
+        )
+        
+        logger.info(f"PDF compress complete: {task_id} - {compression_ratio:.1f}% reduction")
+        
+    except Exception as e:
+        logger.error(f"PDF compress failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
 @router.post("/pdf/compress")
 async def compress_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     quality: str = Form(default="medium"),
 ):
@@ -299,115 +399,67 @@ async def compress_pdf(
     input_path = get_input_path(task_id, "pdf")
     await save_upload_file(file, input_path)
     
-    def process_pdf_compress(task_id: str, input_path: Path, quality: str, original_filename: str):
-        try:
-            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
-            
-            output_path = get_output_path(task_id, "pdf")
-            original_size = input_path.stat().st_size
-            
-            try:
-                from PyPDF2 import PdfReader, PdfWriter
-                
-                update_task(task_id, progress_percent=20)
-                
-                reader = PdfReader(str(input_path))
-                writer = PdfWriter()
-                
-                # Quality settings for compression
-                quality_settings = {
-                    "low": {"remove_duplication": True, "remove_images": False, "image_quality": 30},
-                    "medium": {"remove_duplication": True, "remove_images": False, "image_quality": 50},
-                    "high": {"remove_duplication": True, "remove_images": False, "image_quality": 70},
-                }
-                settings = quality_settings.get(quality, quality_settings["medium"])
-                
-                update_task(task_id, progress_percent=30)
-                
-                # Copy all pages
-                for i, page in enumerate(reader.pages):
-                    writer.add_page(page)
-                    progress = 30 + int((i + 1) / len(reader.pages) * 40)
-                    update_task(task_id, progress_percent=progress)
-                
-                update_task(task_id, progress_percent=75)
-                
-                # Remove metadata for smaller size
-                writer.add_metadata({})
-                
-                # Compress content streams
-                for page in writer.pages:
-                    page.compress_content_streams()
-                
-                update_task(task_id, progress_percent=85)
-                
-                # Write compressed PDF
-                with open(output_path, "wb") as f:
-                    writer.write(f)
-                
-            except ImportError:
-                # Fallback: Use Ghostscript if available
-                import subprocess
-                
-                gs_quality = {"low": "/screen", "medium": "/ebook", "high": "/printer"}.get(quality, "/ebook")
-                
-                try:
-                    result = subprocess.run([
-                        "gswin64c" if Path("C:/Program Files/gs").exists() else "gs",
-                        "-sDEVICE=pdfwrite",
-                        f"-dPDFSETTINGS={gs_quality}",
-                        "-dNOPAUSE",
-                        "-dQUIET",
-                        "-dBATCH",
-                        f"-sOutputFile={output_path}",
-                        str(input_path)
-                    ], capture_output=True, text=True, timeout=120)
-                    
-                    if result.returncode != 0:
-                        raise Exception("Ghostscript compression failed")
-                        
-                except FileNotFoundError:
-                    # No Ghostscript, just copy
-                    import shutil
-                    shutil.copy(input_path, output_path)
-            
-            update_task(task_id, progress_percent=95)
-            
-            final_size = output_path.stat().st_size
-            compression_ratio = (1 - final_size / original_size) * 100 if original_size > 0 else 0
-            
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_compressed.pdf"
-            
-            update_task(
-                task_id,
-                status=TaskStatus.COMPLETE,
-                progress_percent=100,
-                output_filename=output_filename,
-                output_path=output_path,
-                file_size=final_size,
-            )
-            
-            logger.info(f"PDF compress complete: {task_id} - {compression_ratio:.1f}% reduction")
-            
-        except Exception as e:
-            logger.error(f"PDF compress failed: {task_id} - {e}")
-            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
-    
-    background_tasks.add_task(
-        process_pdf_compress,
+    update_task(
         task_id,
-        input_path,
-        quality,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"quality": quality}
     )
     
-    return {"task_id": task_id, "message": "PDF compression started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+def process_pdf_protect(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Add password protection to PDF"""
+    try:
+        password = params.get("password", "")
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+        except ImportError:
+            raise Exception("PyPDF2 not installed")
+        
+        reader = PdfReader(str(input_path))
+        writer = PdfWriter()
+        
+        update_task(task_id, progress_percent=30)
+        
+        for page in reader.pages:
+            writer.add_page(page)
+        
+        writer.encrypt(password)
+        
+        update_task(task_id, progress_percent=70)
+        
+        output_path = get_output_path(task_id, "pdf")
+        with open(output_path, "wb") as f:
+            writer.write(f)
+        
+        update_task(task_id, progress_percent=90)
+        
+        original_stem = Path(original_filename).stem
+        output_filename = f"{original_stem}_protected.pdf"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"PDF protect complete: {task_id}")
+        
+    except Exception as e:
+        logger.error(f"PDF protect failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
 @router.post("/pdf/protect")
 async def protect_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     password: str = Form(...),
 ):
@@ -417,65 +469,68 @@ async def protect_pdf(
     input_path = get_input_path(task_id, "pdf")
     await save_upload_file(file, input_path)
     
-    def process_pdf_protect(task_id: str, input_path: Path, password: str, original_filename: str):
-        try:
-            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
-            
-            try:
-                from PyPDF2 import PdfReader, PdfWriter
-            except ImportError:
-                raise Exception("PyPDF2 not installed")
-            
-            reader = PdfReader(str(input_path))
-            writer = PdfWriter()
-            
-            update_task(task_id, progress_percent=30)
-            
-            for page in reader.pages:
-                writer.add_page(page)
-            
-            writer.encrypt(password)
-            
-            update_task(task_id, progress_percent=70)
-            
-            output_path = get_output_path(task_id, "pdf")
-            with open(output_path, "wb") as f:
-                writer.write(f)
-            
-            update_task(task_id, progress_percent=90)
-            
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_protected.pdf"
-            
-            update_task(
-                task_id,
-                status=TaskStatus.COMPLETE,
-                progress_percent=100,
-                output_filename=output_filename,
-                output_path=output_path,
-                file_size=output_path.stat().st_size,
-            )
-            
-            logger.info(f"PDF protect complete: {task_id}")
-            
-        except Exception as e:
-            logger.error(f"PDF protect failed: {task_id} - {e}")
-            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
-    
-    background_tasks.add_task(
-        process_pdf_protect,
+    update_task(
         task_id,
-        input_path,
-        password,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"password": password}
     )
     
-    return {"task_id": task_id, "message": "PDF protection started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+def process_pdf_unlock(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Remove password protection from PDF"""
+    try:
+        password = params.get("password", "")
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+        except ImportError:
+            raise Exception("PyPDF2 not installed")
+        
+        reader = PdfReader(str(input_path))
+        
+        if reader.is_encrypted:
+            reader.decrypt(password)
+        
+        update_task(task_id, progress_percent=40)
+        
+        writer = PdfWriter()
+        for page in reader.pages:
+            writer.add_page(page)
+        
+        update_task(task_id, progress_percent=70)
+        
+        output_path = get_output_path(task_id, "pdf")
+        with open(output_path, "wb") as f:
+            writer.write(f)
+        
+        update_task(task_id, progress_percent=90)
+        
+        original_stem = Path(original_filename).stem
+        output_filename = f"{original_stem}_unlocked.pdf"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"PDF unlock complete: {task_id}")
+        
+    except Exception as e:
+        logger.error(f"PDF unlock failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
 
 
 @router.post("/pdf/unlock")
 async def unlock_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     password: str = Form(...),
 ):
@@ -485,61 +540,15 @@ async def unlock_pdf(
     input_path = get_input_path(task_id, "pdf")
     await save_upload_file(file, input_path)
     
-    def process_pdf_unlock(task_id: str, input_path: Path, password: str, original_filename: str):
-        try:
-            update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
-            
-            try:
-                from PyPDF2 import PdfReader, PdfWriter
-            except ImportError:
-                raise Exception("PyPDF2 not installed")
-            
-            reader = PdfReader(str(input_path))
-            
-            if reader.is_encrypted:
-                reader.decrypt(password)
-            
-            update_task(task_id, progress_percent=40)
-            
-            writer = PdfWriter()
-            for page in reader.pages:
-                writer.add_page(page)
-            
-            update_task(task_id, progress_percent=70)
-            
-            output_path = get_output_path(task_id, "pdf")
-            with open(output_path, "wb") as f:
-                writer.write(f)
-            
-            update_task(task_id, progress_percent=90)
-            
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_unlocked.pdf"
-            
-            update_task(
-                task_id,
-                status=TaskStatus.COMPLETE,
-                progress_percent=100,
-                output_filename=output_filename,
-                output_path=output_path,
-                file_size=output_path.stat().st_size,
-            )
-            
-            logger.info(f"PDF unlock complete: {task_id}")
-            
-        except Exception as e:
-            logger.error(f"PDF unlock failed: {task_id} - {e}")
-            update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
-    
-    background_tasks.add_task(
-        process_pdf_unlock,
+    update_task(
         task_id,
-        input_path,
-        password,
-        file.filename,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"password": password}
     )
     
-    return {"task_id": task_id, "message": "PDF unlock started"}
+    return {"task_id": task_id, "message": "File uploaded successfully"}
 
 
 @router.post("/to-image")
@@ -875,3 +884,15 @@ async def adjust_file_size(
     
     return {"task_id": task_id, "message": "File size adjustment started"}
 
+
+# ============================================================================
+# PROCESSOR REGISTRATION
+# Register handlers for deferred processing via /start endpoint
+# ============================================================================
+register_processor("document_convert", process_document_convert)
+register_processor("pdf_split", process_pdf_split)
+register_processor("pdf_merge", process_pdf_merge)
+register_processor("pdf_compress", process_pdf_compress)
+register_processor("pdf_protect", process_pdf_protect)
+register_processor("pdf_unlock", process_pdf_unlock)
+# Note: to_image, data_convert, size_adjust still use inline functions

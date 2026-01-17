@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const SCALE_OPTIONS = [
     { value: 2, label: '2x (Double)' },
@@ -24,6 +24,7 @@ export default function AIUpscalerPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -39,23 +40,36 @@ export default function AIUpscalerPage() {
                 if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
             });
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (error: any) {
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed');
+        }
+    }, [scale]);
 
-            const completedTask = await pollTaskStatus(response.task_id, (task) => {
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
+            const completedTask = await pollTaskStatus(taskId, (task) => {
                 setProgress(task.progress_percent || 0);
             });
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || 'upscaled.png');
             if (completedTask.file_size) setDownloadFileSize(formatFileSize(completedTask.file_size));
         } catch (error: any) {
             setStage('error');
             setErrorMessage(error.message || 'Upscale failed');
         }
-    }, [scale]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -66,6 +80,7 @@ export default function AIUpscalerPage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WebP | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ padding: '12px', background: 'rgba(0, 255, 255, 0.05)', borderRadius: '8px', marginBottom: '16px' }}>

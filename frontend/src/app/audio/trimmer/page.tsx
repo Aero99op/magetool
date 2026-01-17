@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const ACCEPT_FORMATS = { 'audio/*': ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a'] };
 
@@ -21,6 +21,7 @@ export default function AudioTrimmerPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -36,23 +37,36 @@ export default function AudioTrimmerPage() {
                 if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
             });
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (error: any) {
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed');
+        }
+    }, [startTime, endTime, fadeIn, fadeOut]);
 
-            const completedTask = await pollTaskStatus(response.task_id, (task) => {
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
+            const completedTask = await pollTaskStatus(taskId, (task) => {
                 setProgress(task.progress_percent || 0);
             });
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || 'trimmed.mp3');
             if (completedTask.file_size) setDownloadFileSize(formatFileSize(completedTask.file_size));
         } catch (error: any) {
             setStage('error');
             setErrorMessage(error.message || 'Trim failed');
         }
-    }, [startTime, endTime, fadeIn, fadeOut]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -63,6 +77,7 @@ export default function AudioTrimmerPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP3, WAV, AAC, FLAC, OGG | Max: 100MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '12px' }}>

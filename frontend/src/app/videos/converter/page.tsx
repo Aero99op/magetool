@@ -40,6 +40,7 @@ export default function VideoConverterPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -78,12 +79,33 @@ export default function VideoConverterPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [outputFormat, resolution]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Starting processing...');
+
+        try {
+            // Trigger backend processing via /start endpoint
+            const { startProcessing } = await import('@/lib/api');
+            await startProcessing(taskId);
+
             setEstimatedTime('Processing video... This may take several minutes');
 
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -94,24 +116,25 @@ export default function VideoConverterPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || `converted.${outputFormat}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Conversion error:', error);
+            console.error('Processing error:', error);
             setStage('error');
-            setErrorMessage(error.message || 'Conversion failed. Please try again.');
+            setErrorMessage(error.message || 'Processing failed. Please try again.');
         }
-    }, [outputFormat, resolution]);
+    }, [taskId, outputFormat]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -123,6 +146,7 @@ export default function VideoConverterPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM, FLV | Max: 500MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
+import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.bmp'] };
@@ -20,6 +20,7 @@ export default function SVGConverterPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [error, setError] = useState('');
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -34,13 +35,26 @@ export default function SVGConverterPage() {
         try {
             const response = await imageApi.svgConvert(
                 file, smoothing, colorDepth,
-                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 30))
+                (e: AxiosProgressEvent) => setProgress(Math.round((e.loaded / (e.total || 1)) * 100))
             );
-            const taskId = response.task_id;
 
-            setStage('processing');
-            setProgress(50);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || err.message || 'Upload failed');
+            setStage('error');
+        }
+    }, [smoothing, colorDepth]);
 
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(50);
+
+        try {
+            await startProcessing(taskId);
             const result = await pollTaskStatus(taskId, (status) => {
                 setProgress(status.progress_percent || 60);
             });
@@ -53,7 +67,7 @@ export default function SVGConverterPage() {
             setError(err.response?.data?.detail || err.message || 'Failed to convert');
             setStage('error');
         }
-    }, [smoothing, colorDepth]);
+    }, [taskId]);
 
     return (
         <ToolLayout
@@ -64,6 +78,7 @@ export default function SVGConverterPage() {
             maxFiles={1}
             supportedFormatsText="Supported: PNG, JPG, BMP | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '16px' }}>

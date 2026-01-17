@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const OUTPUT_FORMATS = [
     { value: 'mp3', label: 'MP3 (.mp3)' },
@@ -39,6 +39,7 @@ export default function AudioConverterPage() {
     const [downloadUrl, setDownloadUrl] = useState<string>();
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -77,11 +78,27 @@ export default function AudioConverterPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [outputFormat, bitrate]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                 }
@@ -89,24 +106,25 @@ export default function AudioConverterPage() {
 
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || `converted.${outputFormat}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Conversion error:', error);
+            console.error('Processing error:', error);
             setStage('error');
-            setErrorMessage(error.message || 'Conversion failed. Please try again.');
+            setErrorMessage(error.message || 'Processing failed. Please try again.');
         }
-    }, [outputFormat, bitrate]);
+    }, [taskId, outputFormat]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setTaskId(null);
     };
 
     return (
@@ -118,6 +136,7 @@ export default function AudioConverterPage() {
             maxFiles={1}
             supportedFormatsText="Supported: MP3, WAV, AAC, FLAC, OGG, M4A, WMA | Max: 100MB"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

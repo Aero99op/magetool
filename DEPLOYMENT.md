@@ -68,26 +68,26 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
 
 ---
 
-## Step 2: Deploy Frontend to Vercel
+## Step 2: Deploy Frontend to Netlify
 
-1. Go to [vercel.com](https://vercel.com) → **Add New Project**
-2. **Import** your GitHub repo: `magetool`
+1. Go to [netlify.com](https://www.netlify.com) → **Add new site** → **Import an existing project**
+2. Connect **GitHub** and select your repo: `magetool`
 3. Configure:
-
+   
    | Setting | Value |
    |---------|-------|
-   | Framework Preset | Next.js |
-   | Root Directory | `frontend` ← **IMPORTANT** |
-   | Build Command | `npm run build` |
-   | Output Directory | `.next` |
+   | Base directory | `frontend` |
+   | Build command | `npm run build` |
+   | Publish directory | `.next` |
 
-4. Add Environment Variable:
+4. **Environment Variables** (Site settings → Environment variables):
    ```
-   NEXT_PUBLIC_API_URL = (leave empty for now, add after backend deploy)
+   NEXT_PUBLIC_API_URL = https://your-backend-url.onrender.com
    ```
+   *(Use your Render or Hugging Face backend URL)*
 
 5. Click **Deploy**
-6. **Note your URL**: `https://magetool.vercel.app`
+6. **Note your URL**: `https://magetool.netlify.app`
 
 ---
 
@@ -101,9 +101,9 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
    |---------|-------|
    | Name | `magetool-api` |
    | Root Directory | `backend` ← **IMPORTANT** |
-   | Runtime | Python 3 |
-   | Build Command | `pip install -r requirements.txt` |
-   | Start Command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+   | Runtime | Docker |
+   | Build Command | (Auto-detected from Dockerfile) |
+   | Start Command | (Auto-detected from Dockerfile) |
 
 4. Add Environment Variables:
    ```
@@ -146,14 +146,14 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
 
 ---
 
-## Step 5: Update Vercel with Backend URLs
+## Step 5: Update Netlify with Backend URLs
 
-1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
-2. Update:
+1. Go to Netlify Dashboard → Site Settings → Environment variables
+2. Add/Update:
    ```
    NEXT_PUBLIC_API_URL = https://magetool-api.onrender.com
    ```
-3. **Redeploy**: Deployments → Redeploy
+3. **Trigger Redeploy**: Deploys → Trigger deploy
 
 ---
 
@@ -162,7 +162,7 @@ Your GitHub repo now has BOTH `frontend/` and `backend/` folders.
 | Platform | Folder | URL | Purpose |
 |----------|--------|-----|---------|
 | **GitHub** | entire repo | github.com/you/magetool | Source code |
-| **Vercel** | `frontend/` | magetool.vercel.app | Next.js UI |
+| **Netlify** | `frontend/` | magetool.netlify.app | Next.js UI |
 | **Render** | `backend/` | magetool-api.onrender.com | Main API |
 | **HF Spaces** | `backend/` | you-magetool.hf.space | AI API (GPU) |
 
@@ -176,14 +176,14 @@ After setup, just push to GitHub and all platforms auto-deploy:
 git add .
 git commit -m "New feature"
 git push
-# → Vercel, Render, and HF Spaces all rebuild automatically!
+# → Netlify, Render, and HF Spaces all rebuild automatically!
 ```
 
 ---
 
 ## Environment Variables Quick Reference
 
-### Vercel (Frontend)
+### Netlify (Frontend)
 ```
 NEXT_PUBLIC_API_URL = https://magetool-api.onrender.com
 ```

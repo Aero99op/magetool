@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 
 const OUTPUT_FORMATS = [
     { value: 'jpg', label: 'JPEG (.jpg)' },
@@ -33,10 +33,16 @@ export default function ImageConverterPage() {
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
 
+    // Store file and task info for processing
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [taskId, setTaskId] = useState<string | null>(null);
+
+    // Step 1: Upload file only (no processing yet)
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setUploadedFile(file);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
@@ -70,12 +76,30 @@ export default function ImageConverterPage() {
                 }
             );
 
-            setStage('processing');
-            setProgress(0);
+            // Upload complete - wait for user to click "Process"
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
 
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [outputFormat]);
+
+    // Step 2: Process file (triggered by user clicking "Process" button)
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+
+        try {
+            await startProcessing(taskId);
             // Poll for task completion
             const completedTask = await pollTaskStatus(
-                response.task_id,
+                taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
                     if (task.estimated_time_remaining_seconds) {
@@ -87,24 +111,26 @@ export default function ImageConverterPage() {
             // Download ready
             setStage('complete');
             setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(response.task_id));
+            setDownloadUrl(getDownloadUrl(taskId));
             setDownloadFileName(completedTask.output_filename || `converted.${outputFormat}`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
 
         } catch (error: any) {
-            console.error('Conversion error:', error);
+            console.error('Processing error:', error);
             setStage('error');
-            setErrorMessage(error.message || 'Conversion failed. Please try again.');
+            setErrorMessage(error.message || 'Processing failed. Please try again.');
         }
-    }, [outputFormat]);
+    }, [taskId, outputFormat]);
 
     const resetState = () => {
         setStage('idle');
         setProgress(0);
         setDownloadReady(false);
         setErrorMessage(undefined);
+        setUploadedFile(null);
+        setTaskId(null);
     };
 
     return (
@@ -116,6 +142,7 @@ export default function ImageConverterPage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WebP, GIF, BMP, HEIC, TIFF, SVG"
             onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
             configPanel={
                 <div>
                     <label
