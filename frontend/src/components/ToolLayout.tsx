@@ -1,11 +1,12 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import UploadZone from './UploadZone';
 import ProgressDisplay, { ProcessingStage } from './ProgressDisplay';
 import DownloadButton from './DownloadButton';
 import AdSlot from './AdSlot';
+import InterstitialAd from './InterstitialAd';
 import { Accept } from 'react-dropzone';
 
 interface ToolLayoutProps {
@@ -55,8 +56,31 @@ export default function ToolLayout({
     downloadFileName,
     downloadFileSize,
 }: ToolLayoutProps) {
+    const [showInterstitial, setShowInterstitial] = useState(false);
+    const [adWatched, setAdWatched] = useState(false);
+
+    // Show interstitial ad when processing completes (before download)
+    useEffect(() => {
+        if (downloadReady && !adWatched) {
+            setShowInterstitial(true);
+        }
+    }, [downloadReady, adWatched]);
+
+    const handleAdClose = () => {
+        setShowInterstitial(false);
+        setAdWatched(true);
+    };
+
     return (
         <div className="container">
+            {/* Interstitial Ad - Shows after processing, before download */}
+            <InterstitialAd
+                isOpen={showInterstitial}
+                onClose={handleAdClose}
+                onSkip={handleAdClose}
+                skipDelay={5}
+            />
+
             <div className="tool-page">
                 {/* Tool Header */}
                 <motion.div
