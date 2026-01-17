@@ -100,6 +100,7 @@ export default function UploadZone({
                         justifyContent: 'center',
                         marginBottom: '16px',
                         transition: 'all 0.2s ease',
+                        pointerEvents: 'none',
                     }}
                 >
                     <Upload
@@ -114,6 +115,7 @@ export default function UploadZone({
                         fontWeight: 500,
                         color: isDragActive ? '#00FFFF' : 'var(--text-primary)',
                         marginBottom: '8px',
+                        pointerEvents: 'none',
                     }}
                 >
                     {isDragActive ? 'Drop files here...' : '📁 Drag files here or click to browse'}
@@ -123,6 +125,7 @@ export default function UploadZone({
                     style={{
                         fontSize: '0.875rem',
                         color: 'var(--text-muted)',
+                        pointerEvents: 'none',
                     }}
                 >
                     {supportedFormatsText} | Max size: {maxSize}MB
