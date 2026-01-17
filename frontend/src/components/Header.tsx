@@ -54,6 +54,8 @@ const navItems: NavItem[] = [
             { name: 'Blur Face/License Plate', href: '/images/blur-face', isAI: true },
             { name: 'SVG Converter', href: '/images/svg-converter' },
             { name: 'Meme Generator', href: '/images/meme-generator' },
+            { name: 'Images to PDF', href: '/images/images-to-pdf' },
+            { name: 'Image Size Adjuster', href: '/images/size-adjuster' },
             { name: 'Negative/Invert', href: '/images/negative' },
             { name: 'Favicon Generator', href: '/images/favicon' },
         ],
