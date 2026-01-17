@@ -304,7 +304,7 @@ async def split_pdf(
 
 
 def process_pdf_compress(task_id: str, input_path: Path, original_filename: str, **params):
-    """Background task: Compress PDF to reduce file size"""
+    """Background task: Compress PDF to reduce file size while preserving images"""
     try:
         quality = params.get("quality", "medium")
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
@@ -312,62 +312,95 @@ def process_pdf_compress(task_id: str, input_path: Path, original_filename: str,
         output_path = get_output_path(task_id, "pdf")
         original_size = input_path.stat().st_size
         
+        compression_success = False
+        
+        # Method 1: Try Ghostscript first (best for image PDFs)
         try:
-            from PyPDF2 import PdfReader, PdfWriter
+            import subprocess
+            import platform
             
             update_task(task_id, progress_percent=20)
             
-            reader = PdfReader(str(input_path))
-            writer = PdfWriter()
+            # Ghostscript quality settings
+            gs_quality = {
+                "low": "/screen",      # 72 dpi - smallest
+                "medium": "/ebook",    # 150 dpi - balanced
+                "high": "/printer"     # 300 dpi - high quality
+            }.get(quality, "/ebook")
             
-            update_task(task_id, progress_percent=30)
+            # Find Ghostscript executable
+            if platform.system() == "Windows":
+                gs_cmd = "gswin64c" if Path("C:/Program Files/gs").exists() else "gs"
+            else:
+                gs_cmd = "gs"
             
-            # Copy all pages
-            for i, page in enumerate(reader.pages):
-                writer.add_page(page)
-                progress = 30 + int((i + 1) / len(reader.pages) * 40)
-                update_task(task_id, progress_percent=progress)
+            update_task(task_id, progress_percent=40)
             
-            update_task(task_id, progress_percent=75)
+            result = subprocess.run([
+                gs_cmd,
+                "-sDEVICE=pdfwrite",
+                f"-dPDFSETTINGS={gs_quality}",
+                "-dNOPAUSE",
+                "-dQUIET",
+                "-dBATCH",
+                "-dCompatibilityLevel=1.4",
+                "-dColorImageResolution=150",
+                "-dGrayImageResolution=150",
+                "-dMonoImageResolution=150",
+                f"-sOutputFile={output_path}",
+                str(input_path)
+            ], capture_output=True, text=True, timeout=300)
             
-            # Remove metadata for smaller size
-            writer.add_metadata({})
+            update_task(task_id, progress_percent=80)
             
-            # Compress content streams
-            for page in writer.pages:
-                page.compress_content_streams()
-            
-            update_task(task_id, progress_percent=85)
-            
-            # Write compressed PDF
-            with open(output_path, "wb") as f:
-                writer.write(f)
-            
-        except ImportError:
-            # Fallback: Use Ghostscript if available
-            import subprocess
-            
-            gs_quality = {"low": "/screen", "medium": "/ebook", "high": "/printer"}.get(quality, "/ebook")
-            
-            try:
-                result = subprocess.run([
-                    "gswin64c" if Path("C:/Program Files/gs").exists() else "gs",
-                    "-sDEVICE=pdfwrite",
-                    f"-dPDFSETTINGS={gs_quality}",
-                    "-dNOPAUSE",
-                    "-dQUIET",
-                    "-dBATCH",
-                    f"-sOutputFile={output_path}",
-                    str(input_path)
-                ], capture_output=True, text=True, timeout=120)
+            if result.returncode == 0 and output_path.exists() and output_path.stat().st_size > 0:
+                compression_success = True
+                logger.info(f"PDF compressed using Ghostscript: {task_id}")
+            else:
+                logger.warning(f"Ghostscript failed: {result.stderr}")
                 
-                if result.returncode != 0:
-                    raise Exception("Ghostscript compression failed")
-                    
-            except FileNotFoundError:
-                # No Ghostscript, just copy
-                import shutil
-                shutil.copy(input_path, output_path)
+        except FileNotFoundError:
+            logger.info("Ghostscript not available, trying PyPDF2")
+        except subprocess.TimeoutExpired:
+            logger.warning("Ghostscript timeout, trying PyPDF2")
+        except Exception as e:
+            logger.warning(f"Ghostscript error: {e}, trying PyPDF2")
+        
+        # Method 2: Fallback to PyPDF2 (may not preserve all images)
+        if not compression_success:
+            try:
+                from PyPDF2 import PdfReader, PdfWriter
+                
+                update_task(task_id, progress_percent=50)
+                
+                reader = PdfReader(str(input_path))
+                writer = PdfWriter()
+                
+                # Copy all pages without modification
+                for i, page in enumerate(reader.pages):
+                    writer.add_page(page)
+                    progress = 50 + int((i + 1) / len(reader.pages) * 30)
+                    update_task(task_id, progress_percent=progress)
+                
+                # Only remove metadata, don't compress content streams (preserves images)
+                writer.add_metadata({})
+                
+                update_task(task_id, progress_percent=85)
+                
+                with open(output_path, "wb") as f:
+                    writer.write(f)
+                
+                compression_success = True
+                logger.info(f"PDF processed using PyPDF2: {task_id}")
+                
+            except Exception as e:
+                logger.error(f"PyPDF2 failed: {e}")
+        
+        # Method 3: Last resort - just copy the file
+        if not compression_success or not output_path.exists():
+            import shutil
+            shutil.copy(input_path, output_path)
+            logger.warning(f"PDF compression fallback to copy: {task_id}")
         
         update_task(task_id, progress_percent=95)
         

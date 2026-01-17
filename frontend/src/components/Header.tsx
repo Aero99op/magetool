@@ -374,12 +374,13 @@ export default function Header() {
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            background: 'rgba(15, 15, 15, 0.98)',
+                            background: 'rgba(10, 10, 10, 0.99)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
                             overflowY: 'auto',
                             padding: '20px',
-                            zIndex: 999,
+                            paddingBottom: '100px',
+                            zIndex: 10000,
                         }}
                         className="mobile-menu"
                     >
