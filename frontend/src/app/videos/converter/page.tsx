@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import { isFFmpegSupported, convertVideoClient } from '@/lib/ffmpeg-client';
 
 const OUTPUT_FORMATS = [
     { value: 'mp4', label: 'MP4 (.mp4)' },
@@ -41,17 +42,59 @@ export default function VideoConverterPage() {
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
     const [taskId, setTaskId] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isClientSide, setIsClientSide] = useState(false);
+
+    // Client-side processing fallback
+    const processClientSide = useCallback(async (file: File) => {
+        setIsClientSide(true);
+        setStage('processing');
+        setEstimatedTime('Processing in your browser (server busy)...');
+        setProgress(0);
+
+        try {
+            const outputBlob = await convertVideoClient(
+                file,
+                outputFormat,
+                (message) => {
+                    setEstimatedTime(message);
+                    // Simulate progress from messages
+                    if (message.includes('%')) {
+                        const match = message.match(/(\d+)%/);
+                        if (match) setProgress(parseInt(match[1]));
+                    }
+                }
+            );
+
+            // Create download URL from blob
+            const blobUrl = URL.createObjectURL(outputBlob);
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+
+            setStage('complete');
+            setDownloadReady(true);
+            setDownloadUrl(blobUrl);
+            setDownloadFileName(`${baseName}_converted.${outputFormat}`);
+            setDownloadFileSize(formatFileSize(outputBlob.size));
+
+        } catch (error: any) {
+            console.error('Client-side processing error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Browser processing failed.');
+        }
+    }, [outputFormat]);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setSelectedFile(file);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
         setProgress(0);
         setErrorMessage(undefined);
         setDownloadReady(false);
+        setIsClientSide(false);
 
         try {
             let lastLoaded = 0;
@@ -85,10 +128,22 @@ export default function VideoConverterPage() {
 
         } catch (error: any) {
             console.error('Upload error:', error);
-            setStage('error');
-            setErrorMessage(error.message || 'Upload failed. Please try again.');
+
+            // Check if server error - fallback to client-side
+            const isServerError = error.message?.includes('502') ||
+                error.message?.includes('503') ||
+                error.message?.includes('Network Error') ||
+                error.message?.includes('timeout');
+
+            if (isServerError && isFFmpegSupported()) {
+                console.log('Server busy, falling back to client-side processing...');
+                await processClientSide(file);
+            } else {
+                setStage('error');
+                setErrorMessage(error.message || 'Upload failed. Please try again.');
+            }
         }
-    }, [outputFormat, resolution]);
+    }, [outputFormat, resolution, processClientSide]);
 
     const handleProcess = useCallback(async () => {
         if (!taskId) return;
@@ -124,10 +179,22 @@ export default function VideoConverterPage() {
 
         } catch (error: any) {
             console.error('Processing error:', error);
-            setStage('error');
-            setErrorMessage(error.message || 'Processing failed. Please try again.');
+
+            // Check if server error - fallback to client-side
+            const isServerError = error.message?.includes('502') ||
+                error.message?.includes('503') ||
+                error.message?.includes('Network Error') ||
+                error.message?.includes('Task failed');
+
+            if (isServerError && isFFmpegSupported() && selectedFile) {
+                console.log('Server failed, falling back to client-side processing...');
+                await processClientSide(selectedFile);
+            } else {
+                setStage('error');
+                setErrorMessage(error.message || 'Processing failed. Please try again.');
+            }
         }
-    }, [taskId, outputFormat]);
+    }, [taskId, outputFormat, selectedFile, processClientSide]);
 
     const resetState = () => {
         setStage('idle');
@@ -135,6 +202,8 @@ export default function VideoConverterPage() {
         setDownloadReady(false);
         setErrorMessage(undefined);
         setTaskId(null);
+        setSelectedFile(null);
+        setIsClientSide(false);
     };
 
     return (
@@ -194,6 +263,36 @@ export default function VideoConverterPage() {
                             ))}
                         </select>
                     </div>
+
+                    {/* Client-side processing indicator */}
+                    {isClientSide && (
+                        <div style={{
+                            padding: '12px',
+                            marginBottom: '16px',
+                            background: 'rgba(255, 193, 7, 0.1)',
+                            border: '1px solid rgba(255, 193, 7, 0.3)',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            color: '#ffc107'
+                        }}>
+                            ⚡ Processing in your browser (servers busy)
+                        </div>
+                    )}
+
+                    {/* FFmpeg support indicator */}
+                    {typeof window !== 'undefined' && !isFFmpegSupported() && (
+                        <div style={{
+                            padding: '12px',
+                            marginBottom: '16px',
+                            background: 'rgba(255, 100, 100, 0.1)',
+                            border: '1px solid rgba(255, 100, 100, 0.3)',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            color: '#ff6b6b'
+                        }}>
+                            ⚠️ Browser fallback not available (use Chrome/Firefox)
+                        </div>
+                    )}
 
                     {stage !== 'idle' && (
                         <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '16px' }}>
