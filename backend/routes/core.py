@@ -119,20 +119,38 @@ async def download_file(task_id: str):
         original = task.get("original_filename", "output")
         original_stem = Path(original).stem
         new_ext = output_path.suffix
+        
+        # Ensure we have an extension
+        if not new_ext:
+            # Try to guess from media type or default to .bin
+            # (Assuming get_mime_type handles empty extension gracefully by returning octet-stream)
+            media_type = get_mime_type(new_ext) 
+            if media_type == "application/octet-stream":
+                new_ext = ".bin"
+            else:
+                from config import get_extension_from_mime
+                new_ext = f".{get_extension_from_mime(media_type) or 'bin'}"
+
         output_filename = f"{original_stem}{new_ext}"
     
+    # Sanitize filename for header (remove quotes and newlines)
+    safe_filename = output_filename.replace('"', '').replace('\n', '').replace('\r', '')
+    
     # Get MIME type
-    extension = output_path.suffix.lstrip(".")
+    extension = Path(safe_filename).suffix.lstrip(".")
+    if not extension:
+         extension = output_path.suffix.lstrip(".")
+         
     media_type = get_mime_type(extension)
     
-    logger.info(f"Download: {task_id} -> {output_filename} ({media_type})")
+    logger.info(f"Download: {task_id} -> {safe_filename} ({media_type})")
     
     return FileResponse(
         path=output_path,
-        filename=output_filename,
+        filename=safe_filename,
         media_type=media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{output_filename}"',
+            "Content-Disposition": f'attachment; filename="{safe_filename}"',
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
             "Expires": "0",

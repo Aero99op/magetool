@@ -19,11 +19,16 @@ settings = get_settings()
 logger = logging.getLogger("magetool.image")
 
 
+import shutil
+
 async def save_upload_file(upload_file: UploadFile, destination: Path):
-    """Save uploaded file to disk"""
-    content = await upload_file.read()
-    destination.write_bytes(content)
-    return len(content)
+    """Save uploaded file to disk using streaming to prevent OOM"""
+    try:
+        with destination.open("wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+        return destination.stat().st_size
+    finally:
+        await upload_file.close()
 
 
 def process_image_convert(task_id: str, input_path: Path, original_filename: str, **params):
