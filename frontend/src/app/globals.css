@@ -472,6 +472,11 @@ textarea::placeholder {
   background: rgba(0, 217, 255, 0.3);
 }
 
+/* Mobile Upload Button */
+.mobile-upload-btn {
+  display: none;
+}
+
 /* Mobile */
 @media (max-width: 640px) {
   .btn {
@@ -482,6 +487,15 @@ textarea::placeholder {
   .upload-zone {
     padding: 40px 20px;
     min-height: 200px;
+  }
+
+  .mobile-upload-btn {
+    display: flex !important;
+    width: 100%;
+    margin-top: 16px;
+    z-index: 10;
+    pointer-events: auto;
+    /* Ensure it is clickable */
   }
 }
 

@@ -52,7 +52,7 @@ export default function UploadZone({
         [maxSize, maxFiles, onFilesSelected]
     );
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop,
         accept,
         maxSize: maxSize * 1024 * 1024,
@@ -131,6 +131,22 @@ export default function UploadZone({
                     {supportedFormatsText} | Max size: {maxSize}MB
                 </p>
             </div>
+
+            {/* Mobile Upload Button */}
+            <button
+                type="button"
+                className="btn btn-primary mobile-upload-btn"
+                onClick={open}
+                style={{
+                    display: 'none', // Hidden by default, shown by CSS media query
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                }}
+            >
+                <Upload size={20} />
+                Select Files
+            </button>
 
             {/* Error Display */}
             {error && (
