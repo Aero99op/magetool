@@ -1,7 +1,83 @@
 import axios, { AxiosError, AxiosProgressEvent } from 'axios';
 
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// ==========================================
+// LOAD BALANCER: Round-Robin + Failover
+// Alternates between Render and Zeabur to maximize free tier usage
+// ==========================================
+
+const API_SERVERS = [
+    process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',    // Server 1: Render (750 hrs/month)
+    process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',        // Server 2: Zeabur ($5/month credit)
+].filter(url => url && url !== 'undefined');
+
+// Load balancer state (persisted in sessionStorage for consistency during session)
+let serverIndex = 0;
+const SERVER_HEALTH: Record<string, boolean> = {};
+
+// Initialize all servers as healthy
+API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+
+/**
+ * Get the next healthy server using round-robin
+ */
+function getNextServer(): string {
+    const startIndex = serverIndex;
+
+    // Try to find a healthy server
+    do {
+        const server = API_SERVERS[serverIndex];
+        serverIndex = (serverIndex + 1) % API_SERVERS.length;
+
+        if (SERVER_HEALTH[server]) {
+            return server;
+        }
+    } while (serverIndex !== startIndex);
+
+    // If no healthy servers, reset all to healthy and try again
+    API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+    return API_SERVERS[0];
+}
+
+/**
+ * Mark a server as unhealthy (will be skipped in rotation)
+ */
+function markServerUnhealthy(serverUrl: string): void {
+    SERVER_HEALTH[serverUrl] = false;
+    console.warn(`[LoadBalancer] Server marked unhealthy: ${serverUrl}`);
+
+    // Reset after 60 seconds (give server time to recover)
+    setTimeout(() => {
+        SERVER_HEALTH[serverUrl] = true;
+        console.log(`[LoadBalancer] Server health reset: ${serverUrl}`);
+    }, 60000);
+}
+
+/**
+ * Get current server for this request
+ */
+export function getCurrentApiServer(): string {
+    return getNextServer();
+}
+
+// Task-to-Server mapping (ensures task stays on same server for status/download)
+const TASK_SERVER_MAP: Record<string, string> = {};
+
+/**
+ * Store which server a task was created on
+ */
+export function setServerForTask(taskId: string, serverUrl: string): void {
+    TASK_SERVER_MAP[taskId] = serverUrl;
+}
+
+/**
+ * Get server for a specific task (returns stored server, or default)
+ */
+function getServerForTask(taskId: string): string {
+    return TASK_SERVER_MAP[taskId] || API_SERVERS[0];
+}
+
+// Default API base (for backward compatibility)
+const API_BASE_URL = API_SERVERS[0];
 
 // Create axios instance with defaults
 const api = axios.create({
@@ -160,7 +236,7 @@ export const checkHealth = async (): Promise<HealthResponse> => {
     return response.data;
 };
 
-// Generic file upload function with validation
+// Generic file upload function with validation and load balancing
 export const uploadFile = async (
     endpoint: string,
     file: File,
@@ -184,16 +260,33 @@ export const uploadFile = async (
         formData.append(key, String(value));
     });
 
+    // Get server from load balancer
+    const serverUrl = getNextServer();
+    console.log(`[LoadBalancer] Using server: ${serverUrl}`);
+
     try {
-        const response = await api.post(endpoint, formData, {
+        const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 300000,
             onUploadProgress,
         });
+
+        // Store server affinity for this task
+        if (response.data.task_id) {
+            setServerForTask(response.data.task_id, serverUrl);
+        }
+
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
+            // If server error (5xx) or network error, mark as unhealthy and try another
+            if (error.response?.status && error.response.status >= 500) {
+                markServerUnhealthy(serverUrl);
+            } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+                markServerUnhealthy(serverUrl);
+            }
             throw new Error(parseErrorResponse(error));
         }
         throw error;
@@ -229,32 +322,51 @@ export const uploadFiles = async (
         formData.append(key, String(value));
     });
 
+    // Get server from load balancer
+    const serverUrl = getNextServer();
+    console.log(`[LoadBalancer] Using server: ${serverUrl}`);
+
     try {
-        const response = await api.post(endpoint, formData, {
+        const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 300000,
             onUploadProgress,
         });
+
+        // Store server affinity for this task
+        if (response.data.task_id) {
+            setServerForTask(response.data.task_id, serverUrl);
+        }
+
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
+            // If server error (5xx) or network error, mark as unhealthy
+            if (error.response?.status && error.response.status >= 500) {
+                markServerUnhealthy(serverUrl);
+            } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+                markServerUnhealthy(serverUrl);
+            }
             throw new Error(parseErrorResponse(error));
         }
         throw error;
     }
 };
 
-// Check task status
+// Check task status (uses server affinity)
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
-    const response = await api.get(`/api/status/${taskId}`);
+    const serverUrl = getServerForTask(taskId);
+    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 30000 });
     return response.data;
 };
 
-// Start processing for an uploaded task
+// Start processing for an uploaded task (uses server affinity)
 export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
+    const serverUrl = getServerForTask(taskId);
     try {
-        const response = await api.post(`/api/start/${taskId}`);
+        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 30000 });
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
@@ -309,9 +421,10 @@ export const pollTaskStatus = async (
     });
 };
 
-// Get download URL
+// Get download URL (uses server affinity)
 export const getDownloadUrl = (taskId: string): string => {
-    return `${API_BASE_URL}/api/download/${taskId}`;
+    const serverUrl = getServerForTask(taskId);
+    return `${serverUrl}/api/download/${taskId}`;
 };
 
 // ==========================================
