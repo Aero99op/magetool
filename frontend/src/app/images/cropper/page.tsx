@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ImageCropper from '@/components/ImageCropper';
 
 const ASPECT_RATIOS = [
     { value: 'free', label: 'Freeform', ratio: null },
@@ -55,11 +55,54 @@ export default function ImageCropperPage() {
         img.onload = () => {
             setImageWidth(img.width);
             setImageHeight(img.height);
-            setCropWidth(Math.min(200, img.width));
-            setCropHeight(Math.min(200, img.height));
+            // Initial crop: centered, 50% of image size
+            const initialSize = Math.min(img.width, img.height) * 0.5;
+            setCropWidth(Math.round(initialSize));
+            setCropHeight(Math.round(initialSize));
+            setCropX(Math.round((img.width - initialSize) / 2));
+            setCropY(Math.round((img.height - initialSize) / 2));
         };
         img.src = url;
     }, []);
+
+    const handleCropChange = useCallback((crop: { x: number; y: number; width: number; height: number }) => {
+        setCropX(Math.round(crop.x));
+        setCropY(Math.round(crop.y));
+        setCropWidth(Math.round(crop.width));
+        setCropHeight(Math.round(crop.height));
+    }, []);
+
+    const handleAspectRatioChange = (value: string) => {
+        setAspectRatio(value);
+        const ratio = ASPECT_RATIOS.find(r => r.value === value)?.ratio;
+
+        if (ratio && imageWidth > 0) {
+            // Adjust crop to match new aspect ratio while keeping centered
+            const centerX = cropX + cropWidth / 2;
+            const centerY = cropY + cropHeight / 2;
+
+            let newWidth = cropWidth;
+            let newHeight = cropWidth / ratio;
+
+            // Make sure it fits in the image
+            if (newHeight > imageHeight) {
+                newHeight = imageHeight * 0.8;
+                newWidth = newHeight * ratio;
+            }
+            if (newWidth > imageWidth) {
+                newWidth = imageWidth * 0.8;
+                newHeight = newWidth / ratio;
+            }
+
+            const newX = Math.max(0, Math.min(centerX - newWidth / 2, imageWidth - newWidth));
+            const newY = Math.max(0, Math.min(centerY - newHeight / 2, imageHeight - newHeight));
+
+            setCropWidth(Math.round(newWidth));
+            setCropHeight(Math.round(newHeight));
+            setCropX(Math.round(newX));
+            setCropY(Math.round(newY));
+        }
+    };
 
     const handleCrop = async () => {
         if (!selectedFile) return;
@@ -99,6 +142,8 @@ export default function ImageCropperPage() {
         setImageUrl('');
     };
 
+    const currentRatio = ASPECT_RATIOS.find(r => r.value === aspectRatio)?.ratio || null;
+
     return (
         <ToolLayout
             title="Image Cropper"
@@ -108,37 +153,141 @@ export default function ImageCropperPage() {
             maxFiles={1}
             supportedFormatsText="Supported: JPG, PNG, WebP, GIF | Max: 50MB"
             onFilesSelected={handleFilesSelected}
+            customContent={
+                imageUrl && stage === 'idle' && (
+                    <div style={{ marginTop: '24px' }}>
+                        <ImageCropper
+                            imageUrl={imageUrl}
+                            aspectRatio={currentRatio}
+                            initialCrop={{ x: cropX, y: cropY, width: cropWidth, height: cropHeight }}
+                            onCropChange={handleCropChange}
+                            imageWidth={imageWidth}
+                            imageHeight={imageHeight}
+                        />
+                    </div>
+                )
+            }
             configPanel={
                 <div>
                     <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Aspect Ratio</label>
-                        <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-primary)' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            Aspect Ratio
+                        </label>
+                        <select
+                            value={aspectRatio}
+                            onChange={(e) => handleAspectRatioChange(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary)'
+                            }}
+                        >
                             {ASPECT_RATIOS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                         </select>
                     </div>
 
                     {imageWidth > 0 && (
-                        <>
-                            <div style={{ marginBottom: '12px' }}>
-                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>X: {cropX}px, Y: {cropY}px</label>
+                        <div style={{
+                            marginBottom: '16px',
+                            padding: '16px',
+                            background: 'rgba(0, 217, 255, 0.05)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(0, 217, 255, 0.1)'
+                        }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                Selection
                             </div>
-                            <div style={{ marginBottom: '12px' }}>
-                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Size: {cropWidth} × {cropHeight}px</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.9rem' }}>
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)' }}>Position: </span>
+                                    <span style={{ color: 'var(--text-primary)' }}>{cropX}, {cropY}</span>
+                                </div>
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)' }}>Size: </span>
+                                    <span style={{ color: 'var(--neon-blue)', fontWeight: 600 }}>{cropWidth} × {cropHeight}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {imageWidth > 0 && (
+                        <>
+                            <div style={{ marginBottom: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                Fine-tune (optional)
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                                <input type="number" placeholder="X" value={cropX} onChange={(e) => setCropX(Number(e.target.value))} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                                <input type="number" placeholder="Y" value={cropY} onChange={(e) => setCropY(Number(e.target.value))} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                                <input type="number" placeholder="Width" value={cropWidth} onChange={(e) => setCropWidth(Number(e.target.value))} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-primary)' }} />
-                                <input type="number" placeholder="Height" value={cropHeight} onChange={(e) => setCropHeight(Number(e.target.value))} style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-primary)' }} />
+                                <input
+                                    type="number"
+                                    placeholder="X"
+                                    value={cropX}
+                                    onChange={(e) => setCropX(Number(e.target.value))}
+                                    style={{
+                                        padding: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '6px',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.85rem'
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Y"
+                                    value={cropY}
+                                    onChange={(e) => setCropY(Number(e.target.value))}
+                                    style={{
+                                        padding: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '6px',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.85rem'
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Width"
+                                    value={cropWidth}
+                                    onChange={(e) => setCropWidth(Number(e.target.value))}
+                                    style={{
+                                        padding: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '6px',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.85rem'
+                                    }}
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Height"
+                                    value={cropHeight}
+                                    onChange={(e) => setCropHeight(Number(e.target.value))}
+                                    style={{
+                                        padding: '8px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '6px',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.85rem'
+                                    }}
+                                />
                             </div>
                         </>
                     )}
 
                     {selectedFile && stage === 'idle' && (
-                        <button onClick={handleCrop} className="btn btn-primary" style={{ width: '100%' }}>Crop Image</button>
+                        <button onClick={handleCrop} className="btn btn-primary" style={{ width: '100%' }}>
+                            ✂️ Crop Image
+                        </button>
                     )}
                     {stage !== 'idle' && (
-                        <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '12px' }}>Crop Another</button>
+                        <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '12px' }}>
+                            Crop Another
+                        </button>
                     )}
                 </div>
             }

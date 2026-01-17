@@ -18,6 +18,7 @@ interface ToolLayoutProps {
     onFilesSelected: (files: File[]) => void;
     onProcessClick?: () => void; // Callback for manual process trigger
     configPanel?: ReactNode;
+    customContent?: ReactNode; // Custom content to display below upload zone
     processingStage?: ProcessingStage;
     progress?: number;
     uploadSpeed?: string;
@@ -41,6 +42,7 @@ export default function ToolLayout({
     onFilesSelected,
     onProcessClick,
     configPanel,
+    customContent,
     processingStage = 'idle',
     progress = 0,
     uploadSpeed,
@@ -94,6 +96,9 @@ export default function ToolLayout({
                                 />
                             </motion.div>
                         )}
+
+                        {/* Custom Content - User-provided content */}
+                        {customContent}
 
                         {/* Progress Display - During upload/uploaded/processing */}
                         {(processingStage === 'uploading' || processingStage === 'uploaded' || processingStage === 'processing') && (

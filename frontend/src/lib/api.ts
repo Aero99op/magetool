@@ -381,6 +381,12 @@ export const imageApi = {
 
     svgConvert: (file: File, smoothing: string, colorDepth: string, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/image/svg-convert', file, { smoothing, color_depth: colorDepth }, onProgress, 'image'),
+
+    adjustSize: (file: File, targetSize: number, mode: string, onProgress?: (e: AxiosProgressEvent) => void) =>
+        uploadFile('/api/image/adjust-size', file, { target_size: targetSize, mode }, onProgress, 'image'),
+
+    imagesToPdf: (files: File[], pageSize: string, orientation: string, onProgress?: (e: AxiosProgressEvent) => void) =>
+        uploadFiles('/api/image/images-to-pdf', files, { page_size: pageSize, orientation }, onProgress, 'image'),
 };
 
 // ==========================================

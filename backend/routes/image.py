@@ -5,6 +5,7 @@ Image processing routes
 import logging
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from typing import List
 from PIL import Image
 import io
 
@@ -1722,6 +1723,315 @@ async def convert_to_svg(
 
 
 # ============================================================================
+# IMAGE SIZE ADJUSTER
+# Adjust image file size to a target size in bytes
+# ============================================================================
+
+def process_image_size_adjust(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Adjust image file size to target"""
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        target_size = params.get("target_size", 0)  # bytes
+        mode = params.get("mode", "quality")  # quality, resolution, padding
+        
+        with Image.open(input_path) as img:
+            original_format = img.format or "PNG"
+            ext = original_format.lower()
+            if ext == "jpeg":
+                ext = "jpg"
+            
+            update_task(task_id, progress_percent=20)
+            
+            # Determine output path
+            output_path = get_output_path(task_id, ext)
+            
+            if mode == "quality":
+                # Quality-based compression (for JPG/WebP)
+                if ext not in ["jpg", "jpeg", "webp"]:
+                    # Convert to JPG for quality compression
+                    if img.mode in ["RGBA", "P"]:
+                        img = img.convert("RGB")
+                    ext = "jpg"
+                    output_path = get_output_path(task_id, ext)
+                
+                # Binary search for optimal quality
+                quality = 95
+                best_quality = quality
+                best_buffer = io.BytesIO()
+                
+                for step in [30, 15, 7, 3, 1]:
+                    while quality > 5:
+                        buffer = io.BytesIO()
+                        save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
+                        img.save(buffer, format=save_format, quality=quality)
+                        current_size = buffer.tell()
+                        
+                        if current_size <= target_size:
+                            best_quality = quality
+                            best_buffer = buffer
+                            break
+                        quality -= step
+                    
+                    if best_buffer.tell() > 0:
+                        break
+                
+                update_task(task_id, progress_percent=70)
+                
+                # Save best result
+                if best_buffer.tell() > 0:
+                    best_buffer.seek(0)
+                    with open(output_path, "wb") as f:
+                        f.write(best_buffer.read())
+                else:
+                    # Couldn't reach target, save with minimum quality
+                    save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
+                    img.save(output_path, format=save_format, quality=5)
+                    
+            elif mode == "resolution":
+                # Resolution reduction mode
+                original_size = input_path.stat().st_size
+                if original_size <= target_size:
+                    # Already smaller, just copy
+                    shutil.copy(input_path, output_path)
+                else:
+                    # Calculate scale factor
+                    scale = (target_size / original_size) ** 0.5
+                    new_width = max(1, int(img.width * scale))
+                    new_height = max(1, int(img.height * scale))
+                    
+                    resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                    
+                    # Save with good quality
+                    save_options = {}
+                    if ext in ["jpg", "jpeg"]:
+                        save_options["quality"] = 85
+                    elif ext == "webp":
+                        save_options["quality"] = 85
+                    
+                    resized.save(output_path, **save_options)
+                    
+            elif mode == "padding":
+                # Add padding to increase file size
+                original_size = input_path.stat().st_size
+                
+                # Save the original image first
+                img.save(output_path, format=original_format)
+                
+                # Calculate padding needed
+                current_size = output_path.stat().st_size
+                if current_size < target_size:
+                    padding_needed = target_size - current_size
+                    # Append null bytes (works for most formats)
+                    with open(output_path, "ab") as f:
+                        f.write(b'\x00' * padding_needed)
+            
+            update_task(task_id, progress_percent=90)
+            
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, extension=ext)
+            
+            final_size = output_path.stat().st_size
+            
+            update_task(
+                task_id,
+                status=TaskStatus.COMPLETE,
+                progress_percent=100,
+                output_filename=output_filename,
+                output_path=output_path,
+                file_size=final_size,
+            )
+            
+            logger.info(f"Image size adjust complete: {task_id} -> {final_size} bytes (target: {target_size})")
+            
+    except Exception as e:
+        logger.error(f"Image size adjust failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+@router.post("/adjust-size")
+async def adjust_image_size(
+    file: UploadFile = File(...),
+    target_size: int = Form(...),  # Target size in bytes
+    mode: str = Form(default="quality"),  # quality, resolution, padding
+):
+    """
+    Adjust image file size to target.
+    
+    Modes:
+    - quality: Reduce JPEG/WebP quality until target size is reached
+    - resolution: Reduce image dimensions proportionally
+    - padding: Add null bytes to increase file size
+    """
+    if target_size <= 0:
+        raise HTTPException(status_code=400, detail="Target size must be positive")
+    
+    if mode not in ["quality", "resolution", "padding"]:
+        raise HTTPException(status_code=400, detail="Mode must be: quality, resolution, or padding")
+    
+    task_id = create_task(file.filename, "image_size_adjust")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    update_task(
+        task_id,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"target_size": target_size, "mode": mode}
+    )
+    
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+# ============================================================================
+# IMAGES TO PDF
+# Convert multiple images to a single PDF document
+# ============================================================================
+
+def process_images_to_pdf(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Convert images to PDF"""
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        page_size = params.get("page_size", "A4")
+        orientation = params.get("orientation", "portrait")
+        image_paths = params.get("image_paths", [])
+        
+        # Page size mappings (in pixels at 72 DPI)
+        PAGE_SIZES = {
+            "A4": (595, 842),
+            "A3": (842, 1191),
+            "Letter": (612, 792),
+            "Legal": (612, 1008),
+            "Custom": None,  # Use original image sizes
+        }
+        
+        page_dims = PAGE_SIZES.get(page_size, (595, 842))
+        if page_dims and orientation == "landscape":
+            page_dims = (page_dims[1], page_dims[0])
+        
+        update_task(task_id, progress_percent=20)
+        
+        # Load all images
+        images = []
+        for i, img_path in enumerate(image_paths):
+            with Image.open(img_path) as img:
+                # Convert to RGB if needed (PDF doesn't support RGBA well)
+                if img.mode in ["RGBA", "P"]:
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    if img.mode == "RGBA":
+                        background.paste(img, mask=img.split()[3])
+                    else:
+                        background.paste(img)
+                    img = background
+                elif img.mode != "RGB":
+                    img = img.convert("RGB")
+                
+                # Resize to fit page if page size is specified
+                if page_dims:
+                    img.thumbnail(page_dims, Image.Resampling.LANCZOS)
+                
+                images.append(img.copy())
+            
+            # Update progress
+            progress = 20 + int((i + 1) / len(image_paths) * 60)
+            update_task(task_id, progress_percent=progress)
+        
+        if not images:
+            raise ValueError("No valid images to convert")
+        
+        update_task(task_id, progress_percent=85)
+        
+        # Save as PDF
+        output_path = get_output_path(task_id, "pdf")
+        
+        if len(images) == 1:
+            images[0].save(output_path, "PDF", resolution=100.0)
+        else:
+            images[0].save(output_path, "PDF", save_all=True, append_images=images[1:], resolution=100.0)
+        
+        update_task(task_id, progress_percent=95)
+        
+        from services.tasks import get_output_filename
+        base_name = Path(original_filename).stem if original_filename else "images"
+        output_filename = f"{base_name}.pdf"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"Images to PDF complete: {task_id} -> {len(images)} images")
+        
+        # Clean up temporary image files
+        for img_path in image_paths:
+            try:
+                Path(img_path).unlink()
+            except:
+                pass
+        
+    except Exception as e:
+        logger.error(f"Images to PDF failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+
+@router.post("/images-to-pdf")
+async def convert_images_to_pdf(
+    files: List[UploadFile] = File(...),
+    page_size: str = Form(default="A4"),  # A4, A3, Letter, Legal, Custom
+    orientation: str = Form(default="portrait"),  # portrait, landscape
+):
+    """
+    Convert multiple images to a single PDF document.
+    
+    Page sizes: A4, A3, Letter, Legal, Custom (uses original image sizes)
+    Orientation: portrait, landscape
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded")
+    
+    if page_size not in ["A4", "A3", "Letter", "Legal", "Custom"]:
+        raise HTTPException(status_code=400, detail="Invalid page size")
+    
+    if orientation not in ["portrait", "landscape"]:
+        raise HTTPException(status_code=400, detail="Invalid orientation")
+    
+    # Create task with first filename
+    first_filename = files[0].filename or "images"
+    task_id = create_task(first_filename, "images_to_pdf")
+    
+    # Save all uploaded files
+    image_paths = []
+    for i, file in enumerate(files):
+        input_ext = Path(file.filename).suffix.lstrip(".") or "png"
+        input_path = get_input_path(task_id, f"{i}_{input_ext}")
+        await save_upload_file(file, input_path)
+        image_paths.append(str(input_path))
+    
+    update_task(
+        task_id,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=Path(image_paths[0]) if image_paths else None,
+        params={
+            "page_size": page_size,
+            "orientation": orientation,
+            "image_paths": image_paths,
+        }
+    )
+    
+    return {"task_id": task_id, "message": f"{len(files)} files uploaded successfully"}
+
+
+# ============================================================================
 # PROCESSOR REGISTRATION
 # Register handlers for deferred processing via /start endpoint
 # ============================================================================
@@ -1741,6 +2051,8 @@ register_processor("blur_face", process_image_blur_face)
 register_processor("passport_photo", process_image_passport_photo)
 register_processor("svg_convert", process_image_svg_convert)
 register_processor("image_collage", process_image_collage)
+register_processor("image_size_adjust", process_image_size_adjust)
+register_processor("images_to_pdf", process_images_to_pdf)
 # Note: collage and watermark-remove still use old flow (multi-file or complex logic)
 
 
