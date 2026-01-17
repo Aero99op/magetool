@@ -32,11 +32,40 @@ export default function DownloadButton({
                 throw new Error('Download failed');
             }
 
+            // Try to get filename from Content-Disposition header (most reliable for cross-origin)
+            let downloadFileName = fileName;
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+                // Parse filename from header: attachment; filename="example.png"
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=(?:"([^"]*)"|([^;\n]*))/i);
+                if (filenameMatch) {
+                    downloadFileName = filenameMatch[1] || filenameMatch[2] || fileName;
+                    // Decode if URL-encoded
+                    try {
+                        downloadFileName = decodeURIComponent(downloadFileName);
+                    } catch {
+                        // Use as-is if decoding fails
+                    }
+                }
+            }
+
+            // Ensure we have a valid filename with extension
+            if (!downloadFileName || downloadFileName === 'undefined' || !downloadFileName.includes('.')) {
+                // Fallback: try to get extension from content-type
+                const contentType = response.headers.get('Content-Type');
+                if (contentType) {
+                    const ext = contentType.split('/').pop()?.replace('jpeg', 'jpg') || 'bin';
+                    downloadFileName = fileName.includes('.') ? fileName : `${fileName || 'download'}.${ext}`;
+                } else {
+                    downloadFileName = fileName || 'download.bin';
+                }
+            }
+
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = fileName;
+            link.download = downloadFileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
