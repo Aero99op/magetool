@@ -2,8 +2,12 @@
 const nextConfig = {
     reactStrictMode: true,
 
+    // Static export for Cloudflare Pages
+    output: 'export',
+
+    // Disable image optimization for static export
     images: {
-        domains: ['localhost'],
+        unoptimized: true,
     },
 
     // Security headers
@@ -73,20 +77,8 @@ const nextConfig = {
         ];
     },
 
-    // API rewrites for backend proxy
-    async rewrites() {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        return [
-            {
-                source: '/api/:path*',
-                destination: `${apiUrl}/api/:path*`,
-            },
-            {
-                source: '/temp/:path*',
-                destination: `${apiUrl}/temp/:path*`,
-            },
-        ];
-    },
+    // Note: API rewrites not supported in static export mode
+    // Direct API calls to backend URLs are configured in src/lib/api.ts
 
     // Production optimizations
     poweredByHeader: false, // Hide X-Powered-By header
