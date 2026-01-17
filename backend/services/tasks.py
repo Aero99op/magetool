@@ -126,12 +126,37 @@ def delete_task(task_id: str) -> bool:
 
 def get_input_path(task_id: str, extension: str) -> Path:
     """Get the input file path for a task"""
-    return settings.TEMP_DIR / f"{task_id}_input.{extension.lstrip('.')}"
+    ext = extension.lstrip('.') if extension else "tmp"
+    return settings.TEMP_DIR / f"{task_id}_input.{ext}"
 
 
 def get_output_path(task_id: str, extension: str) -> Path:
     """Get the output file path for a task"""
-    return settings.TEMP_DIR / f"{task_id}_output.{extension.lstrip('.')}"
+    ext = extension.lstrip('.') if extension else "tmp"
+    return settings.TEMP_DIR / f"{task_id}_output.{ext}"
+
+
+def get_output_filename(original_filename: str, suffix: str = "", extension: Optional[str] = None) -> str:
+    """
+    Construct a clean output filename.
+    If extension is provided, it replaces the original extension.
+    Otherwise, the original extension is preserved.
+    """
+    path = Path(original_filename)
+    stem = path.stem
+    
+    # If original filename has no stem (e.g. just ".ext" or empty), use "file"
+    if not stem:
+        stem = "file"
+        
+    orig_ext = path.suffix.lstrip('.')
+    
+    # Priority: 1. Provided extension, 2. Original extension, 3. Default "bin"
+    target_ext = (extension or orig_ext or "bin").lstrip('.')
+    
+    if suffix:
+        return f"{stem}_{suffix}.{target_ext}"
+    return f"{stem}.{target_ext}"
 
 
 def format_task_response(task: Dict[str, Any]) -> Dict[str, Any]:

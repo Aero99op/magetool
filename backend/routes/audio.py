@@ -82,8 +82,8 @@ def process_audio_convert(task_id: str, input_path: Path, original_filename: str
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}.{output_format}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, extension=output_format)
         
         update_task(
             task_id,
@@ -140,8 +140,8 @@ def process_audio_trim(task_id: str, input_path: Path, original_filename: str, *
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_trimmed.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="trimmed", extension=ext)
         
         update_task(
             task_id,
@@ -187,8 +187,8 @@ def process_audio_volume(task_id: str, input_path: Path, original_filename: str,
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_adjusted.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="adjusted", extension=ext)
         
         update_task(
             task_id,

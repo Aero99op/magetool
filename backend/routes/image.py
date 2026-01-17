@@ -62,9 +62,8 @@ def process_image_convert(task_id: str, input_path: Path, original_filename: str
             
             update_task(task_id, progress_percent=90)
             
-            # Create output filename
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}.{output_format}"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, extension=output_format)
             
             # Complete task
             update_task(
@@ -498,8 +497,8 @@ def process_image_upscale(task_id: str, input_path: Path, original_filename: str
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_upscaled_{scale}x.png"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix=f"upscaled_{scale}x", extension="png")
         
         update_task(
             task_id,
@@ -595,8 +594,8 @@ def process_image_watermark_add(task_id: str, input_path: Path, original_filenam
             output_path = get_output_path(task_id, "png")
             watermarked.save(output_path)
             
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_watermarked.png"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix="watermarked", extension="png")
             
             update_task(
                 task_id,
@@ -665,8 +664,8 @@ def process_image_exif_scrub(task_id: str, input_path: Path, original_filename: 
             output_path = get_output_path(task_id, output_ext)
             clean_img.save(output_path)
             
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_clean.{output_ext}"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix="clean", extension=output_ext)
             
             update_task(
                 task_id,
@@ -732,8 +731,8 @@ def process_image_ocr(task_id: str, input_path: Path, original_filename: str, **
         else:
             output_path.write_text(text)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_text.{output_ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="text", extension=output_ext)
         
         update_task(
             task_id,
@@ -828,7 +827,8 @@ def process_image_meme(task_id: str, input_path: Path, original_filename: str, *
             output_path = get_output_path(task_id, "png")
             img.save(output_path)
             
-            output_filename = f"{Path(original_filename).stem}_meme.png"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix="meme", extension="png")
             
             update_task(
                 task_id,
@@ -913,7 +913,8 @@ def process_image_negative(task_id: str, input_path: Path, original_filename: st
             output_path = get_output_path(task_id, "png")
             result.save(output_path)
             
-            output_filename = f"{Path(original_filename).stem}_{effect}.png"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix=effect, extension="png")
             
             update_task(
                 task_id,
@@ -1036,7 +1037,8 @@ def process_image_splitter(task_id: str, input_path: Path, original_filename: st
             
             update_task(task_id, progress_percent=90)
             
-            output_filename = f"{Path(original_filename).stem}_split_{rows}x{cols}.zip"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix=f"split_{rows}x{cols}", extension="zip")
             
             update_task(
                 task_id,
@@ -1181,7 +1183,8 @@ def process_image_blur_face(task_id: str, input_path: Path, original_filename: s
             output_path = get_output_path(task_id, "png")
             blurred.save(output_path)
             
-            output_filename = f"{Path(original_filename).stem}_blurred.png"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix="blurred", extension="png")
             
             update_task(
                 task_id,

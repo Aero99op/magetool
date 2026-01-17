@@ -196,8 +196,8 @@ def process_video_trim(task_id: str, input_path: Path, original_filename: str, *
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_trimmed.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="trimmed", extension=ext)
         
         update_task(
             task_id,
@@ -250,8 +250,8 @@ def process_video_compress(task_id: str, input_path: Path, original_filename: st
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_compressed.mp4"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="compressed", extension="mp4")
         
         update_task(
             task_id,
@@ -443,8 +443,8 @@ def process_video_rotate(task_id: str, input_path: Path, original_filename: str,
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_rotated.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="rotated", extension=ext)
         
         update_task(
             task_id,
@@ -729,8 +729,8 @@ def process_video_speed(task_id: str, input_path: Path, original_filename: str, 
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_{speed_factor}x.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix=f"speed_{speed_factor}x", extension=ext)
         
         update_task(
             task_id,
@@ -799,8 +799,8 @@ def process_video_mute(task_id: str, input_path: Path, original_filename: str, *
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_muted.{ext}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="muted", extension=ext)
         
         update_task(
             task_id,
@@ -887,8 +887,8 @@ def process_add_music(task_id: str, input_path: Path, original_filename: str, **
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_with_music.mp4"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="with_music", extension="mp4")
         
         update_task(
             task_id,

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         "https://magetool-one.vercel.app",
         "https://magetool-theta.vercel.app",
         "https://clever-dango-6377a7.netlify.app",  # Netlify
+        "https://magetool-api.onrender.com",        # Self (Render)
     ]
     
     # File Upload Limits (in MB)

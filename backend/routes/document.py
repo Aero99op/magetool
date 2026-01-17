@@ -84,8 +84,8 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}.{output_format}"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, extension=output_format)
         
         update_task(
             task_id,
@@ -190,8 +190,8 @@ def process_pdf_split(task_id: str, input_path: Path, original_filename: str, **
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_split.pdf"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="split", extension="pdf")
         
         update_task(
             task_id,
@@ -369,8 +369,8 @@ def process_pdf_compress(task_id: str, input_path: Path, original_filename: str,
         final_size = output_path.stat().st_size
         compression_ratio = (1 - final_size / original_size) * 100 if original_size > 0 else 0
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_compressed.pdf"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="compressed", extension="pdf")
         
         update_task(
             task_id,
@@ -439,8 +439,8 @@ def process_pdf_protect(task_id: str, input_path: Path, original_filename: str, 
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_protected.pdf"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="protected", extension="pdf")
         
         update_task(
             task_id,
@@ -510,8 +510,8 @@ def process_pdf_unlock(task_id: str, input_path: Path, original_filename: str, *
         
         update_task(task_id, progress_percent=90)
         
-        original_stem = Path(original_filename).stem
-        output_filename = f"{original_stem}_unlocked.pdf"
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="unlocked", extension="pdf")
         
         update_task(
             task_id,
@@ -600,8 +600,8 @@ async def file_to_image(
             
             update_task(task_id, progress_percent=90)
             
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}_images.zip"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, suffix="images", extension="zip")
             
             update_task(
                 task_id,
@@ -693,8 +693,8 @@ async def convert_data_format(
             
             update_task(task_id, progress_percent=90)
             
-            original_stem = Path(original_filename).stem
-            output_filename = f"{original_stem}.{output_format}"
+            from services.tasks import get_output_filename
+            output_filename = get_output_filename(original_filename, extension=output_format)
             
             update_task(
                 task_id,
@@ -860,10 +860,11 @@ async def adjust_file_size(
             
             final_size = output_path.stat().st_size
             
+            from services.tasks import get_output_filename
             if mode == "increase":
-                output_filename = f"{Path(original_filename).stem}_padded.{ext}"
+                output_filename = get_output_filename(original_filename, suffix="padded", extension=ext)
             else:
-                output_filename = f"{Path(original_filename).stem}_compressed.zip"
+                output_filename = get_output_filename(original_filename, suffix="compressed", extension="zip")
             
             update_task(
                 task_id,
