@@ -170,7 +170,7 @@ export default function InterstitialAd({
                             height: '280px',
                         }}
                         data-ad-client="ca-pub-7253353658623253"
-                        data-ad-slot="YOUR_AD_SLOT_ID"  // Replace with your ad slot ID
+                        data-ad-slot="6478503111"
                         data-ad-format="auto"
                         data-full-width-responsive="true"
                     />
