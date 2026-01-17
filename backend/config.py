@@ -31,6 +31,8 @@ class Settings(BaseSettings):
         "https://magetool-theta.vercel.app",
         "https://clever-dango-6377a7.netlify.app",  # Netlify
         "https://magetool-api.onrender.com",        # Self (Render)
+        "https://magetool-new.pages.dev",           # Cloudflare Pages
+        "https://magetool.pages.dev",               # Cloudflare Pages (alt)
     ]
     
     # File Upload Limits (in MB)
