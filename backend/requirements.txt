@@ -51,8 +51,8 @@ openpyxl>=3.1.0
 # ==========================================
 # OCR (Optical Character Recognition)
 # ==========================================
-# Note: Tesseract must be installed separately on the system
-pytesseract>=0.3.10
+# Using EasyOCR - pure Python, no system dependencies required
+easyocr>=1.7.0
 
 # ==========================================
 # MONITORING & LOGGING
@@ -79,11 +79,6 @@ python-dotenv>=1.0.0
 #   Windows: winget install ffmpeg
 #   macOS:   brew install ffmpeg
 #   Linux:   apt install ffmpeg
-#
-# Tesseract OCR (Text extraction):
-#   Windows: winget install tesseract
-#   macOS:   brew install tesseract
-#   Linux:   apt install tesseract-ocr
 #
 # Poppler (PDF to Image):
 #   Windows: Download from https://github.com/oschwartz10612/poppler-windows

@@ -718,13 +718,26 @@ def process_image_ocr(task_id: str, input_path: Path, original_filename: str, **
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
         try:
-            import pytesseract
+            import easyocr
             update_task(task_id, progress_percent=30)
-            with Image.open(input_path) as img:
-                text = pytesseract.image_to_string(img)
+            
+            # Initialize EasyOCR reader (supports multiple languages)
+            reader = easyocr.Reader(['en'], gpu=False)  # CPU mode for compatibility
+            
+            update_task(task_id, progress_percent=50)
+            
+            # Read text from image
+            results = reader.readtext(str(input_path))
+            
+            # Combine all detected text
+            text = '\n'.join([result[1] for result in results])
+            
         except ImportError:
-            logger.warning("pytesseract not installed, using placeholder")
-            text = "OCR requires Tesseract to be installed."
+            logger.warning("easyocr not installed, returning error message")
+            text = "OCR functionality is not available. Please install easyocr."
+        except Exception as ocr_error:
+            logger.error(f"OCR processing error: {ocr_error}")
+            text = f"OCR processing failed: {str(ocr_error)}"
         
         update_task(task_id, progress_percent=70)
         
