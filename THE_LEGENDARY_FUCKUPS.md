@@ -2,15 +2,348 @@
 ## Ek Roast Documentary: Kaise Humne Is Project Ki Maa-Behen Ek Ki (Aur Phir Fix Kiya)
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 > **WARNING**: Is document mein **ganda sach**, **bhayankar roasting**, aur **kadhwa gyaan** hai. Agar dil ke kamzor ho ya family ke paas baithe ho, toh abhi band kar do. Yahan shuddh desi bhasa mein debugging ki dastaan hai.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 ## 📊 THE HALL OF SHAME (Paap Ka Ghada)
 
 | Kaand (Metric) | Count | Dard Level |
-|--------|-------|-----------|
+|---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ------
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ -----|---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ------
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ----|---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ------
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ------
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ -----|
 | **Total Errors** | 50+ | 🔥 Gaand Phat Gayi |
 | **CORS Errors** | 15+ | Zeher hai bc |
 | **File Extension Issues** | 10+ | Mazak chal raha hai kya? |
@@ -19,6 +352,43 @@
 | **Ghanta Barbaad** | ∞ | Haan bhai, poora hafta gaya |
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🤡 CHAPTER 1: CORS KA CHUTIYAPA
 
@@ -79,6 +449,43 @@ app.add_middleware(
 5. **Typo mat kar** - `https://magetool.netlify.app` aur `https://magetool.netlify.app/` mein farak hota hai!
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 💀 CHAPTER 2: FILE EXTENSION GAYAB HONE KA RAAZ
 
@@ -171,6 +578,43 @@ const downloadFile = async (taskId: string, originalName: string, format: string
 4. **MIME type mapping** - Backend ko pata hona chahiye ki mp3 = audio/mpeg.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🎪 CHAPTER 3: 502 BAD GATEWAY KA NANGAA NAACH
 
@@ -224,6 +668,43 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
 3. **Logs check kar** - Error wahan chilla chilla ke bol raha hota hai kya galat hai.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🤯 CHAPTER 4: THE "setTimeout" SCAM
 
@@ -299,6 +780,43 @@ const handleProcess = async () => {
 4. **setTimeout animation ke liye hai**, business logic ke liye nahi.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 💩 CHAPTER 5: CSP (Content Security Policy) KA LAFDA
 
@@ -357,6 +875,43 @@ Google Ads, Fonts, Analytics - sab block ho gaye kyunki tune unko invite list (C
 3. **Production mein test kar** - Local pe shuraad sab chal jaye but production pe CSP gaand mar leta hai.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🎭 CHAPTER 6: GIT KE GUNAAH
 
@@ -403,6 +958,43 @@ git push --force origin main
 3. **Push karne se pehle check kar** - GitHub pe folder khul raha hai ya nahi.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🔥 CHAPTER 7: "Endpoint Not Found" KI MAHAAMARI
 
@@ -454,6 +1046,43 @@ Ek route bana `/api/routes` jo list karke de ki bhai mere paas ye ye endpoints h
 3. **Console.log kar URL** - Dekh toh sahi request jaa kahan rahi hai.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🤮 CHAPTER 8: FFmpeg KAAND
 
@@ -489,6 +1118,43 @@ RUN apt-get update && apt-get install -y \
 3. **Locally Docker run karke dekh** - Deployment se pehle surprise nahi chahiye.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🎪 CHAPTER 9: ENVIRONMENT VARIABLE KA CIRCUS
 
@@ -531,6 +1197,43 @@ if (!API_URL) {
 3. **Fallback laga** - Agar variable nahi mila toh kam se kam crash mat kar, warning de.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 💀 CHAPTER 10: "Mere Laptop Pe Toh Chal Raha Tha" HALL OF FAME
 
@@ -554,6 +1257,43 @@ if (!API_URL) {
 Agar Docker container mein chal raha hai local pe, toh production mein bhi chalega. Simple.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 🏆 ANTIM GYAAN (FINAL LESSONS)
 
@@ -575,6 +1315,43 @@ Stack Overflow se uthaya code bina samjhe chipka diya. **Aise nahi bante enginee
 Raat ke 2 baje debugging nahi hoti. **Dimag ka dahi hota hai.** So ja, subah fix ho jayega 5 minute mein.
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 # 📈 FINAL SCORECARD
 
@@ -601,12 +1378,86 @@ Raat ke 2 baje debugging nahi hoti. **Dimag ka dahi hota hai.** So ja, subah fix
 ```
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 > **Yaad rakhna**: Har senior developer pehle ek junior tha jisne ye saare kaand kiye the. Farak sirf itna hai ki usne seekha. Tu bhi seekh le, warna gaali khata rahega.
 
 > **Aakhri Shabd**: Error aayenge. Gussa aayega. Laptop fekne ka mann karega. Par jab code finally run karega na... **Bhai sahab wo nasha hi alag hai.** 🚀
 
 ---
+ 
+ # ☁️ CHAPTER 11: CLOUDFLARE KA CACHE MONSTER
+ 
+ ## "25MB Limit Hai Bhai, Ye 43MB Ka Hathi Kahan Ghusa Raha Hai?"
+ 
+ ```
+ Error: Pages only supports files up to 25 MiB in size
+ cache/webpack/client-production/0.pack is 43 MiB
+ ```
+ 
+ ### 🤬 THE ROAST:
+ 
+ Bhai sahab! Cloudflare Pages bol raha hai "Main chhota bachha hoon, mujhe 25MB se badi dawai mat do".
+ Aur Next.js build karke pichhwade (cache) mein 43MB ka gola bana raha hai.
+ 
+ Tune setting mein likha `Build output: out`.
+ Lekin Cloudflare ne bola "Main toh Next.js preset use karoonga aur `.next` folder uthaunga jisme kachra bhara hai". **DHOKEBAAZ!**
+ 
+ User screenshot dikha raha hai "Dekh maine `out` likha hai".
+ Cloudflare hans raha hai "Likhte raho, main toh 'Next.js Preset' hoon, main apni marzi chalaunga".
+ 
+ ### ✅ THE FIX:
+ 
+ **Cloudflare Dashboard mein jaake uski akad todi:**
+ 
+ 1. **Settings > Builds & deployments**
+ 2. **Build Configuration** dekho.
+ 3. Wahan **"Framework Preset"** agar "Next.js" hai -> usko **"None"** kar do.
+ 4. Ab wo wahi karega jo tum bologe (`out` folder).
+ 
+ ### 📚 GYAAN:
+ 
+ 1. **Presets par bharosa mat kar** - Kabhi kabhi wo zyada hoshiyaar banne ki koshish karte hain.
+ 2. **Static Export makhhan hai** - `output: 'export'` use kiya hai toh preset 'None' rakhna best hai.
+ 3. **Cache file upload mat kar** - `.next/cache` sirf build ke liye hota hai, duniya ko dikhane ke liye nahi.
+ 
+ ---
 
 *Ye dastaan likhi gayi hai khoon, paseene, aur bahut saari gaaliyon ke saath.*
 
