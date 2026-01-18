@@ -102,23 +102,30 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         # ==========================================
         elif input_ext == "docx":
             if output_format == "pdf":
-                # DOCX -> HTML -> PDF for better fidelity on Linux
+                # DOCX -> HTML -> PDF
                 import mammoth
-                import pdfkit
+                from weasyprint import HTML, CSS
                 
                 with open(input_path, "rb") as docx_file:
                     result = mammoth.convert_to_html(docx_file)
                     html = result.value
                     
-                # Add basic styling to make it look like a document
+                # Add styling ensuring compatibility with WeasyPrint
                 styled_html = f"""
                 <html>
-                <head><style>body {{ font-family: Arial; padding: 40px; }}</style></head>
+                <head>
+                    <style>
+                        @page {{ margin: 2cm; size: A4; }}
+                        body {{ font-family: sans-serif; line-height: 1.5; }}
+                        table {{ border-collapse: collapse; width: 100%; }}
+                        td, th {{ border: 1px solid #ddd; padding: 8px; }}
+                    </style>
+                </head>
                 <body>{html}</body>
                 </html>
                 """
                 
-                pdfkit.from_string(styled_html, str(output_path), options={'quiet': ''})
+                HTML(string=styled_html).write_pdf(str(output_path))
                 
             elif output_format == "html":
                 import mammoth
@@ -138,7 +145,7 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         # TEXT TO PDF
         # ==========================================
         elif input_ext in ["txt", "md"] and output_format == "pdf":
-            import pdfkit
+            from weasyprint import HTML
             import markdown
             
             text_content = input_path.read_text(encoding="utf-8")
@@ -146,16 +153,23 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             if input_ext == "md":
                 html_body = markdown.markdown(text_content)
             else:
-                # Text to simple HTML
-                html_body = f"<pre>{text_content}</pre>"
+                # Text to simple HTML with line breaks
+                import html
+                escaped = html.escape(text_content)
+                html_body = f"<pre style='white-space: pre-wrap;'>{escaped}</pre>"
             
             html_doc = f"""
             <html>
-            <head><style>body {{ font-family: Arial; padding: 40px; }}</style></head>
+            <head>
+                <style>
+                    @page {{ margin: 2cm; size: A4; }}
+                    body {{ font-family: monospace; font-size: 12px; }}
+                </style>
+            </head>
             <body>{html_body}</body>
             </html>
             """
-            pdfkit.from_string(html_doc, str(output_path), options={'quiet': ''})
+            HTML(string=html_doc).write_pdf(str(output_path))
 
         # ==========================================
         # PDF TO TEXT
