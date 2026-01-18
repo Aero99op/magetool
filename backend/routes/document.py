@@ -45,47 +45,134 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         update_task(task_id, progress_percent=30)
         
         # Handle different conversion types
-        if input_ext == "json" and output_format == "csv":
-            # JSON to CSV
-            with open(input_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+        # ==========================================
+        # DATA FORMATS (CSV, JSON, XML, XLSX)
+        # ==========================================
+        if input_ext in ["json", "csv", "xml", "xlsx", "xls"] and output_format in ["json", "csv", "xml", "xlsx"]:
+            import pandas as pd
             
-            if isinstance(data, list) and len(data) > 0:
-                fieldnames = list(data[0].keys()) if isinstance(data[0], dict) else ["value"]
-                with open(output_path, "w", newline="", encoding="utf-8") as f:
-                    writer = csv.DictWriter(f, fieldnames=fieldnames)
-                    writer.writeheader()
-                    for row in data:
-                        if isinstance(row, dict):
-                            writer.writerow(row)
-                        else:
-                            writer.writerow({"value": row})
+            # Read Input
+            df = None
+            if input_ext == "json":
+                df = pd.read_json(input_path)
+            elif input_ext == "csv":
+                df = pd.read_csv(input_path)
+            elif input_ext in ["xlsx", "xls"]:
+                df = pd.read_excel(input_path)
+            elif input_ext == "xml":
+                try:
+                    df = pd.read_xml(input_path)
+                except ValueError:
+                    # Fallback for complex XML
+                    import xmltodict
+                    with open(input_path) as f:
+                        doc = xmltodict.parse(f.read())
+                    # Flatten simplisticly or take first root
+                    root_key = list(doc.keys())[0]
+                    df = pd.DataFrame(doc[root_key])
+            
+            if df is None:
+                raise ValueError(f"Could not read input file: {input_ext}")
+
+            # Write Output
+            if output_format == "csv":
+                df.to_csv(output_path, index=False)
+            elif output_format == "json":
+                df.to_json(output_path, orient="records", indent=2)
+            elif output_format == "xlsx":
+                df.to_excel(output_path, index=False)
+            elif output_format == "xml":
+                df.to_xml(output_path, index=False)
+
+        # ==========================================
+        # PDF TO DOCX
+        # ==========================================
+        elif input_ext == "pdf" and output_format == "docx":
+            try:
+                from pdf2docx import Converter
+            except ImportError:
+                raise Exception("pdf2docx not installed")
+            
+            cv = Converter(str(input_path))
+            cv.convert(str(output_path), start=0, end=None)
+            cv.close()
+
+        # ==========================================
+        # DOCX CONVERSIONS
+        # ==========================================
+        elif input_ext == "docx":
+            if output_format == "pdf":
+                # DOCX -> HTML -> PDF for better fidelity on Linux
+                import mammoth
+                import pdfkit
+                
+                with open(input_path, "rb") as docx_file:
+                    result = mammoth.convert_to_html(docx_file)
+                    html = result.value
+                    
+                # Add basic styling to make it look like a document
+                styled_html = f"""
+                <html>
+                <head><style>body {{ font-family: Arial; padding: 40px; }}</style></head>
+                <body>{html}</body>
+                </html>
+                """
+                
+                pdfkit.from_string(styled_html, str(output_path), options={'quiet': ''})
+                
+            elif output_format == "html":
+                import mammoth
+                with open(input_path, "rb") as docx_file:
+                    result = mammoth.convert_to_html(docx_file)
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(result.value)
+                        
+            elif output_format == "txt":
+                import mammoth
+                with open(input_path, "rb") as docx_file:
+                    result = mammoth.extract_raw_text(docx_file)
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(result.value)
+
+        # ==========================================
+        # TEXT TO PDF
+        # ==========================================
+        elif input_ext in ["txt", "md"] and output_format == "pdf":
+            import pdfkit
+            import markdown
+            
+            text_content = input_path.read_text(encoding="utf-8")
+            
+            if input_ext == "md":
+                html_body = markdown.markdown(text_content)
             else:
-                output_path.write_text("No data to convert")
-                
-        elif input_ext == "csv" and output_format == "json":
-            # CSV to JSON
-            with open(input_path, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                data = list(reader)
+                # Text to simple HTML
+                html_body = f"<pre>{text_content}</pre>"
             
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-                
-        elif input_ext == "txt" and output_format == "json":
-            # TXT to JSON (line by line)
-            with open(input_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            
-            data = [{"line": i+1, "text": line.strip()} for i, line in enumerate(lines)]
-            
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-                
+            html_doc = f"""
+            <html>
+            <head><style>body {{ font-family: Arial; padding: 40px; }}</style></head>
+            <body>{html_body}</body>
+            </html>
+            """
+            pdfkit.from_string(html_doc, str(output_path), options={'quiet': ''})
+
+        # ==========================================
+        # PDF TO TEXT
+        # ==========================================
+        elif input_ext == "pdf" and output_format == "txt":
+            from PyPDF2 import PdfReader
+            reader = PdfReader(str(input_path))
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+            output_path.write_text(text, encoding="utf-8")
+
         else:
-            # Generic copy (for unsupported conversions)
+            # Fallback for direct copies or unhandled pairs
             import shutil
             shutil.copy(input_path, output_path)
+
         
         update_task(task_id, progress_percent=90)
         

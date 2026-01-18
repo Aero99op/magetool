@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     imagemagick \
     tesseract-ocr \
     libmagic1 \
+    wkhtmltopdf \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
