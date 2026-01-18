@@ -32,7 +32,8 @@ class Settings(BaseSettings):
         "https://clever-dango-6377a7.netlify.app",  # Netlify
         "https://magetool-api.onrender.com",        # Self (Render)
         "https://magetool-new.pages.dev",           # Cloudflare Pages
-        "https://magetool.pages.dev",               # Cloudflare Pages (alt)
+        "https://magetool.pages.dev",
+               # Cloudflare Pages (main)
     ]
     
     # File Upload Limits (in MB)

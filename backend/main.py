@@ -143,8 +143,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # ==========================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.pages\.dev|https://.*\.netlify\.app|https://.*\.vercel\.app",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
