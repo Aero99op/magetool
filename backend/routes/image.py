@@ -1760,49 +1760,95 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
             output_path = get_output_path(task_id, ext)
             
             if mode == "quality":
-                # Quality-based compression (for JPG/WebP)
+                # Smart Size Adjustment logic (Quality + Resize + Padding)
+                # This mode now handles both reduction and "expansion" (via padding) to hit target exactly
+                
+                # Ensure we work with efficient formats for size tuning
                 if ext not in ["jpg", "jpeg", "webp"]:
-                    # Convert to JPG for quality compression
                     if img.mode in ["RGBA", "P"]:
                         img = img.convert("RGB")
                     ext = "jpg"
                     output_path = get_output_path(task_id, ext)
                 
-                # Binary search for optimal quality
-                quality = 95
-                best_quality = quality
-                best_buffer = io.BytesIO()
+                save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
                 
-                for step in [30, 15, 7, 3, 1]:
-                    while quality > 5:
-                        buffer = io.BytesIO()
-                        save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
-                        img.save(buffer, format=save_format, quality=quality)
-                        current_size = buffer.tell()
-                        
-                        if current_size <= target_size:
-                            best_quality = quality
-                            best_buffer = buffer
-                            break
-                        quality -= step
+                # 1. Try Highest Quality first
+                # Check if file fits target even at max quality (or if we need to pad)
+                buffer = io.BytesIO()
+                # For expansion requests, we want max quality
+                img.save(buffer, format=save_format, quality=95, optimize=True)
+                size_at_max = buffer.tell()
+                
+                best_buffer = None
+                
+                if size_at_max <= target_size:
+                    # Fits easily! We can use this base and pad.
+                    best_buffer = buffer
+                else:
+                    # Max quality is too big, need to compress
                     
-                    if best_buffer.tell() > 0:
-                        break
+                    # 2. Binary Search for optimal quality (1-95)
+                    low = 1
+                    high = 95
+                    
+                    while low <= high:
+                        mid = (low + high) // 2
+                        buffer = io.BytesIO()
+                        img.save(buffer, format=save_format, quality=mid, optimize=True)
+                        size = buffer.tell()
+                        
+                        if size <= target_size:
+                            best_buffer = buffer
+                            low = mid + 1 # Try to squeeze more quality
+                        else:
+                            high = mid - 1 # Needs more compression
+                    
+                    # 3. Resizing Fallback
+                    # If even quality=1 is too big, or binary search failed
+                    if best_buffer is None:
+                        w, h = img.size
+                        fallback_quality = 75
+                        
+                        while True:
+                            # Reduce dimensions by 5% iteratively for finer control
+                            w = int(w * 0.95)
+                            h = int(h * 0.95)
+                            
+                            if w < 10 or h < 10:
+                                # Last resort: tiny image
+                                buffer = io.BytesIO()
+                                img.save(buffer, format=save_format, quality=1)
+                                best_buffer = buffer
+                                break
+                            
+                            resized = img.resize((w, h), Image.Resampling.LANCZOS)
+                            buffer = io.BytesIO()
+                            resized.save(buffer, format=save_format, quality=fallback_quality, optimize=True)
+                            
+                            if buffer.tell() <= target_size:
+                                best_buffer = buffer
+                                break
                 
                 update_task(task_id, progress_percent=70)
                 
-                # Save best result
-                if best_buffer.tell() > 0:
-                    best_buffer.seek(0)
-                    with open(output_path, "wb") as f:
-                        f.write(best_buffer.read())
-                else:
-                    # Couldn't reach target, save with minimum quality
-                    save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
-                    img.save(output_path, format=save_format, quality=5)
-                    
+                # 4. Precise Padding
+                # Now we have a buffer <= target_size. 
+                # We append null bytes to reach exactly the target size (or very close).
+                if best_buffer:
+                    current_size = best_buffer.tell()
+                    if current_size < target_size:
+                        padding_needed = target_size - current_size
+                        # Append null bytes to the end of format (safe for JPG/PNG/WEBP usually)
+                        best_buffer.seek(0, 2) # Seek to end
+                        best_buffer.write(b'\0' * padding_needed)
+                
+                # Save result
+                best_buffer.seek(0)
+                with open(output_path, "wb") as f:
+                    f.write(best_buffer.read())
+
             elif mode == "resolution":
-                # Resolution reduction mode
+                # Resolution reduction mode (Legacy/Manual)
                 original_size = input_path.stat().st_size
                 if original_size <= target_size:
                     # Already smaller, just copy
@@ -1825,7 +1871,7 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                     resized.save(output_path, **save_options)
                     
             elif mode == "padding":
-                # Add padding to increase file size
+                # Explicit Padding mode
                 original_size = input_path.stat().st_size
                 
                 # Save the original image first
@@ -1835,9 +1881,8 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                 current_size = output_path.stat().st_size
                 if current_size < target_size:
                     padding_needed = target_size - current_size
-                    # Append null bytes (works for most formats)
                     with open(output_path, "ab") as f:
-                        f.write(b'\x00' * padding_needed)
+                        f.write(b'\0' * padding_needed)
             
             update_task(task_id, progress_percent=90)
             

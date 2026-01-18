@@ -202,12 +202,12 @@ export default function ImageSizeAdjusterPage() {
                                     }}
                                 >
                                     <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-                                        {m === 'quality' && '🎨 Quality Reduction'}
+                                        {m === 'quality' && '✨ Smart Fit (Recommended)'}
                                         {m === 'resolution' && '📐 Resolution Reduction'}
                                         {m === 'padding' && '⬆️ Padding (Increase Size)'}
                                     </div>
                                     <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>
-                                        {m === 'quality' && 'Adjust JPEG/WebP quality to reach target'}
+                                        {m === 'quality' && 'Smartly adjusts quality & padding to hit EXACT target size'}
                                         {m === 'resolution' && 'Scale down dimensions proportionally'}
                                         {m === 'padding' && 'Add bytes to increase file size'}
                                     </div>
