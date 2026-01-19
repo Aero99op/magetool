@@ -1,0 +1,21 @@
+# Backend dependencies
+backend/venv/
+backend/__pycache__/
+backend/temp/*
+*.pyc
+
+# Frontend dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+
+# Version Control & Editors
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Logs
+*.log
