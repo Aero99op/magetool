@@ -16,6 +16,11 @@ pydantic-settings>=2.1.0
 setuptools<70.0.0
 wheel
 
+# Force CPU-only versions for Weight Reduction (Zeabur/Free Tier)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+
 # ==========================================
 # HTTP & ASYNC
 # ==========================================

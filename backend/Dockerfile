@@ -26,11 +26,14 @@ WORKDIR /app
 RUN useradd --create-home --shell /bin/bash appuser
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Using wildcards to avoid failure if context is different
+COPY requirements*.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
+# Final check to move files if they were copied into a nested backend/ folder
+RUN if [ -d "backend" ]; then cp -rn backend/* . && rm -rf backend; fi
 
 # Create temp directory
 RUN mkdir -p /app/temp && chown -R appuser:appuser /app
