@@ -26,9 +26,10 @@ WORKDIR /app
 RUN useradd --create-home --shell /bin/bash appuser
 
 # Copy requirements and install Python dependencies
-# Using wildcards to avoid failure if context is different
-COPY requirements*.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements (Universal Copy Trick)
+# Handles both "root context" (backend/requirements.txt) and "backend context" (./requirements.txt)
+COPY requirements.tx[t] backend/requirements.tx[t] ./
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else echo "requirements.txt not found, checking subfolder" && mv backend/requirements.txt . && pip install --no-cache-dir -r requirements.txt; fi || pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
