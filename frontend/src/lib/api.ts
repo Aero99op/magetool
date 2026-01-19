@@ -8,6 +8,7 @@ import axios, { AxiosError, AxiosProgressEvent } from 'axios';
 const API_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',    // Server 1: Render (750 hrs/month)
     process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',        // Server 2: Zeabur ($5/month credit)
+    process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
 ].filter(url => url && url !== 'undefined');
 
 // Load balancer state (persisted in sessionStorage for consistency during session)
