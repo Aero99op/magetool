@@ -1036,3 +1036,151 @@ register_processor("pdf_compress", process_pdf_compress)
 register_processor("pdf_protect", process_pdf_protect)
 register_processor("pdf_unlock", process_pdf_unlock)
 # Note: to_image, data_convert, size_adjust still use inline functions
+
+
+# ============================================================================
+# IMAGE TO PDF WITH QUALITY OPTIONS
+# ============================================================================
+
+def process_pdf_from_images(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Create PDF from images with quality options"""
+    try:
+        input_paths = [Path(p) for p in params.get("input_paths", [])]
+        quality = params.get("quality", "medium")  # low, medium, high
+        
+        if not input_paths:
+            raise ValueError("No input images provided")
+        
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        from PIL import Image
+        import io
+        
+        # Quality settings
+        quality_map = {
+            "low": {"max_size": 1000, "jpg_quality": 50},
+            "medium": {"max_size": 2000, "jpg_quality": 75},
+            "high": {"max_size": None, "jpg_quality": 95},
+        }
+        
+        settings = quality_map.get(quality, quality_map["medium"])
+        max_size = settings["max_size"]
+        jpg_quality = settings["jpg_quality"]
+        
+        pdf_images = []
+        
+        total_images = len(input_paths)
+        
+        for i, img_path in enumerate(input_paths):
+            try:
+                with Image.open(img_path) as img:
+                    # Convert to RGB (PDF doesn't like RGBA usually, or for consistency)
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
+                    
+                    # Resize if needed
+                    if max_size:
+                        width, height = img.size
+                        if width > max_size or height > max_size:
+                            ratio = min(max_size / width, max_size / height)
+                            new_size = (int(width * ratio), int(height * ratio))
+                            img = img.resize(new_size, Image.Resampling.LANCZOS)
+                    
+                    # Compress in memory
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG", quality=jpg_quality)
+                    buffer.seek(0)
+                    
+                    # Re-open optimized image
+                    optimized_img = Image.open(buffer)
+                    # Load data to keep it in memory
+                    optimized_img.load()
+                    pdf_images.append(optimized_img)
+            
+            except Exception as e:
+                logger.warning(f"Failed to process image {img_path}: {e}")
+            
+            # Update progress
+            progress = 10 + int((i + 1) / total_images * 60)
+            update_task(task_id, progress_percent=progress)
+        
+        update_task(task_id, progress_percent=80)
+        
+        if not pdf_images:
+            raise Exception("No valid images to convert")
+        
+        output_path = get_output_path(task_id, "pdf")
+        
+        # Save first image as PDF and append others
+        pdf_images[0].save(
+            output_path,
+            "PDF",
+            resolution=100.0,
+            save_all=True,
+            append_images=pdf_images[1:]
+        )
+        
+        update_task(task_id, progress_percent=90)
+        
+        output_filename = "images_combined.pdf"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"Image to PDF complete: {task_id} (Quality: {quality})")
+        
+    except Exception as e:
+        logger.error(f"Image to PDF failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+@router.post("/pdf/create")
+async def create_pdf_from_images(
+    files: List[UploadFile] = File(...),
+    quality: str = Form(default="medium"),
+):
+    """Create PDF from uploaded images with quality control"""
+    if len(files) == 0:
+        raise HTTPException(status_code=400, detail="No files provided")
+    
+    if len(files) > 50:
+         raise HTTPException(status_code=400, detail="Maximum 50 files allowed")
+         
+    if quality not in ["low", "medium", "high"]:
+        quality = "medium"
+    
+    task_id = create_task("images_to_pdf", "pdf_from_images")
+    
+    # Save all files
+    input_paths = []
+    for i, file in enumerate(files):
+        ext = Path(file.filename).suffix.lstrip(".") or "jpg"
+        input_path = get_input_path(f"{task_id}_{i}", ext)
+        await save_upload_file(file, input_path)
+        input_paths.append(str(input_path))
+    
+    # Use first file as primary input_path
+    primary_input_path = Path(input_paths[0])
+    
+    update_task(
+        task_id,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=primary_input_path,
+        params={
+            "input_paths": input_paths,
+            "quality": quality,
+        }
+    )
+    
+    return {"task_id": task_id, "message": "Files uploaded successfully"}
+
+
+# Register processor
+register_processor("pdf_from_images", process_pdf_from_images)

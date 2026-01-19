@@ -27,6 +27,7 @@ export default function ImagesToPdfPage() {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [pageSize, setPageSize] = useState('A4');
     const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+    const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('medium');
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [downloadUrl, setDownloadUrl] = useState('');
@@ -78,7 +79,7 @@ export default function ImagesToPdfPage() {
 
             const response = await imageApi.imagesToPdf(files, pageSize, orientation, (e) => {
                 if (e.total) setProgress(Math.round((e.loaded / e.total) * 50));
-            });
+            }, quality);
 
             setProgress(50);
             await startProcessing(response.task_id);
@@ -304,6 +305,44 @@ export default function ImagesToPdfPage() {
                         </div>
                     </div>
 
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            Quality
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                            {(['low', 'medium', 'high'] as const).map(q => (
+                                <button
+                                    key={q}
+                                    onClick={() => setQuality(q)}
+                                    style={{
+                                        padding: '12px',
+                                        background: quality === q ? 'rgba(0, 217, 255, 0.15)' : 'rgba(255,255,255,0.03)',
+                                        border: `1px solid ${quality === q ? 'var(--neon-blue)' : 'var(--glass-border)'}`,
+                                        borderRadius: '8px',
+                                        color: quality === q ? 'var(--neon-blue)' : 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        textTransform: 'capitalize'
+                                    }}
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{
+                            marginTop: '8px',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                            background: 'rgba(255,255,255,0.02)',
+                            padding: '8px',
+                            borderRadius: '6px'
+                        }}>
+                            {quality === 'low' && 'Smaller file size, lower resolution (ideal for sharing)'}
+                            {quality === 'medium' && 'Balanced quality and size (recommended)'}
+                            {quality === 'high' && 'Original resolution, larger file size (print quality)'}
+                        </div>
+                    </div>
+
                     {error && (
                         <div style={{
                             padding: '12px',
@@ -387,6 +426,6 @@ export default function ImagesToPdfPage() {
                     }
                 }
             `}</style>
-        </div>
+        </div >
     );
 }

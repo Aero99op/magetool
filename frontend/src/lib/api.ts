@@ -498,8 +498,8 @@ export const imageApi = {
     adjustSize: (file: File, targetSize: number, mode: string, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/image/adjust-size', file, { target_size: targetSize, mode }, onProgress, 'image'),
 
-    imagesToPdf: (files: File[], pageSize: string, orientation: string, onProgress?: (e: AxiosProgressEvent) => void) =>
-        uploadFiles('/api/image/images-to-pdf', files, { page_size: pageSize, orientation }, onProgress, 'image'),
+    imagesToPdf: (files: File[], pageSize: string, orientation: string, onProgress?: (e: AxiosProgressEvent) => void, quality: string = 'medium') =>
+        uploadFiles('/api/pdf/create', files, { page_size: pageSize, orientation, quality }, onProgress, 'image'),
 };
 
 // ==========================================
