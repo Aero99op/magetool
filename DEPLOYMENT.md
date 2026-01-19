@@ -214,19 +214,35 @@ CORS_ORIGINS = ["https://magetool-one.vercel.app"]
 | HF 502 error | Ensure Dockerfile uses port 7860 |
 | Render cold starts | Upgrade tier or add keep-alive ping |
 
-## ⚡ Zero-Cost "Unlimited" Hosting (Gareeb Pro Max Tips)
+### ⚡ Zero-Cost "Unlimited" Hosting (Gareeb Pro Max Tips)
 
-Render and Zeabur have a **750-hour/month** limit. If you keep them awake 24/7, your quota will end before the month does. To save every single minute, follow this:
+Since Render and Zeabur have a 750-hour monthly limit, your credits will never finish if you follow this strategy:
 
-### 🏆 Primary Choice: Hugging Face Spaces
-**Why?** HF Spaces don't have a "750-hour" monthly meter. They just run for free. 
-- They sleep after inactivity, but waking them up costs **nothing** from your quota.
-- Update your Frontend `NEXT_PUBLIC_API_URL` to your Hugging Face Space URL.
+1.  **Primary: Hugging Face Spaces** (Docker)
+    *   **Pros**: 100% Free, no hourly limit, reliable.
+    *   **Cons**: Might sleep, but wakes up on visitor arrival.
+2.  **Secondary: Koyeb (Nano Instance)**
+    *   **Pros**: Very fast, free tier available.
+    *   **Setup**: Deploy as Docker or Web Service.
+3.  **Third: Northflank**
+    *   **Pros**: Excellent UI, generous free tier.
+4.  **The "Lazy Waking" Strategy**:
+    *   We added the `ServerStatus` component in the frontend.
+    *   Let Render/Zeabur/Koyeb go to sleep!
+    *   Don't use GitHub Actions for pings.
+    *   When a user visits, the frontend pings them all, and whichever wakes up first handles the request.
 
-### 🕒 Secondary Choice: Render/Zeabur (On-Demand)
-Use these only as backups. Don't ping them. Let them sleep. 
-- When a user hits the site, the first request will take 30-50s to wake up.
-- This way, you **only** spend hours when an actual user is using the tool.
+---
+
+### 🌐 Ultimate Free Backend Tier List
+
+| Provider | Memory | Strategy | Gareeb Rating | 
+| :--- | :--- | :--- | :--- |
+| **Hugging Face** | 16GB | Docker Space | ⭐⭐⭐⭐⭐ (King) |
+| **Koyeb** | 512MB | Nano Instance | ⭐⭐⭐⭐ (Fast) |
+| **Zeabur** | 512MB | Monthly $5 Credit | ⭐⭐⭐⭐ (Reliable) |
+| **Render** | 512MB | Free Instance | ⭐⭐⭐ (Good Backup) |
+| **Oracle Cloud** | 24GB | ARM Instance | ⭐⭐⭐⭐⭐ (Always Free - Hard to setup) |
 
 ---
 
