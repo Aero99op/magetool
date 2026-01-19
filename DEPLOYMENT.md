@@ -213,3 +213,27 @@ CORS_ORIGINS = ["https://magetool-one.vercel.app"]
 | Build fails | Check logs on respective platform |
 | HF 502 error | Ensure Dockerfile uses port 7860 |
 | Render cold starts | Upgrade tier or add keep-alive ping |
+
+## ⚡ Zero-Cost "Unlimited" Hosting (Gareeb Pro Max Tips)
+
+Render and Zeabur have a **750-hour/month** limit. If you keep them awake 24/7, your quota will end before the month does. To save every single minute, follow this:
+
+### 🏆 Primary Choice: Hugging Face Spaces
+**Why?** HF Spaces don't have a "750-hour" monthly meter. They just run for free. 
+- They sleep after inactivity, but waking them up costs **nothing** from your quota.
+- Update your Frontend `NEXT_PUBLIC_API_URL` to your Hugging Face Space URL.
+
+### 🕒 Secondary Choice: Render/Zeabur (On-Demand)
+Use these only as backups. Don't ping them. Let them sleep. 
+- When a user hits the site, the first request will take 30-50s to wake up.
+- This way, you **only** spend hours when an actual user is using the tool.
+
+---
+
+## 🛠️ Performance Optimization
+
+If your server is sleeping, the first user will find it slow. Instead of a background ping, we use **Lazy Waking**:
+1. When the user lands on the Landing Page, the frontend sends a *single* small request.
+2. By the time the user selects their file and settings, the server is already warm.
+3. This saves hours because if no one visits the site, the server stays dead.
+
