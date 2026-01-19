@@ -25,9 +25,12 @@ WORKDIR /app
 # Create non-root user (required for HF Spaces)
 RUN useradd --create-home --shell /bin/bash appuser
 
-# Copy requirements (Universal Copy Trick)
-COPY requirements.tx[t] backend/requirements.tx[t] ./
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else mv backend/requirements.txt . && pip install --no-cache-dir -r requirements.txt; fi
+# Copy requirements - handling both context scenarios safely
+COPY requirements.txt ./
+COPY backend/requirements.tx* ./
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .

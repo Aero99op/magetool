@@ -1,3 +1,22 @@
+FROM python:3.11-slim as preparer
+
+# This stage is responsible for finding requirements.txt
+# regardless of the build context (root vs backend directory)
+WORKDIR /preparer
+COPY . .
+
+# Logic to find requirements.txt
+# 1. If in root of context (standard for backend context), use it.
+# 2. If in backend/ subdirectory (standard for root context), use it.
+# 3. Create empty if not found to prevent build failure (though it should exist).
+RUN if [ -f "requirements.txt" ]; then \
+    cp requirements.txt /requirements.txt; \
+    elif [ -f "backend/requirements.txt" ]; then \
+    cp backend/requirements.txt /requirements.txt; \
+    else \
+    echo "No requirements.txt found!" && exit 1; \
+    fi
+
 FROM python:3.11-slim
 
 # Set environment variables
@@ -25,15 +44,18 @@ WORKDIR /app
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser
 
-# Copy requirements and install Python dependencies
-# Copy requirements (Universal Copy Trick)
-# Handles both "root context" (backend/requirements.txt) and "backend context" (./requirements.txt)
-COPY requirements.tx[t] backend/requirements.tx[t] ./
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else echo "requirements.txt not found, checking subfolder" && mv backend/requirements.txt . && pip install --no-cache-dir -r requirements.txt; fi || pip install --no-cache-dir -r requirements.txt
+# Copy requirements from preparer stage
+COPY --from=preparer /requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
+# We copy everything, then fix directory structure if needed
 COPY . .
-# Final check to move files if they were copied into a nested backend/ folder
+
+# Fix for nested backend folder structure when building from root context
+# If 'backend' directory exists, move its contents to root of /app
 RUN if [ -d "backend" ]; then cp -rn backend/* . && rm -rf backend; fi
 
 # Create temp directory
