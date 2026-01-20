@@ -1,0 +1,52 @@
+name: Sync Backend to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**' # Only runs when backend files change
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Prepare Backend Deployment
+        run: |
+          echo "Preparing backend files for Hugging Face..."
+          
+          # Create a clean deployment directory
+          mkdir hf_deploy
+          
+          # Copy only backend contents to the root of deployment dir
+          cp -r backend/* hf_deploy/
+          
+          # Rename Dockerfile.hf to Dockerfile (Critical for HF)
+          mv hf_deploy/Dockerfile.hf hf_deploy/Dockerfile
+          
+          echo "Files prepared. Initializing git..."
+          
+          cd hf_deploy
+          git init
+          git config user.email "bot@magetool.com"
+          git config user.name "Magetool Bot"
+          
+          # Add all files
+          git add .
+          git commit -m "Deploying backend update from GitHub: ${{ github.sha }}"
+          
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # CHANGE THIS if your space name is different
+          HF_SPACE_NAME: Spandan1234/magetool-backend-api
+        run: |
+          echo "Pushing to Hugging Face Space: $HF_SPACE_NAME"
+          cd hf_deploy
+          # Force push to overwrite the space with the new backend state
+          git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME main

@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     AI_SERVICE_URL: str | None = None
     AI_SERVICE_KEY: str | None = None
     
+    # Keep-Alive Bot (for Northflank unlimited hours)
+    ENABLE_KEEP_ALIVE: bool = False
+    KEEP_ALIVE_URL: str | None = None
+    KEEP_ALIVE_INTERVAL: int = 14  # minutes (Render sleeps after 15, verify for others)
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

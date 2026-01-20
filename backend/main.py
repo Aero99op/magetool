@@ -79,6 +79,30 @@ async def cleanup_old_files():
             logger.error(f"Cleanup task error: {e}")
 
 
+# Background Keep-Alive Task (Self-Pinging Bot)
+async def keep_alive_ping():
+    """Periodically ping self to prevent sleeping"""
+    if not settings.ENABLE_KEEP_ALIVE or not settings.KEEP_ALIVE_URL:
+        return
+
+    logger.info(f"🤖 Keep-Alive Bot Started! Pinging {settings.KEEP_ALIVE_URL} every {settings.KEEP_ALIVE_INTERVAL} mins")
+    
+    import httpx
+    
+    while True:
+        try:
+            # Sleep first (don't ping immediately on startup)
+            await asyncio.sleep(settings.KEEP_ALIVE_INTERVAL * 60)
+            
+            async with httpx.AsyncClient() as client:
+                logger.info("🤖 Keep-Alive Bot: Pinging self...")
+                response = await client.get(f"{settings.KEEP_ALIVE_URL}/health/live", timeout=10)
+                logger.info(f"🤖 Keep-Alive Bot: Ping status {response.status_code}")
+                
+        except Exception as e:
+            logger.warning(f"🤖 Keep-Alive Bot Error: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
@@ -93,6 +117,9 @@ async def lifespan(app: FastAPI):
     
     # Start background cleanup task
     cleanup_task = asyncio.create_task(cleanup_old_files())
+    
+    # Start Keep-Alive Bot (if enabled)
+    keep_alive_task = asyncio.create_task(keep_alive_ping())
     
     # Initialize Sentry if configured
     if settings.SENTRY_DSN:
@@ -115,8 +142,10 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     cleanup_task.cancel()
+    keep_alive_task.cancel()
     try:
         await cleanup_task
+        await keep_alive_task
     except asyncio.CancelledError:
         pass
     logger.info("👋 Magetool Backend shutdown complete")

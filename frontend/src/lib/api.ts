@@ -14,12 +14,12 @@ const API_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',               // Server 2: Zeabur ($5/month credit)
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
     process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
-].filter(url => url && url !== 'undefined' && !url.includes('example.com'));
+].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
 
 // Load balancer state
 let serverIndex = 0;
 const SERVER_HEALTH: Record<string, boolean> = {};
-const HEALTH_CHECK_TIMEOUT = 20000; // 20 seconds timeout for health check (allows waking up)
+const HEALTH_CHECK_TIMEOUT = 60000; // 60 seconds timeout for health check (allows waking up deep sleepers)
 let lastUsedServerUrl: string = API_SERVERS[0];
 
 /**
@@ -59,13 +59,19 @@ async function checkServerHealth(url: string): Promise<boolean> {
     }
 }
 
-// Initial Health Check (Fire and forget, but update state)
-(async () => {
-    console.log('[LoadBalancer] Starting initial health checks...');
+/**
+ * Trigger a wake-up call to all servers
+ * Useful for "lazy waking" when user lands on the site
+ */
+export const wakeUpServers = async () => {
+    console.log('[LoadBalancer] Waking up all servers...');
     const checks = API_SERVERS.map(server => checkServerHealth(server));
     await Promise.allSettled(checks);
-    console.log('[LoadBalancer] Health checks complete:', SERVER_HEALTH);
-})();
+    console.log('[LoadBalancer] Wake-up complete:', SERVER_HEALTH);
+};
+
+// Initial Health Check (Fire and forget)
+wakeUpServers();
 
 /**
  * Get the next healthy server using TRUE Round-Robin
@@ -455,7 +461,7 @@ export const uploadFiles = async (
 // Check task status (uses server affinity)
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const serverUrl = getServerForTask(taskId);
-    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 30000 });
+    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 60000 });
     return response.data;
 };
 
@@ -463,7 +469,7 @@ export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
 export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
     const serverUrl = getServerForTask(taskId);
     try {
-        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 30000 });
+        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 60000 });
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {

@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Image, Video, Music, FileText, ArrowRight } from 'lucide-react';
 import AdSlot from '@/components/AdSlot';
+import { wakeUpServers } from '@/lib/api';
 
 const categories = [
     {
@@ -41,6 +43,11 @@ const categories = [
 ];
 
 export default function HomePage() {
+    // Lazy Wake Strategy: Wake up servers when user lands on home page
+    useEffect(() => {
+        wakeUpServers();
+    }, []);
+
     return (
         <div className="container">
             {/* Hero Section */}
