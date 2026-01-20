@@ -13,13 +13,13 @@ const API_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',           // Server 1: Render (750 hrs/month)
     process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',               // Server 2: Zeabur ($5/month credit)
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
-    // process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
+    process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
 ].filter(url => url && url !== 'undefined' && !url.includes('example.com'));
 
 // Load balancer state
 let serverIndex = 0;
 const SERVER_HEALTH: Record<string, boolean> = {};
-const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds timeout for health check
+const HEALTH_CHECK_TIMEOUT = 20000; // 20 seconds timeout for health check (allows waking up)
 let lastUsedServerUrl: string = API_SERVERS[0];
 
 /**
@@ -68,40 +68,32 @@ async function checkServerHealth(url: string): Promise<boolean> {
 })();
 
 /**
- * Get the next healthy server using PRIORITIZED Round-Robin
- * Priority: Render/Northflank (Primary) > Zeabur (Backup)
+ * Get the next healthy server using TRUE Round-Robin
+ * All servers are treated equally.
  */
 function getNextServer(): string {
-    const servers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
+    // 1. Get all healthy servers
+    const healthyServers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    // Split into Primary and Backup
-    const primaryServers = servers.filter(s =>
-        s.includes('onrender.com') || s.includes('code.run')
-    );
-    // Zeabur is treated as backup (less important)
-    const backupServers = servers.filter(s =>
-        s.includes('zeabur.app')
-    );
-
-    // 1. Prefer Primary Servers (Round Robin)
-    if (primaryServers.length > 0) {
-        const server = primaryServers[serverIndex % primaryServers.length];
-        serverIndex = (serverIndex + 1) % primaryServers.length;
+    // 2. If we have healthy servers, rotate through them
+    if (healthyServers.length > 0) {
+        const server = healthyServers[serverIndex % healthyServers.length];
+        serverIndex = (serverIndex + 1) % healthyServers.length;
         lastUsedServerUrl = server;
         return server;
     }
 
-    // 2. Fallback to Backup Server (if Primaries are down)
-    if (backupServers.length > 0) {
-        console.warn('[LoadBalancer] Primary servers busy/down. Using Backup (Zeabur).');
-        lastUsedServerUrl = backupServers[0];
-        return backupServers[0];
-    }
+    // 3. Fallback: If ALL are marked unhealthy, try them all (rotate through the main list)
+    // This allows us to keep trying even if health checks failed previously
+    console.warn('[LoadBalancer] All servers marked unhealthy! Using fallback rotation.');
+    const server = API_SERVERS[serverIndex % API_SERVERS.length];
+    serverIndex = (serverIndex + 1) % API_SERVERS.length;
 
-    // 3. Absolute Fallback (If everything is marked unhealthy)
-    console.warn('[LoadBalancer] All servers marked unhealthy! Using default fallback.');
-    API_SERVERS.forEach(s => checkServerHealth(s)); // Trigger background re-check
-    return API_SERVERS[0];
+    // Trigger a background health check to refresh status
+    API_SERVERS.forEach(s => checkServerHealth(s));
+
+    lastUsedServerUrl = server;
+    return server;
 }
 
 /**
