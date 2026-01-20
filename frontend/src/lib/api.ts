@@ -5,38 +5,102 @@ import axios, { AxiosError, AxiosProgressEvent } from 'axios';
 // Alternates between Render and Zeabur to maximize free tier usage
 // ==========================================
 
+// ==========================================
+// LOAD BALANCER: Smart Round-Robin (Health Aware)
+// ==========================================
+
 const API_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',           // Server 1: Render (750 hrs/month)
     process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',               // Server 2: Zeabur ($5/month credit)
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
-    process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
-].filter(url => url && url !== 'undefined');
+    // process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
+].filter(url => url && url !== 'undefined' && !url.includes('example.com'));
 
-// Load balancer state (persisted in sessionStorage for consistency during session)
+// Load balancer state
 let serverIndex = 0;
 const SERVER_HEALTH: Record<string, boolean> = {};
-
-// Initialize all servers as healthy
-API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds timeout for health check
+let lastUsedServerUrl: string = API_SERVERS[0];
 
 /**
- * Get the next healthy server using round-robin
+ * Get a friendly name for a server URL
+ */
+export function getServerName(url: string): string {
+    if (!url) return 'Unknown';
+    if (url.includes('onrender.com')) return 'Render';
+    if (url.includes('code.run')) return 'Northflank';
+    if (url.includes('zeabur.app')) return 'Zeabur';
+    if (url.includes('hf.space')) return 'Hugging Face';
+    if (url.includes('localhost')) return 'Localhost';
+    return 'Cloud';
+}
+
+/**
+ * Get the name of the last successfully used server
+ */
+export function getLastUsedServerName(): string {
+    return getServerName(lastUsedServerUrl);
+}
+
+// Initialize all servers as unknown first
+API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+
+// Active Health Check System
+async function checkServerHealth(url: string): Promise<boolean> {
+    try {
+        await axios.get(`${url}/health/live`, { timeout: HEALTH_CHECK_TIMEOUT });
+        console.log(`[LoadBalancer] Server Healthy: ${url}`);
+        SERVER_HEALTH[url] = true;
+        return true;
+    } catch (error) {
+        console.warn(`[LoadBalancer] Server Unhealthy: ${url}`);
+        SERVER_HEALTH[url] = false;
+        return false;
+    }
+}
+
+// Initial Health Check (Fire and forget, but update state)
+(async () => {
+    console.log('[LoadBalancer] Starting initial health checks...');
+    const checks = API_SERVERS.map(server => checkServerHealth(server));
+    await Promise.allSettled(checks);
+    console.log('[LoadBalancer] Health checks complete:', SERVER_HEALTH);
+})();
+
+/**
+ * Get the next healthy server using PRIORITIZED Round-Robin
+ * Priority: Render/Northflank (Primary) > Zeabur (Backup)
  */
 function getNextServer(): string {
-    const startIndex = serverIndex;
+    const servers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    // Try to find a healthy server
-    do {
-        const server = API_SERVERS[serverIndex];
-        serverIndex = (serverIndex + 1) % API_SERVERS.length;
+    // Split into Primary and Backup
+    const primaryServers = servers.filter(s =>
+        s.includes('onrender.com') || s.includes('code.run')
+    );
+    // Zeabur is treated as backup (less important)
+    const backupServers = servers.filter(s =>
+        s.includes('zeabur.app')
+    );
 
-        if (SERVER_HEALTH[server]) {
-            return server;
-        }
-    } while (serverIndex !== startIndex);
+    // 1. Prefer Primary Servers (Round Robin)
+    if (primaryServers.length > 0) {
+        const server = primaryServers[serverIndex % primaryServers.length];
+        serverIndex = (serverIndex + 1) % primaryServers.length;
+        lastUsedServerUrl = server;
+        return server;
+    }
 
-    // If no healthy servers, reset all to healthy and try again
-    API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+    // 2. Fallback to Backup Server (if Primaries are down)
+    if (backupServers.length > 0) {
+        console.warn('[LoadBalancer] Primary servers busy/down. Using Backup (Zeabur).');
+        lastUsedServerUrl = backupServers[0];
+        return backupServers[0];
+    }
+
+    // 3. Absolute Fallback (If everything is marked unhealthy)
+    console.warn('[LoadBalancer] All servers marked unhealthy! Using default fallback.');
+    API_SERVERS.forEach(s => checkServerHealth(s)); // Trigger background re-check
     return API_SERVERS[0];
 }
 
@@ -44,14 +108,16 @@ function getNextServer(): string {
  * Mark a server as unhealthy (will be skipped in rotation)
  */
 function markServerUnhealthy(serverUrl: string): void {
-    SERVER_HEALTH[serverUrl] = false;
-    console.warn(`[LoadBalancer] Server marked unhealthy: ${serverUrl}`);
+    if (SERVER_HEALTH[serverUrl]) {
+        SERVER_HEALTH[serverUrl] = false;
+        console.warn(`[LoadBalancer] Server marked unhealthy: ${serverUrl}. Removing from rotation.`);
 
-    // Reset after 60 seconds (give server time to recover)
-    setTimeout(() => {
-        SERVER_HEALTH[serverUrl] = true;
-        console.log(`[LoadBalancer] Server health reset: ${serverUrl}`);
-    }, 60000);
+        // Try to recover it after 60 seconds
+        setTimeout(() => {
+            console.log(`[LoadBalancer] Attempting to recover server: ${serverUrl}`);
+            checkServerHealth(serverUrl);
+        }, 60000);
+    }
 }
 
 /**
@@ -239,6 +305,7 @@ export const checkHealth = async (): Promise<HealthResponse> => {
 };
 
 // Generic file upload function with validation and load balancing
+// Generic file upload function with validation and load balancing + AUTO RETRY
 export const uploadFile = async (
     endpoint: string,
     file: File,
@@ -262,40 +329,60 @@ export const uploadFile = async (
         formData.append(key, String(value));
     });
 
-    // Get server from load balancer
-    const serverUrl = getNextServer();
-    console.log(`[LoadBalancer] Using server: ${serverUrl}`);
+    // RETRY LOGIC
+    let lastError: any;
+    // Try up to 2 times (current + 1 retry fallback)
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const serverUrl = getNextServer();
+        console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
-    try {
-        const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            timeout: 300000,
-            onUploadProgress,
-        });
+        try {
+            const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                timeout: 300000,
+                onUploadProgress,
+            });
 
-        // Store server affinity for this task
-        if (response.data.task_id) {
-            setServerForTask(response.data.task_id, serverUrl);
-        }
-
-        return response.data;
-    } catch (error) {
-        if (error instanceof AxiosError) {
-            // If server error (5xx) or network error, mark as unhealthy and try another
-            if (error.response?.status && error.response.status >= 500) {
-                markServerUnhealthy(serverUrl);
-            } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-                markServerUnhealthy(serverUrl);
+            // Store server affinity for this task
+            if (response.data.task_id) {
+                setServerForTask(response.data.task_id, serverUrl);
             }
-            throw new Error(parseErrorResponse(error));
+
+            return response.data;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[LoadBalancer] Attempt ${attempt + 1} failed on ${serverUrl}`);
+
+            if (error instanceof AxiosError) {
+                // Determine if we should retry
+                const shouldRetry =
+                    (error.response?.status && error.response.status >= 500) || // Server error
+                    error.code === 'ERR_NETWORK' ||
+                    error.code === 'ECONNABORTED'; // Connection error
+
+                if (shouldRetry) {
+                    markServerUnhealthy(serverUrl); // Mark bad, so next iteration picks different one
+                    if (attempt < 1) {
+                        console.log(`[LoadBalancer] Retrying on next healthy server...`);
+                        continue; // Retry loop
+                    }
+                }
+            }
+            break; // Don't retry client errors (400, 401 etc)
         }
-        throw error;
     }
+
+    // If we're here, all attempts failed
+    if (lastError instanceof AxiosError) {
+        throw new Error(parseErrorResponse(lastError));
+    }
+    throw lastError;
 };
 
 // Multiple files upload with validation
+// Multiple files upload with validation + AUTO RETRY
 export const uploadFiles = async (
     endpoint: string,
     files: File[],
@@ -324,37 +411,53 @@ export const uploadFiles = async (
         formData.append(key, String(value));
     });
 
-    // Get server from load balancer
-    const serverUrl = getNextServer();
-    console.log(`[LoadBalancer] Using server: ${serverUrl}`);
+    // RETRY LOGIC
+    let lastError: any;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const serverUrl = getNextServer();
+        console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
-    try {
-        const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            timeout: 300000,
-            onUploadProgress,
-        });
+        try {
+            const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                timeout: 300000,
+                onUploadProgress,
+            });
 
-        // Store server affinity for this task
-        if (response.data.task_id) {
-            setServerForTask(response.data.task_id, serverUrl);
-        }
-
-        return response.data;
-    } catch (error) {
-        if (error instanceof AxiosError) {
-            // If server error (5xx) or network error, mark as unhealthy
-            if (error.response?.status && error.response.status >= 500) {
-                markServerUnhealthy(serverUrl);
-            } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-                markServerUnhealthy(serverUrl);
+            // Store server affinity for this task
+            if (response.data.task_id) {
+                setServerForTask(response.data.task_id, serverUrl);
             }
-            throw new Error(parseErrorResponse(error));
+
+            return response.data;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[LoadBalancer] Attempt ${attempt + 1} failed on ${serverUrl}`);
+
+            if (error instanceof AxiosError) {
+                const shouldRetry =
+                    (error.response?.status && error.response.status >= 500) ||
+                    error.code === 'ERR_NETWORK' ||
+                    error.code === 'ECONNABORTED';
+
+                if (shouldRetry) {
+                    markServerUnhealthy(serverUrl);
+                    if (attempt < 1) {
+                        console.log(`[LoadBalancer] Retrying on next healthy server...`);
+                        continue;
+                    }
+                }
+            }
+            break;
         }
-        throw error;
     }
+
+    if (lastError instanceof AxiosError) {
+        throw new Error(parseErrorResponse(lastError));
+    }
+    throw lastError;
 };
 
 // Check task status (uses server affinity)
