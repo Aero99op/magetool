@@ -59,7 +59,7 @@ const nextConfig = {
                             // Images: Allow self, data URIs, blob, and common sources
                             "img-src 'self' data: blob: https: http://localhost:*",
                             // Connect: Allow API and analytics
-                            "connect-src 'self' http://localhost:* https://localhost:* https://*.onrender.com https://*.hf.space https://*.zeabur.app https://pagead2.googlesyndication.com https://www.google-analytics.com",
+                            "connect-src 'self' http://localhost:* https://localhost:* https://*.onrender.com https://*.hf.space https://*.zeabur.app https://*.code.run https://pagead2.googlesyndication.com https://www.google-analytics.com",
                             // Frames: Allow Google ads
                             "frame-src 'self' https://googleads.g.doubleclick.net https://www.google.com https://tpc.googlesyndication.com",
                             // Frame ancestors: Allow embedding
