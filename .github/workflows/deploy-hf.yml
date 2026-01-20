@@ -34,17 +34,21 @@ jobs:
           git config user.email "bot@magetool.com"
           git config user.name "Magetool Bot"
           
-          # Add all files
           git add .
           git commit -m "Deploying backend update from GitHub: ${{ github.sha }}"
+          git branch -M main
           
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          # CHANGE THIS if your space name is different
           HF_SPACE_NAME: Spandan1234/magetool-backend-api
         run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "Error: HF_TOKEN is not set in GitHub Secrets!"
+            exit 1
+          fi
           echo "Pushing to Hugging Face Space: $HF_SPACE_NAME"
           cd hf_deploy
-          # Force push to overwrite the space with the new backend state
-          git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME main
+          # Add hf remote and force push
+          git remote add hf https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME
+          git push hf main --force
