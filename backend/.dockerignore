@@ -1,0 +1,25 @@
+# Local Python environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary files
+temp/*
+*.log
+
+# Docker/Build related
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Frontend (if captured in context)
+frontend/
+node_modules/
+.next/
+out/
+build/
+dist/
