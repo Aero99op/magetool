@@ -179,8 +179,13 @@ def process_video_trim(task_id: str, input_path: Path, original_filename: str, *
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
-        start_time = params.get("start_time", "00:00:00")
-        end_time = params.get("end_time", "00:00:30")
+        start_time = params.get("start_time")
+        if start_time in ["undefined", "null", ""]:
+            start_time = "00:00:00"
+            
+        end_time = params.get("end_time")
+        if end_time in ["undefined", "null", ""]:
+            end_time = "00:00:30"
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
@@ -605,7 +610,13 @@ def process_video_to_gif(task_id: str, input_path: Path, original_filename: str,
         fps = params.get("fps", 15)
         width = params.get("width")
         start_time = params.get("start_time")
+        if start_time in ["undefined", "null", ""]:
+            start_time = None
+            
         duration = params.get("duration")
+        if duration in ["undefined", "null", ""]:
+            duration = None
+            
         output_path = get_output_path(task_id, "gif")
         
         # Build FFmpeg command
