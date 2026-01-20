@@ -3,8 +3,6 @@ name: Sync Backend to Hugging Face Hub
 on:
   push:
     branches: [main]
-    paths:
-      - 'backend/**' # Only runs when backend files change
 
 jobs:
   sync-to-hub:
