@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str | None = None
     AI_SERVICE_URL: str | None = None
     AI_SERVICE_KEY: str | None = None
+    GOOGLE_VISION_API_KEY: str | None = None  # For reverse image/video search
     
     # Keep-Alive Bot (for Northflank unlimited hours)
     ENABLE_KEEP_ALIVE: bool = False

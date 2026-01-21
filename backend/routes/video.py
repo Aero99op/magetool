@@ -1062,64 +1062,157 @@ async def extract_video_metadata(
 async def find_video_source(
     file: UploadFile = File(...),
 ):
-    """Find original source of a video using reverse search (simulated)"""
+    """Find original source of a video using Google Vision API reverse search"""
     import hashlib
     import json as json_module
+    import base64
     
     try:
         content = await file.read()
-        file_hash = hashlib.md5(content[:1024*1024]).hexdigest()[:8]  # First 1MB hash
+        file_hash = hashlib.md5(content[:1024*1024]).hexdigest()[:8]
         
-        # Get video info using ffprobe
+        # Save video temporarily
         ext = Path(file.filename).suffix.lstrip(".") or "mp4"
-        temp_path = settings.TEMP_DIR / f"temp_finder_{file.filename}"
+        temp_path = settings.TEMP_DIR / f"temp_finder_{file_hash}.{ext}"
         temp_path.write_bytes(content)
         
+        # Get video duration
+        duration = 0
         try:
             result = subprocess.run(
-                [
-                    "ffprobe",
-                    "-v", "quiet",
-                    "-print_format", "json",
-                    "-show_format",
-                    str(temp_path)
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
+                ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(temp_path)],
+                capture_output=True, text=True, timeout=30,
             )
-            
-            format_info = {}
             if result.returncode == 0:
                 data = json_module.loads(result.stdout)
-                format_info = data.get("format", {})
+                duration = float(data.get("format", {}).get("duration", 0))
         except:
-            format_info = {}
-        finally:
-            temp_path.unlink(missing_ok=True)
+            pass
         
-        duration = float(format_info.get("duration", 0))
         size_mb = len(content) / (1024 * 1024)
-        
-        # Generate simulated results based on file characteristics
-        # In a real implementation, this would call Google Vision AI or similar
         results = []
+        api_used = "none"
         
-        # Generate semi-random but consistent results based on hash
-        hash_int = int(file_hash, 16)
+        # Try Google Vision API if key is configured
+        if settings.GOOGLE_VISION_API_KEY:
+            try:
+                # Extract a frame from the video (at 1 second or middle)
+                frame_time = min(1, duration / 2) if duration > 0 else 0
+                frame_path = settings.TEMP_DIR / f"temp_frame_{file_hash}.jpg"
+                
+                frame_result = subprocess.run([
+                    "ffmpeg", "-y",
+                    "-ss", str(frame_time),
+                    "-i", str(temp_path),
+                    "-vframes", "1",
+                    "-q:v", "2",
+                    str(frame_path)
+                ], capture_output=True, timeout=30)
+                
+                if frame_result.returncode == 0 and frame_path.exists():
+                    # Read frame and encode to base64
+                    frame_content = frame_path.read_bytes()
+                    frame_base64 = base64.b64encode(frame_content).decode('utf-8')
+                    
+                    # Call Google Vision API
+                    import httpx
+                    
+                    vision_url = f"https://vision.googleapis.com/v1/images:annotate?key={settings.GOOGLE_VISION_API_KEY}"
+                    
+                    request_body = {
+                        "requests": [{
+                            "image": {"content": frame_base64},
+                            "features": [
+                                {"type": "WEB_DETECTION", "maxResults": 10}
+                            ]
+                        }]
+                    }
+                    
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        response = await client.post(vision_url, json=request_body)
+                        
+                        if response.status_code == 200:
+                            vision_data = response.json()
+                            web_detection = vision_data.get("responses", [{}])[0].get("webDetection", {})
+                            
+                            # Parse web entities
+                            web_entities = web_detection.get("webEntities", [])
+                            pages_with_matching = web_detection.get("pagesWithMatchingImages", [])
+                            full_matching = web_detection.get("fullMatchingImages", [])
+                            partial_matching = web_detection.get("partialMatchingImages", [])
+                            
+                            # Build results from pages with matching images
+                            for page in pages_with_matching[:5]:
+                                url = page.get("url", "")
+                                title = page.get("pageTitle", "Unknown")
+                                
+                                # Determine platform
+                                platform = "Web"
+                                if "youtube.com" in url or "youtu.be" in url:
+                                    platform = "YouTube"
+                                elif "tiktok.com" in url:
+                                    platform = "TikTok"
+                                elif "instagram.com" in url:
+                                    platform = "Instagram"
+                                elif "facebook.com" in url or "fb.com" in url:
+                                    platform = "Facebook"
+                                elif "twitter.com" in url or "x.com" in url:
+                                    platform = "Twitter/X"
+                                elif "vimeo.com" in url:
+                                    platform = "Vimeo"
+                                
+                                results.append({
+                                    "title": title[:100] if title else "Untitled",
+                                    "url": url,
+                                    "platform": platform,
+                                    "similarity": 90,  # Google doesn't give exact similarity
+                                    "type": "page_match"
+                                })
+                            
+                            # Add full matches
+                            for match in full_matching[:3]:
+                                results.append({
+                                    "title": "Exact Image Match",
+                                    "url": match.get("url", ""),
+                                    "platform": "Web",
+                                    "similarity": 99,
+                                    "type": "full_match"
+                                })
+                            
+                            # Add best guess labels
+                            best_guess = web_detection.get("bestGuessLabels", [])
+                            
+                            api_used = "google_vision"
+                            logger.info(f"Google Vision API returned {len(results)} results")
+                        else:
+                            logger.warning(f"Google Vision API error: {response.status_code} - {response.text}")
+                    
+                    # Cleanup frame
+                    frame_path.unlink(missing_ok=True)
+                    
+            except Exception as vision_error:
+                logger.warning(f"Google Vision API failed: {vision_error}")
         
-        platforms = ["YouTube", "Vimeo", "TikTok", "Instagram", "Facebook", "Twitter"]
-        
-        for i in range(3):
-            platform = platforms[(hash_int + i) % len(platforms)]
-            similarity = 95 - (i * 8) - (hash_int % 5)
+        # Fallback to simulated results if no API results
+        if not results:
+            api_used = "simulated"
+            hash_int = int(file_hash, 16)
+            platforms = ["YouTube", "Vimeo", "TikTok", "Instagram", "Facebook", "Twitter"]
             
-            results.append({
-                "title": f"Similar content on {platform}",
-                "url": f"https://{platform.lower()}.com/video/{file_hash}{i}",
-                "platform": platform,
-                "similarity": max(50, min(99, similarity)),
-            })
+            for i in range(3):
+                platform = platforms[(hash_int + i) % len(platforms)]
+                similarity = 95 - (i * 8) - (hash_int % 5)
+                
+                results.append({
+                    "title": f"Similar content on {platform}",
+                    "url": f"https://{platform.lower()}.com/video/{file_hash}{i}",
+                    "platform": platform,
+                    "similarity": max(50, min(99, similarity)),
+                    "type": "simulated"
+                })
+        
+        # Cleanup temp video
+        temp_path.unlink(missing_ok=True)
         
         return {
             "success": True,
@@ -1127,7 +1220,8 @@ async def find_video_source(
             "file_size_mb": round(size_mb, 2),
             "duration_seconds": round(duration, 1),
             "results": results,
-            "note": "Results are simulated. Real reverse video search requires integration with Google Vision API or similar services."
+            "api_used": api_used,
+            "note": "Real results from Google Vision API" if api_used == "google_vision" else "Simulated results. Set GOOGLE_VISION_API_KEY for real reverse search."
         }
         
     except subprocess.TimeoutExpired:
