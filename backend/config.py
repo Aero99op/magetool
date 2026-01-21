@@ -78,6 +78,42 @@ class Settings(BaseSettings):
         super().__init__(**kwargs)
         # Ensure temp directory exists
         self.TEMP_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # ----------------------------------------------------
+        # Auto-Enable Keep-Alive for Unlimited Hosting (HF, Northflank)
+        # ----------------------------------------------------
+        
+        # 1. Hugging Face Spaces Auto-Detection
+        # HF sets 'SPACE_ID', 'SPACE_AUTHOR_NAME', 'SPACE_TITLE'
+        if os.environ.get("SPACE_ID"):
+            self.ENABLE_KEEP_ALIVE = True
+            
+            # Construct Self-Ping URL for HF
+            # Format: https://{username}-{space_name}.hf.space
+            # Note: If space is private, this might fail without auth, 
+            # but for public/internal checks it's the target.
+            # Newer HF spaces also provide SPACE_HOST (e.g., username-space.hf.space)
+            space_host = os.environ.get("SPACE_HOST")
+            if space_host:
+                 self.KEEP_ALIVE_URL = f"https://{space_host}"
+            elif not self.KEEP_ALIVE_URL:
+                 # Fallback construction
+                 author = os.environ.get("SPACE_AUTHOR_NAME")
+                 title = os.environ.get("SPACE_TITLE")
+                 if author and title:
+                     self.KEEP_ALIVE_URL = f"https://{author}-{title}.hf.space"
+            
+            # HF Spaces can handle 1-2 min pings easily
+            self.KEEP_ALIVE_INTERVAL = 1 
+            
+        # 2. Northflank Auto-Detection
+        # Northflank injects specific vars like 'NF_SERVICE_ID' or we can check for custom var
+        # User can also strictly force it via ENABLE_KEEP_ALIVE=true
+        elif os.environ.get("NF_SERVICE_ID") or os.environ.get("NORTHFLANK_FORWARDED_PORT"):
+             self.ENABLE_KEEP_ALIVE = True
+             if not self.KEEP_ALIVE_URL:
+                 self.KEEP_ALIVE_URL = f"http://localhost:{self.PORT}" # Self-ping on localhost often works for containers
+             self.KEEP_ALIVE_INTERVAL = 5
 
 
 @lru_cache()

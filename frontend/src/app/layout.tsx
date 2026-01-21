@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import JsonLd from '@/components/JsonLd';
 
 import { ServerStatus } from '@/components/ServerStatus';
+import { WakeUpManager } from '@/components/WakeUpManager';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -72,6 +73,7 @@ export default function RootLayout({
             </head>
             <body>
                 <ServerStatus />
+                <WakeUpManager />
                 <JsonLd />
                 <Header />
                 <main className="main-content">

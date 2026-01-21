@@ -11,41 +11,72 @@ export function ServerStatus() {
     const [activeServer, setActiveServer] = useState<string>("");
 
     useEffect(() => {
+        let isMounted = true;
         const checkServer = async () => {
             const timerInterval = setInterval(() => {
-                setSeconds(s => s + 1);
+                if (isMounted) setSeconds(s => s + 1);
             }, 1000);
 
+            // Show "Waking up" message soon if not immediate
             const wakingTimeout = setTimeout(() => {
-                setStatus("waking");
-            }, 1500);
+                if (isMounted) setStatus("waking");
+            }, 1000);
 
-            try {
-                // Initial check to see what's active
-                setActiveServer(getLastUsedServerName());
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://magetool-api.onrender.com";
+            const MAX_RETRIES = 60; // 2 minutes (assuming 2s delay)
+            let attempts = 0;
 
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://magetool-api.onrender.com";
-                await fetch(`${apiUrl}/health/live`);
+            while (attempts < MAX_RETRIES && isMounted) {
+                try {
+                    // Try to ping
+                    await fetch(`${apiUrl}/health/live`, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        mode: 'cors'
+                    });
 
-                clearTimeout(wakingTimeout);
-                setStatus("ready");
-                setActiveServer(getLastUsedServerName());
+                    // If success:
+                    if (isMounted) {
+                        clearTimeout(wakingTimeout);
+                        setStatus("ready");
+                        setActiveServer(getLastUsedServerName());
 
-                // Hide the big "Ready" notification after 3s, but keep the small persistent one?
-                // Actually, let's just transition to the small persistent indicator.
-                setTimeout(() => {
-                    setStatus("checking");
-                }, 3000);
+                        // Clear timer
+                        clearInterval(timerInterval);
 
-            } catch (error) {
-                console.error("Server ping failed:", error);
-                setStatus("error");
-            } finally {
+                        // Hide notification after short delay
+                        setTimeout(() => {
+                            if (isMounted) setStatus("checking"); // Hides top banner
+                        }, 3000);
+                    }
+                    return; // Exit loop on success
+
+                } catch (error) {
+                    attempts++;
+                    console.log(`Server wake-up attempt ${attempts}/${MAX_RETRIES} failed. Retrying...`);
+
+                    if (isMounted && attempts > 2) {
+                        // Only show waking status if it's taking more than a couple of seconds
+                        setStatus("waking");
+                    }
+
+                    // Wait 2 seconds before retry
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+
+            // If we reached here, it failed after all retries
+            if (isMounted) {
                 clearInterval(timerInterval);
+                setStatus("error");
             }
         };
 
         checkServer();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     return (
@@ -77,7 +108,7 @@ export function ServerStatus() {
                             {status === "error" && (
                                 <>
                                     <Activity className="w-4 h-4 text-red-500" />
-                                    <span className="text-red-500">Connection error. Retrying...</span>
+                                    <span className="text-red-500">Servers are busy. Please refresh.</span>
                                 </>
                             )}
                         </div>
