@@ -717,24 +717,59 @@ def process_image_ocr(task_id: str, input_path: Path, original_filename: str, **
         output_format = params.get("output_format", "txt")
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
+        text = ""
+        
         try:
             import easyocr
+            
+            # Use cached reader (initialized once, reused for all requests)
+            global _ocr_reader
+            if '_ocr_reader' not in globals() or _ocr_reader is None:
+                logger.info("Initializing EasyOCR reader (one-time)...")
+                _ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+            
             update_task(task_id, progress_percent=30)
             
-            # Initialize EasyOCR reader (supports multiple languages)
-            reader = easyocr.Reader(['en'], gpu=False)  # CPU mode for compatibility
+            # Preprocess image for faster OCR
+            with Image.open(input_path) as img:
+                # Convert to RGB if needed
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Resize large images for speed (OCR doesn't need 4K resolution)
+                max_dimension = 2000
+                if max(img.width, img.height) > max_dimension:
+                    ratio = max_dimension / max(img.width, img.height)
+                    new_size = (int(img.width * ratio), int(img.height * ratio))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+                    logger.info(f"Resized image for OCR: {new_size}")
+                
+                # Save preprocessed image to temp
+                temp_ocr_path = input_path.parent / f"{task_id}_ocr_temp.jpg"
+                img.save(temp_ocr_path, "JPEG", quality=95)
             
             update_task(task_id, progress_percent=50)
             
-            # Read text from image
-            results = reader.readtext(str(input_path))
+            # Read text from preprocessed image
+            results = _ocr_reader.readtext(str(temp_ocr_path))
+            
+            # Clean up temp file
+            temp_ocr_path.unlink(missing_ok=True)
             
             # Combine all detected text
             text = '\n'.join([result[1] for result in results])
             
         except ImportError:
-            logger.warning("easyocr not installed, returning error message")
-            text = "OCR functionality is not available. Please install easyocr."
+            logger.warning("easyocr not installed, trying pytesseract fallback")
+            
+            # Fallback to pytesseract (lighter, faster)
+            try:
+                import pytesseract
+                with Image.open(input_path) as img:
+                    text = pytesseract.image_to_string(img)
+            except ImportError:
+                text = "OCR functionality is not available. Please install easyocr or pytesseract."
+                
         except Exception as ocr_error:
             logger.error(f"OCR processing error: {ocr_error}")
             text = f"OCR processing failed: {str(ocr_error)}"
@@ -767,6 +802,9 @@ def process_image_ocr(task_id: str, input_path: Path, original_filename: str, **
     except Exception as e:
         logger.error(f"OCR failed: {task_id} - {e}")
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+# Initialize OCR reader as None (will be loaded on first use)
+_ocr_reader = None
 
 
 @router.post("/ocr")
