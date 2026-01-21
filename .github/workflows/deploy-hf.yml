@@ -3,6 +3,7 @@ name: Sync Backend to Hugging Face Hub
 on:
   push:
     branches: [main]
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
 
 jobs:
   sync-to-hub:
