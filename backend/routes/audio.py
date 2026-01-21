@@ -30,7 +30,7 @@ async def save_upload_file(upload_file: UploadFile, destination: Path):
         await upload_file.close()
 
 
-def run_ffmpeg(args: list, timeout: int = 300) -> tuple[bool, str]:
+def run_ffmpeg(args: list, timeout: int = 600) -> tuple[bool, str]:
     """Run FFmpeg command and return success status and output"""
     try:
         result = subprocess.run(
@@ -118,9 +118,10 @@ def process_audio_trim(task_id: str, input_path: Path, original_filename: str, *
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
+        # OPTIMIZED: -ss BEFORE input for fast seek
         ffmpeg_args = [
-            "-i", str(input_path),
             "-ss", start_time,
+            "-i", str(input_path),
             "-to", end_time,
         ]
         

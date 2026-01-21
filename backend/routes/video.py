@@ -81,6 +81,9 @@ def process_video_convert(task_id: str, input_path: Path, original_filename: str
         if bitrate:
             ffmpeg_args.extend(["-b:v", bitrate])
         
+        # Balanced preset: good quality + reasonable speed
+        ffmpeg_args.extend(["-preset", "medium", "-tune", "film"])  # film = less blur, more detail
+        
         ffmpeg_args.append(str(output_path))
         
         update_task(task_id, progress_percent=30)
@@ -189,11 +192,13 @@ def process_video_trim(task_id: str, input_path: Path, original_filename: str, *
         ext = input_path.suffix.lstrip(".")
         output_path = get_output_path(task_id, ext)
         
+        # OPTIMIZED: -ss BEFORE input = fast seek (input seeking)
         ffmpeg_args = [
-            "-i", str(input_path),
             "-ss", start_time,
+            "-i", str(input_path),
             "-to", end_time,
             "-c", "copy",  # Stream copy for fast trimming
+            "-avoid_negative_ts", "make_zero",  # Fix timestamp issues
             str(output_path),
         ]
         
@@ -233,11 +238,12 @@ def process_video_compress(task_id: str, input_path: Path, original_filename: st
         quality = params.get("quality", "medium")
         output_path = get_output_path(task_id, "mp4")
         
-        # CRF values: lower = better quality, higher = more compression
+        # CRF values: lower = better quality (sharper), higher = more compression
+        # FLASH MODE: Using lower CRF for sharper output
         crf_map = {
-            "low": "18",      # Minimal compression
-            "medium": "23",   # Balanced
-            "high": "28",     # Aggressive compression
+            "low": "16",      # Minimal compression, maximum sharpness
+            "medium": "20",   # Balanced - still sharp
+            "high": "26",     # Aggressive compression
         }
         crf = crf_map.get(quality, "23")
         
@@ -246,8 +252,9 @@ def process_video_compress(task_id: str, input_path: Path, original_filename: st
             "-c:v", "libx264",
             "-crf", crf,
             "-preset", "medium",
+            "-tune", "film",  # FLASH MODE: Less blur, more detail
             "-c:a", "aac",
-            "-b:a", "128k",
+            "-b:a", "192k",  # Higher audio bitrate
             str(output_path),
         ]
         
@@ -607,7 +614,7 @@ def process_video_to_gif(task_id: str, input_path: Path, original_filename: str,
     try:
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
-        fps = params.get("fps", 15)
+        fps = params.get("fps", 15)  # 15 fps for smooth animation
         width = params.get("width")
         start_time = params.get("start_time")
         if start_time in ["undefined", "null", ""]:
@@ -616,33 +623,45 @@ def process_video_to_gif(task_id: str, input_path: Path, original_filename: str,
         duration = params.get("duration")
         if duration in ["undefined", "null", ""]:
             duration = None
+        
+        # BALANCED: Cap width at 640px if not specified (good quality + reasonable speed)
+        if not width or width <= 0:
+            width = 640  # Default cap for good GIF quality + reasonable speed
             
         output_path = get_output_path(task_id, "gif")
         
-        # Build FFmpeg command
-        ffmpeg_args = ["-i", str(input_path)]
+        # Build FFmpeg command with optimized ordering
+        ffmpeg_args = []
         
-        # Add start time if specified
+        # Add start time BEFORE input (faster seeking)
         if start_time:
             ffmpeg_args.extend(["-ss", start_time])
         
-        # Add duration if specified
+        ffmpeg_args.extend(["-i", str(input_path)])
+        
+        # Add duration AFTER input
         if duration:
             ffmpeg_args.extend(["-t", duration])
         
-        # Build filter string
-        filters = []
-        if width and width > 0:
-            filters.append(f"scale={width}:-1:flags=lanczos")
-        filters.append(f"fps={fps}")
-        filters.append("split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse")
+        # Build HIGH QUALITY filter string with speed optimizations
+        # Scale FIRST (before palette) for faster processing
+        filters = [
+            f"fps={fps}",
+            f"scale={width}:-1:flags=lanczos",
+            "split[s0][s1]",
+            "[s0]palettegen=max_colors=256:stats_mode=full[p]",  # Full 256 colors for quality
+            "[s1][p]paletteuse=dither=floyd_steinberg"  # Best quality dithering
+        ]
         
-        ffmpeg_args.extend(["-vf", ",".join(filters[:-1]) + "," + filters[-1] if len(filters) > 1 else filters[0]])
+        # Join filters properly for the split/palette complex filter
+        filter_str = f"{filters[0]},{filters[1]},{filters[2]};{filters[3]};{filters[4]}"
+        
+        ffmpeg_args.extend(["-filter_complex", filter_str])
         ffmpeg_args.append(str(output_path))
         
         update_task(task_id, progress_percent=30)
         
-        success, error = run_ffmpeg(ffmpeg_args, timeout=300)
+        success, error = run_ffmpeg(ffmpeg_args, timeout=600)  # Increased timeout
         
         if not success:
             raise Exception(f"FFmpeg error: {error}")
