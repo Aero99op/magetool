@@ -81,19 +81,39 @@ function getNextServer(category?: string): string {
     // 1. Get all healthy servers
     const healthyServers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    // 2. SMART ROUTING: Prioritize Hugging Face for "Heavy" tools (Video/Audio)
-    // HF = Unlimited CPU hours, better for long FFmpeg tasks
+    // 2. SMART ROUTING: 2-TIER PRIORITY for "Heavy" tools (Video/Audio)
+    // TIER 1: HF + Northflank (powerful, unlimited/generous compute)
+    // TIER 2: Render + Zeabur (fallback round-robin when Tier 1 is down)
     if (category === 'video' || category === 'audio') {
-        const hfServer = healthyServers.find(s => s.includes('hf.space'));
-        if (hfServer) {
-            console.log(`[LoadBalancer] Smart Routing: Prioritizing HF for ${category}`);
-            return hfServer;
+        // TIER 1: HuggingFace + Northflank
+        const tier1Servers = healthyServers.filter(s =>
+            s.includes('hf.space') || s.includes('code.run')
+        );
+
+        if (tier1Servers.length > 0) {
+            // Random selection between Tier 1 servers for load balancing
+            const randomIndex = Math.floor(Math.random() * tier1Servers.length);
+            const server = tier1Servers[randomIndex];
+            console.log(`[LoadBalancer] Tier 1 Routing: Using ${server.includes('hf.space') ? 'HF' : 'Northflank'} for ${category}`);
+            lastUsedServerUrl = server;
+            return server;
         }
-        // If HF is unhealthy/missing, it will fall back to standard rotation below
-        console.warn(`[LoadBalancer] Smart Routing: HF unavailable for ${category}, falling back...`);
+
+        // TIER 2: Fallback to Render/Zeabur
+        console.warn(`[LoadBalancer] Tier 1 (HF+Northflank) down for ${category}, falling back to Tier 2...`);
+        const tier2Servers = healthyServers.filter(s =>
+            s.includes('onrender.com') || s.includes('zeabur.app')
+        );
+
+        if (tier2Servers.length > 0) {
+            const server = tier2Servers[serverIndex % tier2Servers.length];
+            serverIndex = (serverIndex + 1) % tier2Servers.length;
+            lastUsedServerUrl = server;
+            return server;
+        }
     }
 
-    // 3. Standard Round-Robin
+    // 3. Standard Round-Robin (for non-heavy tools or if all tiers exhausted)
     if (healthyServers.length > 0) {
         const server = healthyServers[serverIndex % healthyServers.length];
         serverIndex = (serverIndex + 1) % healthyServers.length;
@@ -338,10 +358,9 @@ export const uploadFile = async (
         formData.append(key, String(value));
     });
 
-    // RETRY LOGIC
+    // RETRY LOGIC - Try up to 3 times for reliability
     let lastError: any;
-    // Try up to 2 times (current + 1 retry fallback)
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
         const serverUrl = getNextServer(category);
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
@@ -350,7 +369,7 @@ export const uploadFile = async (
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
-                timeout: 300000,
+                timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
             });
 
@@ -373,7 +392,7 @@ export const uploadFile = async (
 
                 if (shouldRetry) {
                     markServerUnhealthy(serverUrl); // Mark bad, so next iteration picks different one
-                    if (attempt < 1) {
+                    if (attempt < 2) {
                         console.log(`[LoadBalancer] Retrying on next healthy server...`);
                         continue; // Retry loop
                     }
@@ -420,9 +439,9 @@ export const uploadFiles = async (
         formData.append(key, String(value));
     });
 
-    // RETRY LOGIC
+    // RETRY LOGIC - Try up to 3 times for reliability
     let lastError: any;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
         const serverUrl = getNextServer(category);
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
@@ -431,7 +450,7 @@ export const uploadFiles = async (
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
-                timeout: 300000,
+                timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
             });
 
@@ -453,7 +472,7 @@ export const uploadFiles = async (
 
                 if (shouldRetry) {
                     markServerUnhealthy(serverUrl);
-                    if (attempt < 1) {
+                    if (attempt < 2) {
                         console.log(`[LoadBalancer] Retrying on next healthy server...`);
                         continue;
                     }
@@ -472,7 +491,7 @@ export const uploadFiles = async (
 // Check task status (uses server affinity)
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const serverUrl = getServerForTask(taskId);
-    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 60000 });
+    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 120000 });  // 2 min timeout
     return response.data;
 };
 
@@ -480,7 +499,7 @@ export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
 export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
     const serverUrl = getServerForTask(taskId);
     try {
-        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 60000 });
+        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 120000 });  // 2 min timeout
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
@@ -495,7 +514,7 @@ export const pollTaskStatus = async (
     taskId: string,
     onProgress?: (task: TaskResponse) => void,
     intervalMs = 2000,
-    maxAttempts = 180 // 6 minutes max polling
+    maxAttempts = 300 // 10 minutes max polling for large video processing
 ): Promise<TaskResponse> => {
     return new Promise((resolve, reject) => {
         let attempts = 0;
