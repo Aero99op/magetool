@@ -48,14 +48,23 @@ API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
 // Active Health Check System
 async function checkServerHealth(url: string): Promise<boolean> {
     try {
+        // Try /health/live first
         await axios.get(`${url}/health/live`, { timeout: HEALTH_CHECK_TIMEOUT });
         console.log(`[LoadBalancer] Server Healthy: ${url}`);
         SERVER_HEALTH[url] = true;
         return true;
     } catch (error) {
-        console.warn(`[LoadBalancer] Server Unhealthy: ${url}`);
-        SERVER_HEALTH[url] = false;
-        return false;
+        // Fallback: Try root / endpoint (some proxies block /health/live)
+        try {
+            await axios.get(`${url}/`, { timeout: HEALTH_CHECK_TIMEOUT });
+            console.log(`[LoadBalancer] Server Healthy (via /): ${url}`);
+            SERVER_HEALTH[url] = true;
+            return true;
+        } catch {
+            console.warn(`[LoadBalancer] Server Unhealthy: ${url}`);
+            SERVER_HEALTH[url] = false;
+            return false;
+        }
     }
 }
 
