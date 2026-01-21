@@ -122,7 +122,37 @@ function getNextServer(category?: string): string {
         }
     }
 
-    // 3. Standard Round-Robin (for non-heavy tools or if all tiers exhausted)
+    // 3. SMART WAKE-UP ROUTING for "Light" tools (Image/Document)
+    // PREFER: Render + Zeabur (save powerful servers for heavy tasks)
+    // BACKUP: HF + Northflank (if Render/Zeabur are sleeping)
+    const tierRegularServers = healthyServers.filter(s =>
+        s.includes('onrender.com') || s.includes('zeabur.app')
+    );
+
+    if (tierRegularServers.length > 0) {
+        // Preferred servers are AWAKE! Use them.
+        const server = tierRegularServers[serverIndex % tierRegularServers.length];
+        serverIndex = (serverIndex + 1) % tierRegularServers.length;
+        lastUsedServerUrl = server;
+        console.log(`[LoadBalancer] Using Regular Server (Awake): ${server}`);
+        return server;
+    }
+
+    // If we reach here, Render/Zeabur are SLEEPING/DOWN.
+    // Temporarily use HF/Northflank so user doesn't wait!
+    const tierBackupServers = healthyServers.filter(s =>
+        s.includes('hf.space') || s.includes('code.run')
+    );
+
+    if (tierBackupServers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * tierBackupServers.length);
+        const server = tierBackupServers[randomIndex];
+        console.log(`[LoadBalancer] Regular servers sleeping, using Backup (HF/NF): ${server}`);
+        lastUsedServerUrl = server;
+        return server;
+    }
+
+    // 4. Fallback: If absolutely nothing else matches (rare), use any healthy server
     if (healthyServers.length > 0) {
         const server = healthyServers[serverIndex % healthyServers.length];
         serverIndex = (serverIndex + 1) % healthyServers.length;
@@ -130,12 +160,12 @@ function getNextServer(category?: string): string {
         return server;
     }
 
-    // 4. Fallback: If ALL are marked unhealthy, try them all (rotate through the main list)
+    // 5. Last Resort: If ALL are marked unhealthy, try them all (rotate through main list)
     console.warn('[LoadBalancer] All servers marked unhealthy! Using fallback rotation.');
     const server = API_SERVERS[serverIndex % API_SERVERS.length];
     serverIndex = (serverIndex + 1) % API_SERVERS.length;
 
-    // Trigger a refresh
+    // Trigger a refresh to wake everyone up
     API_SERVERS.forEach(s => checkServerHealth(s));
 
     lastUsedServerUrl = server;
