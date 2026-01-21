@@ -74,14 +74,26 @@ export const wakeUpServers = async () => {
 wakeUpServers();
 
 /**
- * Get the next healthy server using TRUE Round-Robin
- * All servers are treated equally.
+ * Get the next healthy server using Smart Routing + Round-Robin
+ * @param category - Optional tool category to prioritize specific servers (e.g. 'video' -> HF)
  */
-function getNextServer(): string {
+function getNextServer(category?: string): string {
     // 1. Get all healthy servers
     const healthyServers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    // 2. If we have healthy servers, rotate through them
+    // 2. SMART ROUTING: Prioritize Hugging Face for "Heavy" tools (Video/Audio)
+    // HF = Unlimited CPU hours, better for long FFmpeg tasks
+    if (category === 'video' || category === 'audio') {
+        const hfServer = healthyServers.find(s => s.includes('hf.space'));
+        if (hfServer) {
+            console.log(`[LoadBalancer] Smart Routing: Prioritizing HF for ${category}`);
+            return hfServer;
+        }
+        // If HF is unhealthy/missing, it will fall back to standard rotation below
+        console.warn(`[LoadBalancer] Smart Routing: HF unavailable for ${category}, falling back...`);
+    }
+
+    // 3. Standard Round-Robin
     if (healthyServers.length > 0) {
         const server = healthyServers[serverIndex % healthyServers.length];
         serverIndex = (serverIndex + 1) % healthyServers.length;
@@ -89,13 +101,12 @@ function getNextServer(): string {
         return server;
     }
 
-    // 3. Fallback: If ALL are marked unhealthy, try them all (rotate through the main list)
-    // This allows us to keep trying even if health checks failed previously
+    // 4. Fallback: If ALL are marked unhealthy, try them all (rotate through the main list)
     console.warn('[LoadBalancer] All servers marked unhealthy! Using fallback rotation.');
     const server = API_SERVERS[serverIndex % API_SERVERS.length];
     serverIndex = (serverIndex + 1) % API_SERVERS.length;
 
-    // Trigger a background health check to refresh status
+    // Trigger a refresh
     API_SERVERS.forEach(s => checkServerHealth(s));
 
     lastUsedServerUrl = server;
@@ -331,7 +342,7 @@ export const uploadFile = async (
     let lastError: any;
     // Try up to 2 times (current + 1 retry fallback)
     for (let attempt = 0; attempt < 2; attempt++) {
-        const serverUrl = getNextServer();
+        const serverUrl = getNextServer(category);
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
         try {
@@ -412,7 +423,7 @@ export const uploadFiles = async (
     // RETRY LOGIC
     let lastError: any;
     for (let attempt = 0; attempt < 2; attempt++) {
-        const serverUrl = getNextServer();
+        const serverUrl = getNextServer(category);
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
         try {
