@@ -96,7 +96,7 @@ async def keep_alive_ping():
             
             async with httpx.AsyncClient() as client:
                 logger.info("🤖 Keep-Alive Bot: Pinging self...")
-                response = await client.get(f"{settings.KEEP_ALIVE_URL}/health/live", timeout=10)
+                response = await client.get(f"{settings.KEEP_ALIVE_URL}/", timeout=10)  # Use root, /health/live may 404 on some proxies
                 logger.info(f"🤖 Keep-Alive Bot: Ping status {response.status_code}")
                 
         except Exception as e:
