@@ -13,7 +13,7 @@ const API_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',           // Server 1: Render (750 hrs/month)
     process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',               // Server 2: Zeabur ($5/month credit)
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
-    process.env.NEXT_PUBLIC_API_URL_4 || 'https://aero99op-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
+    process.env.NEXT_PUBLIC_API_URL_4 || 'https://spandan1234-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
 ].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
 
 // Load balancer state
