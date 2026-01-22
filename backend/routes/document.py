@@ -6,6 +6,7 @@ import logging
 import json
 import csv
 import io
+import os
 from pathlib import Path
 from typing import List
 from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
@@ -52,40 +53,45 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             import subprocess
             import shutil
             
-            # Check if LibreOffice is available
+            # Find LibreOffice executable
             libreoffice_cmd = None
             for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
                 if shutil.which(cmd):
                     libreoffice_cmd = cmd
                     break
             
-            if libreoffice_cmd:
-                try:
-                    temp_output_dir = input_path.parent
-                    
-                    result = subprocess.run([
-                        libreoffice_cmd,
-                        "--headless",
-                        "--nofirststartwizard",
-                        "--convert-to", "pdf",
-                        "--outdir", str(temp_output_dir),
-                        str(input_path)
-                    ], capture_output=True, text=True, timeout=180)
-                    
-                    expected_output = temp_output_dir / (input_path.stem + ".pdf")
-                    
-                    if expected_output.exists():
-                        shutil.move(str(expected_output), str(output_path))
-                        logger.info(f"LibreOffice Excel/PPT conversion successful: {task_id}")
-                    else:
-                        raise Exception(f"LibreOffice failed: {result.stderr}")
-                        
-                except subprocess.TimeoutExpired:
-                    raise Exception("LibreOffice conversion timed out")
-                except Exception as e:
-                    raise Exception(f"Excel/PPT to PDF conversion failed: {e}")
+            if not libreoffice_cmd:
+                raise Exception("LibreOffice not installed. Required for Excel/PPT to PDF conversion.")
+            
+            temp_output_dir = input_path.parent
+            
+            logger.info(f"Starting LibreOffice Excel/PPT conversion: {input_path} -> PDF")
+            
+            # Run LibreOffice conversion with environment fixes
+            env = os.environ.copy()
+            env["HOME"] = "/tmp"  # Fix for Docker/non-root user
+            
+            result = subprocess.run([
+                libreoffice_cmd,
+                "--headless",
+                "--invisible",
+                "--nologo",
+                "--nofirststartwizard",
+                "--norestore",
+                "--convert-to", "pdf",
+                "--outdir", str(temp_output_dir),
+                str(input_path)
+            ], capture_output=True, text=True, timeout=180, env=env)
+            
+            expected_output = temp_output_dir / (input_path.stem + ".pdf")
+            
+            if expected_output.exists() and expected_output.stat().st_size > 0:
+                shutil.move(str(expected_output), str(output_path))
+                logger.info(f"LibreOffice Excel/PPT conversion successful: {task_id}")
             else:
-                raise Exception("LibreOffice not available for Excel/PPT to PDF conversion")
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.error(f"LibreOffice output not found. stderr: {error_msg}")
+                raise Exception(f"Excel/PPT to PDF conversion failed: {error_msg}")
 
         # ==========================================
         # DATA FORMATS (CSV, JSON, XML, XLSX)
@@ -144,88 +150,52 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         # ==========================================
         elif input_ext in ["docx", "doc", "odt", "rtf"]:
             if output_format == "pdf":
-                # Use LibreOffice for pixel-perfect conversion
+                # Use LibreOffice ONLY for pixel-perfect conversion
                 import subprocess
                 import shutil
                 
-                # Check if LibreOffice is available
+                # Find LibreOffice executable
                 libreoffice_cmd = None
                 for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
                     if shutil.which(cmd):
                         libreoffice_cmd = cmd
                         break
                 
-                if libreoffice_cmd:
-                    try:
-                        # Create temp output directory
-                        temp_output_dir = input_path.parent
-                        
-                        # Run LibreOffice conversion
-                        result = subprocess.run([
-                            libreoffice_cmd,
-                            "--headless",
-                            "--nofirststartwizard", 
-                            "--convert-to", "pdf",
-                            "--outdir", str(temp_output_dir),
-                            str(input_path)
-                        ], capture_output=True, text=True, timeout=120)
-                        
-                        # LibreOffice creates file with same name but .pdf extension
-                        expected_output = temp_output_dir / (input_path.stem + ".pdf")
-                        
-                        if expected_output.exists():
-                            # Move to final output path
-                            shutil.move(str(expected_output), str(output_path))
-                            logger.info(f"LibreOffice conversion successful: {task_id}")
-                        else:
-                            raise Exception(f"LibreOffice failed: {result.stderr}")
-                            
-                    except subprocess.TimeoutExpired:
-                        raise Exception("LibreOffice conversion timed out (120s limit)")
-                    except Exception as e:
-                        logger.warning(f"LibreOffice failed: {e}, falling back to mammoth")
-                        # Fallback to mammoth+weasyprint
-                        import mammoth
-                        from weasyprint import HTML
-                        
-                        with open(input_path, "rb") as docx_file:
-                            result = mammoth.convert_to_html(docx_file)
-                            html = result.value
-                        
-                        styled_html = f"""
-                        <!DOCTYPE html>
-                        <html><head><meta charset="UTF-8">
-                        <style>
-                            @page {{ margin: 2cm; size: A4; }}
-                            body {{ font-family: sans-serif; line-height: 1.6; }}
-                            table {{ border-collapse: collapse; width: 100%; }}
-                            td, th {{ border: 1px solid #ccc; padding: 8px; }}
-                        </style>
-                        </head><body>{html}</body></html>
-                        """
-                        HTML(string=styled_html).write_pdf(str(output_path))
+                if not libreoffice_cmd:
+                    raise Exception("LibreOffice not installed. Please install LibreOffice for document conversion.")
+                
+                # Create temp output directory
+                temp_output_dir = input_path.parent
+                
+                logger.info(f"Starting LibreOffice conversion: {input_path} -> PDF")
+                
+                # Run LibreOffice conversion with environment fixes
+                env = os.environ.copy()
+                env["HOME"] = "/tmp"  # Fix for Docker/non-root user
+                
+                result = subprocess.run([
+                    libreoffice_cmd,
+                    "--headless",
+                    "--invisible",
+                    "--nologo",
+                    "--nofirststartwizard",
+                    "--norestore",
+                    "--convert-to", "pdf",
+                    "--outdir", str(temp_output_dir),
+                    str(input_path)
+                ], capture_output=True, text=True, timeout=180, env=env)
+                
+                # LibreOffice creates file with same name but .pdf extension
+                expected_output = temp_output_dir / (input_path.stem + ".pdf")
+                
+                if expected_output.exists() and expected_output.stat().st_size > 0:
+                    # Move to final output path
+                    shutil.move(str(expected_output), str(output_path))
+                    logger.info(f"LibreOffice conversion successful: {task_id}")
                 else:
-                    # No LibreOffice, use fallback
-                    logger.warning("LibreOffice not found, using mammoth fallback")
-                    import mammoth
-                    from weasyprint import HTML
-                    
-                    with open(input_path, "rb") as docx_file:
-                        result = mammoth.convert_to_html(docx_file)
-                        html = result.value
-                    
-                    styled_html = f"""
-                    <!DOCTYPE html>
-                    <html><head><meta charset="UTF-8">
-                    <style>
-                        @page {{ margin: 2cm; size: A4; }}
-                        body {{ font-family: sans-serif; line-height: 1.6; }}
-                        table {{ border-collapse: collapse; width: 100%; }}
-                        td, th {{ border: 1px solid #ccc; padding: 8px; }}
-                    </style>
-                    </head><body>{html}</body></html>
-                    """
-                    HTML(string=styled_html).write_pdf(str(output_path))
+                    error_msg = result.stderr or result.stdout or "Unknown error"
+                    logger.error(f"LibreOffice output not found. stderr: {error_msg}")
+                    raise Exception(f"LibreOffice conversion failed: {error_msg}")
                     
             elif output_format == "html":
                 import mammoth
