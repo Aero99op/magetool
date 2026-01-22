@@ -5,77 +5,94 @@ import { Loader2, CheckCircle2, Server, Activity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLastUsedServerName } from "../lib/api";
 
+// Primary 24/7 server for health check - always awake
+const PRIMARY_INSTANT_SERVER = "https://spandan1234-magetool-backend-api.hf.space";
+
 export function ServerStatus() {
-    const [status, setStatus] = useState<"checking" | "waking" | "ready" | "error">("checking");
+    // Start with "ready" state - 24/7 servers are always ready
+    const [status, setStatus] = useState<"checking" | "waking" | "ready" | "error">("ready");
     const [seconds, setSeconds] = useState(0);
-    const [activeServer, setActiveServer] = useState<string>("");
+    // Default to HF as the instant provider - shown immediately
+    const [activeServer, setActiveServer] = useState<string>("Hugging Face");
 
     useEffect(() => {
         let isMounted = true;
+
         const checkServer = async () => {
-            const timerInterval = setInterval(() => {
-                if (isMounted) setSeconds(s => s + 1);
-            }, 1000);
+            // Quick verification that 24/7 server is responsive
+            // This should be near-instant since HF is kept alive
+            try {
+                const response = await fetch(`${PRIMARY_INSTANT_SERVER}/health/live`, {
+                    method: 'GET',
+                    cache: 'no-store',
+                    mode: 'cors'
+                });
 
-            // Show "Waking up" message soon if not immediate
-            const wakingTimeout = setTimeout(() => {
-                if (isMounted) setStatus("waking");
-            }, 1000);
-
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://magetool-api.onrender.com";
-            const MAX_RETRIES = 60; // 2 minutes (assuming 2s delay)
-            let attempts = 0;
-
-            while (attempts < MAX_RETRIES && isMounted) {
-                try {
-                    // Try to ping
-                    await fetch(`${apiUrl}/health/live`, {
-                        method: 'GET',
-                        cache: 'no-store',
-                        mode: 'cors'
-                    });
-
-                    // If success:
-                    if (isMounted) {
-                        clearTimeout(wakingTimeout);
-                        setStatus("ready");
-                        setActiveServer(getLastUsedServerName());
-
-                        // Clear timer
-                        clearInterval(timerInterval);
-
-                        // Hide notification after short delay
-                        setTimeout(() => {
-                            if (isMounted) setStatus("checking"); // Hides top banner
-                        }, 3000);
-                    }
-                    return; // Exit loop on success
-
-                } catch (error) {
-                    attempts++;
-                    console.log(`Server wake-up attempt ${attempts}/${MAX_RETRIES} failed. Retrying...`);
-
-                    if (isMounted && attempts > 2) {
-                        // Only show waking status if it's taking more than a couple of seconds
-                        setStatus("waking");
-                    }
-
-                    // Wait 2 seconds before retry
-                    await new Promise(r => setTimeout(r, 2000));
+                if (isMounted && response.ok) {
+                    setStatus("ready");
+                    // Update with actual last used server name
+                    const serverName = getLastUsedServerName();
+                    if (serverName) setActiveServer(serverName);
                 }
-            }
+            } catch (error) {
+                // If HF is somehow down, show waking status
+                if (isMounted) {
+                    console.log('[ServerStatus] Primary 24/7 server slow to respond, showing wake-up...');
+                    setStatus("waking");
 
-            // If we reached here, it failed after all retries
-            if (isMounted) {
-                clearInterval(timerInterval);
-                setStatus("error");
+                    // Start timer
+                    const timerInterval = setInterval(() => {
+                        if (isMounted) setSeconds(s => s + 1);
+                    }, 1000);
+
+                    // Retry logic for edge case where 24/7 server is slow
+                    let attempts = 0;
+                    const MAX_RETRIES = 30;
+
+                    while (attempts < MAX_RETRIES && isMounted) {
+                        try {
+                            await fetch(`${PRIMARY_INSTANT_SERVER}/health/live`, {
+                                method: 'GET',
+                                cache: 'no-store',
+                            });
+
+                            if (isMounted) {
+                                clearInterval(timerInterval);
+                                setStatus("ready");
+                                setActiveServer(getLastUsedServerName() || "Hugging Face");
+                            }
+                            return;
+                        } catch {
+                            attempts++;
+                            await new Promise(r => setTimeout(r, 2000));
+                        }
+                    }
+
+                    // All retries failed
+                    if (isMounted) {
+                        clearInterval(timerInterval);
+                        setStatus("error");
+                    }
+                }
             }
         };
 
+        // Run health check immediately
         checkServer();
+
+        // Periodically update server name (in case it switches)
+        const nameUpdateInterval = setInterval(() => {
+            if (isMounted) {
+                const serverName = getLastUsedServerName();
+                if (serverName && serverName !== activeServer) {
+                    setActiveServer(serverName);
+                }
+            }
+        }, 5000);
 
         return () => {
             isMounted = false;
+            clearInterval(nameUpdateInterval);
         };
     }, []);
 
@@ -122,10 +139,9 @@ export function ServerStatus() {
                     <div className={`w-1.5 h-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
                     <span>Region: Global</span>
                     <span className="opacity-20">|</span>
-                    <span>Provider: <span className="text-foreground/80">{activeServer || 'Selecting...'}</span></span>
+                    <span>Provider: <span className="text-foreground/80">{activeServer}</span></span>
                 </div>
             </div>
         </>
     );
 }
-

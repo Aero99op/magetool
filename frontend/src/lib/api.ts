@@ -1,26 +1,38 @@
 import axios, { AxiosError, AxiosProgressEvent } from 'axios';
 
 // ==========================================
-// LOAD BALANCER: Round-Robin + Failover
-// Alternates between Render and Zeabur to maximize free tier usage
+// LOAD BALANCER: Instant Selection + Background Wake-up
+// TIER 1: 24/7 Always-Awake Servers (HF, Northflank) - INSTANT, no waiting
+// TIER 2: Sleeping Servers (Render, Zeabur) - Wake in background, use when healthy
 // ==========================================
 
-// ==========================================
-// LOAD BALANCER: Smart Round-Robin (Health Aware)
-// ==========================================
-
-const API_SERVERS = [
-    process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',           // Server 1: Render (750 hrs/month)
-    process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',               // Server 2: Zeabur ($5/month credit)
-    process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run', // Server 3: Northflank (Free Tier)
-    process.env.NEXT_PUBLIC_API_URL_4 || 'https://spandan1234-magetool-backend-api.hf.space', // Server 4: Hugging Face Spaces (Truly Free)
+// TIER 1: 24/7 Always-Awake Servers (kept alive by keep-alive bot)
+// These are used IMMEDIATELY - no health check wait
+const ALWAYS_AWAKE_SERVERS = [
+    process.env.NEXT_PUBLIC_API_URL_4 || 'https://spandan1234-magetool-backend-api.hf.space', // HF (Primary 24/7)
+    process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run',      // Northflank (Backup 24/7)
 ].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
 
+// TIER 2: Sleeping Servers (may need cold start - 30-60 seconds)
+// These are woken up in background, used once healthy
+const SLEEPING_SERVERS = [
+    process.env.NEXT_PUBLIC_API_URL || 'https://magetool-api.onrender.com',     // Render (750 hrs/month)
+    process.env.NEXT_PUBLIC_API_URL_2 || 'https://magetool.zeabur.app',         // Zeabur ($5/month credit)
+].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
+
+// Combined list for compatibility
+const API_SERVERS = [...ALWAYS_AWAKE_SERVERS, ...SLEEPING_SERVERS];
+
 // Load balancer state
-let serverIndex = 0;
+let awakeServerIndex = 0;  // For round-robin within awake servers
+let sleepingServerIndex = 0;  // For round-robin within sleeping servers
 const SERVER_HEALTH: Record<string, boolean> = {};
-const HEALTH_CHECK_TIMEOUT = 60000; // 60 seconds timeout for health check (allows waking up deep sleepers)
-let lastUsedServerUrl: string = API_SERVERS[0];
+const HEALTH_CHECK_TIMEOUT = 60000; // 60 seconds timeout for health check
+let lastUsedServerUrl: string = ALWAYS_AWAKE_SERVERS[0]; // Default to instant server
+
+// Initialize health state: Assume 24/7 servers are HEALTHY, sleeping servers are UNKNOWN
+ALWAYS_AWAKE_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
+SLEEPING_SERVERS.forEach(server => { SERVER_HEALTH[server] = false; }); // Assume asleep until proven otherwise
 
 /**
  * Get a friendly name for a server URL
@@ -42,26 +54,23 @@ export function getLastUsedServerName(): string {
     return getServerName(lastUsedServerUrl);
 }
 
-// Initialize all servers as unknown first
-API_SERVERS.forEach(server => { SERVER_HEALTH[server] = true; });
-
-// Active Health Check System
+// Active Health Check System (non-blocking)
 async function checkServerHealth(url: string): Promise<boolean> {
     try {
         // Try /health/live first
         await axios.get(`${url}/health/live`, { timeout: HEALTH_CHECK_TIMEOUT });
-        console.log(`[LoadBalancer] Server Healthy: ${url}`);
+        console.log(`[LoadBalancer] ✅ Server Healthy: ${getServerName(url)}`);
         SERVER_HEALTH[url] = true;
         return true;
     } catch (error) {
         // Fallback: Try root / endpoint (some proxies block /health/live)
         try {
             await axios.get(`${url}/`, { timeout: HEALTH_CHECK_TIMEOUT });
-            console.log(`[LoadBalancer] Server Healthy (via /): ${url}`);
+            console.log(`[LoadBalancer] ✅ Server Healthy (via /): ${getServerName(url)}`);
             SERVER_HEALTH[url] = true;
             return true;
         } catch {
-            console.warn(`[LoadBalancer] Server Unhealthy: ${url}`);
+            console.warn(`[LoadBalancer] ❌ Server Unhealthy: ${getServerName(url)}`);
             SERVER_HEALTH[url] = false;
             return false;
         }
@@ -69,106 +78,117 @@ async function checkServerHealth(url: string): Promise<boolean> {
 }
 
 /**
- * Trigger a wake-up call to all servers
- * Useful for "lazy waking" when user lands on the site
+ * Wake up ONLY sleeping servers (Render, Zeabur) in background
+ * 24/7 servers (HF, Northflank) don't need wake-up
+ * This is NON-BLOCKING - fire and forget
  */
-export const wakeUpServers = async () => {
-    console.log('[LoadBalancer] Waking up all servers...');
-    const checks = API_SERVERS.map(server => checkServerHealth(server));
-    await Promise.allSettled(checks);
-    console.log('[LoadBalancer] Wake-up complete:', SERVER_HEALTH);
+export const wakeUpSleepingServers = async () => {
+    console.log('[LoadBalancer] 🌅 Waking up sleeping servers in background...');
+
+    // Only wake sleeping servers - no need to ping 24/7 servers
+    const checks = SLEEPING_SERVERS.map(server => checkServerHealth(server));
+
+    // Fire and forget - don't await, let it run in background
+    Promise.allSettled(checks).then(() => {
+        console.log('[LoadBalancer] 🌅 Background wake-up complete:',
+            SLEEPING_SERVERS.map(s => `${getServerName(s)}: ${SERVER_HEALTH[s] ? 'AWAKE ✅' : 'SLEEPING 💤'}`).join(', ')
+        );
+    });
 };
 
-// Initial Health Check (Fire and forget)
-wakeUpServers();
+// Legacy alias for compatibility
+export const wakeUpServers = wakeUpSleepingServers;
+
+// Initial Wake-up: Start waking sleeping servers immediately (non-blocking)
+wakeUpSleepingServers();
 
 /**
- * Get the next healthy server using Smart Routing + Round-Robin
- * @param category - Optional tool category to prioritize specific servers (e.g. 'video' -> HF)
+ * Get an INSTANT server from 24/7 pool
+ * No health check - assumes they're awake (kept alive by bot)
+ */
+function getInstantServer(): string {
+    const server = ALWAYS_AWAKE_SERVERS[awakeServerIndex % ALWAYS_AWAKE_SERVERS.length];
+    awakeServerIndex = (awakeServerIndex + 1) % ALWAYS_AWAKE_SERVERS.length;
+    return server;
+}
+
+/**
+ * Get the next healthy server using INSTANT-FIRST routing
+ * 
+ * STRATEGY:
+ * 1. For heavy tasks (video/audio): Use 24/7 servers (HF/NF) - INSTANT
+ * 2. For light tasks: 
+ *    - If sleeping servers are CONFIRMED healthy → Use them (save powerful servers)
+ *    - Otherwise → Use 24/7 servers INSTANTLY (no waiting!)
+ * 
+ * @param category - Optional tool category (e.g. 'video', 'image')
  */
 function getNextServer(category?: string): string {
-    // 1. Get all healthy servers
-    const healthyServers = API_SERVERS.filter(s => SERVER_HEALTH[s]);
-
-    // 2. SMART ROUTING: 2-TIER PRIORITY for "Heavy" tools (Video/Audio)
-    // TIER 1: HF + Northflank (powerful, unlimited/generous compute)
-    // TIER 2: Render + Zeabur (fallback round-robin when Tier 1 is down)
+    // ==========================================
+    // HEAVY TASKS: Always use 24/7 powerful servers
+    // ==========================================
     if (category === 'video' || category === 'audio') {
-        // TIER 1: HuggingFace + Northflank
-        const tier1Servers = healthyServers.filter(s =>
-            s.includes('hf.space') || s.includes('code.run')
-        );
+        // Get healthy 24/7 servers
+        const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-        if (tier1Servers.length > 0) {
-            // Random selection between Tier 1 servers for load balancing
-            const randomIndex = Math.floor(Math.random() * tier1Servers.length);
-            const server = tier1Servers[randomIndex];
-            console.log(`[LoadBalancer] Tier 1 Routing: Using ${server.includes('hf.space') ? 'HF' : 'Northflank'} for ${category}`);
+        if (healthyAwakeServers.length > 0) {
+            // Random selection for load balancing
+            const randomIndex = Math.floor(Math.random() * healthyAwakeServers.length);
+            const server = healthyAwakeServers[randomIndex];
+            console.log(`[LoadBalancer] 🎬 Heavy task (${category}): Using ${getServerName(server)}`);
             lastUsedServerUrl = server;
             return server;
         }
 
-        // TIER 2: Fallback to Render/Zeabur
-        console.warn(`[LoadBalancer] Tier 1 (HF+Northflank) down for ${category}, falling back to Tier 2...`);
-        const tier2Servers = healthyServers.filter(s =>
-            s.includes('onrender.com') || s.includes('zeabur.app')
-        );
-
-        if (tier2Servers.length > 0) {
-            const server = tier2Servers[serverIndex % tier2Servers.length];
-            serverIndex = (serverIndex + 1) % tier2Servers.length;
+        // Fallback: If 24/7 servers are somehow down, try sleeping servers
+        const healthySleeping = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
+        if (healthySleeping.length > 0) {
+            const server = healthySleeping[sleepingServerIndex % healthySleeping.length];
+            sleepingServerIndex = (sleepingServerIndex + 1) % healthySleeping.length;
+            console.warn(`[LoadBalancer] 🎬 24/7 servers down! Using ${getServerName(server)} for ${category}`);
             lastUsedServerUrl = server;
             return server;
         }
     }
 
-    // 3. SMART WAKE-UP ROUTING for "Light" tools (Image/Document)
-    // PREFER: Render + Zeabur (save powerful servers for heavy tasks)
-    // BACKUP: HF + Northflank (if Render/Zeabur are sleeping)
-    const tierRegularServers = healthyServers.filter(s =>
-        s.includes('onrender.com') || s.includes('zeabur.app')
-    );
+    // ==========================================
+    // LIGHT TASKS: Prefer sleeping servers IF AWAKE
+    // ==========================================
+    const healthySleepingServers = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    if (tierRegularServers.length > 0) {
-        // Preferred servers are AWAKE! Use them.
-        const server = tierRegularServers[serverIndex % tierRegularServers.length];
-        serverIndex = (serverIndex + 1) % tierRegularServers.length;
-        lastUsedServerUrl = server;
-        console.log(`[LoadBalancer] Using Regular Server (Awake): ${server}`);
-        return server;
-    }
-
-    // If we reach here, Render/Zeabur are SLEEPING/DOWN.
-    // Temporarily use HF/Northflank so user doesn't wait!
-    const tierBackupServers = healthyServers.filter(s =>
-        s.includes('hf.space') || s.includes('code.run')
-    );
-
-    if (tierBackupServers.length > 0) {
-        const randomIndex = Math.floor(Math.random() * tierBackupServers.length);
-        const server = tierBackupServers[randomIndex];
-        console.log(`[LoadBalancer] Regular servers sleeping, using Backup (HF/NF): ${server}`);
+    if (healthySleepingServers.length > 0) {
+        // Sleeping servers are AWAKE! Use them to save 24/7 servers for heavy tasks
+        const server = healthySleepingServers[sleepingServerIndex % healthySleepingServers.length];
+        sleepingServerIndex = (sleepingServerIndex + 1) % healthySleepingServers.length;
+        console.log(`[LoadBalancer] 🖼️ Light task: Using awake ${getServerName(server)}`);
         lastUsedServerUrl = server;
         return server;
     }
 
-    // 4. Fallback: If absolutely nothing else matches (rare), use any healthy server
-    if (healthyServers.length > 0) {
-        const server = healthyServers[serverIndex % healthyServers.length];
-        serverIndex = (serverIndex + 1) % healthyServers.length;
+    // ==========================================
+    // INSTANT FALLBACK: Sleeping servers not ready
+    // Use 24/7 servers IMMEDIATELY - no waiting!
+    // ==========================================
+    const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
+
+    if (healthyAwakeServers.length > 0) {
+        const server = getInstantServer();
+        console.log(`[LoadBalancer] ⚡ INSTANT: Sleeping servers not ready, using ${getServerName(server)}`);
         lastUsedServerUrl = server;
         return server;
     }
 
-    // 5. Last Resort: If ALL are marked unhealthy, try them all (rotate through main list)
-    console.warn('[LoadBalancer] All servers marked unhealthy! Using fallback rotation.');
-    const server = API_SERVERS[serverIndex % API_SERVERS.length];
-    serverIndex = (serverIndex + 1) % API_SERVERS.length;
-
-    // Trigger a refresh to wake everyone up
-    API_SERVERS.forEach(s => checkServerHealth(s));
-
+    // ==========================================
+    // LAST RESORT: All servers seem down
+    // Still try 24/7 server (most likely to work)
+    // ==========================================
+    console.warn('[LoadBalancer] ⚠️ All servers marked unhealthy! Trying 24/7 server anyway...');
+    const server = getInstantServer();
     lastUsedServerUrl = server;
+
+    // Trigger background recovery
+    [...ALWAYS_AWAKE_SERVERS, ...SLEEPING_SERVERS].forEach(s => checkServerHealth(s));
+
     return server;
 }
 
