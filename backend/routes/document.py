@@ -46,9 +46,51 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
         
         # Handle different conversion types
         # ==========================================
+        # EXCEL/PPT TO PDF (LibreOffice)
+        # ==========================================
+        if input_ext in ["xlsx", "xls", "pptx", "ppt", "odp", "ods"] and output_format == "pdf":
+            import subprocess
+            import shutil
+            
+            # Check if LibreOffice is available
+            libreoffice_cmd = None
+            for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
+                if shutil.which(cmd):
+                    libreoffice_cmd = cmd
+                    break
+            
+            if libreoffice_cmd:
+                try:
+                    temp_output_dir = input_path.parent
+                    
+                    result = subprocess.run([
+                        libreoffice_cmd,
+                        "--headless",
+                        "--nofirststartwizard",
+                        "--convert-to", "pdf",
+                        "--outdir", str(temp_output_dir),
+                        str(input_path)
+                    ], capture_output=True, text=True, timeout=180)
+                    
+                    expected_output = temp_output_dir / (input_path.stem + ".pdf")
+                    
+                    if expected_output.exists():
+                        shutil.move(str(expected_output), str(output_path))
+                        logger.info(f"LibreOffice Excel/PPT conversion successful: {task_id}")
+                    else:
+                        raise Exception(f"LibreOffice failed: {result.stderr}")
+                        
+                except subprocess.TimeoutExpired:
+                    raise Exception("LibreOffice conversion timed out")
+                except Exception as e:
+                    raise Exception(f"Excel/PPT to PDF conversion failed: {e}")
+            else:
+                raise Exception("LibreOffice not available for Excel/PPT to PDF conversion")
+
+        # ==========================================
         # DATA FORMATS (CSV, JSON, XML, XLSX)
         # ==========================================
-        if input_ext in ["json", "csv", "xml", "xlsx", "xls"] and output_format in ["json", "csv", "xml", "xlsx"]:
+        elif input_ext in ["json", "csv", "xml", "xlsx", "xls"] and output_format in ["json", "csv", "xml", "xlsx"]:
             import pandas as pd
             
             # Read Input
@@ -98,130 +140,93 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             cv.close()
 
         # ==========================================
-        # DOCX CONVERSIONS
+        # DOCX/DOC/ODT/RTF CONVERSIONS (LibreOffice)
         # ==========================================
-        elif input_ext == "docx":
+        elif input_ext in ["docx", "doc", "odt", "rtf"]:
             if output_format == "pdf":
-                # DOCX -> HTML -> PDF
-                import mammoth
-                from weasyprint import HTML, CSS
+                # Use LibreOffice for pixel-perfect conversion
+                import subprocess
+                import shutil
                 
-                with open(input_path, "rb") as docx_file:
-                    result = mammoth.convert_to_html(docx_file)
-                    html = result.value
+                # Check if LibreOffice is available
+                libreoffice_cmd = None
+                for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
+                    if shutil.which(cmd):
+                        libreoffice_cmd = cmd
+                        break
+                
+                if libreoffice_cmd:
+                    try:
+                        # Create temp output directory
+                        temp_output_dir = input_path.parent
+                        
+                        # Run LibreOffice conversion
+                        result = subprocess.run([
+                            libreoffice_cmd,
+                            "--headless",
+                            "--nofirststartwizard", 
+                            "--convert-to", "pdf",
+                            "--outdir", str(temp_output_dir),
+                            str(input_path)
+                        ], capture_output=True, text=True, timeout=120)
+                        
+                        # LibreOffice creates file with same name but .pdf extension
+                        expected_output = temp_output_dir / (input_path.stem + ".pdf")
+                        
+                        if expected_output.exists():
+                            # Move to final output path
+                            shutil.move(str(expected_output), str(output_path))
+                            logger.info(f"LibreOffice conversion successful: {task_id}")
+                        else:
+                            raise Exception(f"LibreOffice failed: {result.stderr}")
+                            
+                    except subprocess.TimeoutExpired:
+                        raise Exception("LibreOffice conversion timed out (120s limit)")
+                    except Exception as e:
+                        logger.warning(f"LibreOffice failed: {e}, falling back to mammoth")
+                        # Fallback to mammoth+weasyprint
+                        import mammoth
+                        from weasyprint import HTML
+                        
+                        with open(input_path, "rb") as docx_file:
+                            result = mammoth.convert_to_html(docx_file)
+                            html = result.value
+                        
+                        styled_html = f"""
+                        <!DOCTYPE html>
+                        <html><head><meta charset="UTF-8">
+                        <style>
+                            @page {{ margin: 2cm; size: A4; }}
+                            body {{ font-family: sans-serif; line-height: 1.6; }}
+                            table {{ border-collapse: collapse; width: 100%; }}
+                            td, th {{ border: 1px solid #ccc; padding: 8px; }}
+                        </style>
+                        </head><body>{html}</body></html>
+                        """
+                        HTML(string=styled_html).write_pdf(str(output_path))
+                else:
+                    # No LibreOffice, use fallback
+                    logger.warning("LibreOffice not found, using mammoth fallback")
+                    import mammoth
+                    from weasyprint import HTML
                     
-                # Add comprehensive styling for better layout preservation
-                styled_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
+                    with open(input_path, "rb") as docx_file:
+                        result = mammoth.convert_to_html(docx_file)
+                        html = result.value
+                    
+                    styled_html = f"""
+                    <!DOCTYPE html>
+                    <html><head><meta charset="UTF-8">
                     <style>
-                        @page {{ 
-                            margin: 2cm; 
-                            size: A4;
-                            @bottom-center {{
-                                content: counter(page);
-                                font-size: 10px;
-                                color: #666;
-                            }}
-                        }}
-                        
-                        body {{ 
-                            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
-                            font-size: 11pt;
-                            line-height: 1.6; 
-                            color: #333;
-                            text-align: justify;
-                        }}
-                        
-                        /* Headings */
-                        h1 {{ font-size: 24pt; font-weight: bold; margin: 24pt 0 12pt 0; color: #1a1a1a; }}
-                        h2 {{ font-size: 18pt; font-weight: bold; margin: 18pt 0 10pt 0; color: #2a2a2a; }}
-                        h3 {{ font-size: 14pt; font-weight: bold; margin: 14pt 0 8pt 0; color: #3a3a3a; }}
-                        h4, h5, h6 {{ font-size: 12pt; font-weight: bold; margin: 12pt 0 6pt 0; }}
-                        
-                        /* Paragraphs */
-                        p {{ margin: 0 0 10pt 0; orphans: 3; widows: 3; }}
-                        
-                        /* Tables */
-                        table {{ 
-                            border-collapse: collapse; 
-                            width: 100%; 
-                            margin: 12pt 0;
-                            page-break-inside: avoid;
-                        }}
-                        td, th {{ 
-                            border: 1px solid #ccc; 
-                            padding: 8px 12px; 
-                            text-align: left;
-                            vertical-align: top;
-                        }}
-                        th {{ 
-                            background-color: #f5f5f5; 
-                            font-weight: bold;
-                        }}
-                        tr:nth-child(even) {{ background-color: #fafafa; }}
-                        
-                        /* Lists */
-                        ul, ol {{ margin: 10pt 0; padding-left: 24pt; }}
-                        li {{ margin: 4pt 0; }}
-                        
-                        /* Images */
-                        img {{ 
-                            max-width: 100%; 
-                            height: auto; 
-                            margin: 12pt 0;
-                            page-break-inside: avoid;
-                        }}
-                        
-                        /* Links */
-                        a {{ color: #0066cc; text-decoration: underline; }}
-                        
-                        /* Blockquotes */
-                        blockquote {{ 
-                            margin: 12pt 0; 
-                            padding: 10pt 20pt; 
-                            border-left: 4px solid #ddd; 
-                            background: #f9f9f9;
-                            font-style: italic;
-                        }}
-                        
-                        /* Code */
-                        code {{ 
-                            font-family: 'Consolas', 'Monaco', monospace; 
-                            background: #f4f4f4; 
-                            padding: 2px 6px; 
-                            border-radius: 3px;
-                            font-size: 10pt;
-                        }}
-                        pre {{ 
-                            background: #f4f4f4; 
-                            padding: 12pt; 
-                            overflow-x: auto;
-                            border-radius: 4px;
-                            margin: 12pt 0;
-                        }}
-                        pre code {{ background: none; padding: 0; }}
-                        
-                        /* Strong/Bold and Emphasis */
-                        strong, b {{ font-weight: bold; }}
-                        em, i {{ font-style: italic; }}
-                        
-                        /* Horizontal Rule */
-                        hr {{ 
-                            border: none; 
-                            border-top: 1px solid #ddd; 
-                            margin: 20pt 0; 
-                        }}
+                        @page {{ margin: 2cm; size: A4; }}
+                        body {{ font-family: sans-serif; line-height: 1.6; }}
+                        table {{ border-collapse: collapse; width: 100%; }}
+                        td, th {{ border: 1px solid #ccc; padding: 8px; }}
                     </style>
-                </head>
-                <body>{html}</body>
-                </html>
-                """
-                
-                HTML(string=styled_html).write_pdf(str(output_path))
-                
+                    </head><body>{html}</body></html>
+                    """
+                    HTML(string=styled_html).write_pdf(str(output_path))
+                    
             elif output_format == "html":
                 import mammoth
                 with open(input_path, "rb") as docx_file:

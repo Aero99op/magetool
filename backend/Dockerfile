@@ -24,7 +24,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies including LibreOffice for document conversion
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     ghostscript \
@@ -36,7 +36,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpangoft2-1.0-0 \
     libgl1 \
     libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+    # LibreOffice for pixel-perfect DOCX/DOC to PDF conversion
+    libreoffice-writer-nogui \
+    libreoffice-calc-nogui \
+    libreoffice-impress-nogui \
+    # Fonts for proper document rendering
+    fonts-liberation \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    # Clean up LibreOffice cache to reduce image size
+    && rm -rf /usr/share/libreoffice/share/gallery \
+    && rm -rf /usr/share/libreoffice/share/template
 
 # Create app directory
 WORKDIR /app
