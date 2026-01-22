@@ -110,15 +110,110 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
                     result = mammoth.convert_to_html(docx_file)
                     html = result.value
                     
-                # Add styling ensuring compatibility with WeasyPrint
+                # Add comprehensive styling for better layout preservation
                 styled_html = f"""
+                <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta charset="UTF-8">
                     <style>
-                        @page {{ margin: 2cm; size: A4; }}
-                        body {{ font-family: sans-serif; line-height: 1.5; }}
-                        table {{ border-collapse: collapse; width: 100%; }}
-                        td, th {{ border: 1px solid #ddd; padding: 8px; }}
+                        @page {{ 
+                            margin: 2cm; 
+                            size: A4;
+                            @bottom-center {{
+                                content: counter(page);
+                                font-size: 10px;
+                                color: #666;
+                            }}
+                        }}
+                        
+                        body {{ 
+                            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+                            font-size: 11pt;
+                            line-height: 1.6; 
+                            color: #333;
+                            text-align: justify;
+                        }}
+                        
+                        /* Headings */
+                        h1 {{ font-size: 24pt; font-weight: bold; margin: 24pt 0 12pt 0; color: #1a1a1a; }}
+                        h2 {{ font-size: 18pt; font-weight: bold; margin: 18pt 0 10pt 0; color: #2a2a2a; }}
+                        h3 {{ font-size: 14pt; font-weight: bold; margin: 14pt 0 8pt 0; color: #3a3a3a; }}
+                        h4, h5, h6 {{ font-size: 12pt; font-weight: bold; margin: 12pt 0 6pt 0; }}
+                        
+                        /* Paragraphs */
+                        p {{ margin: 0 0 10pt 0; orphans: 3; widows: 3; }}
+                        
+                        /* Tables */
+                        table {{ 
+                            border-collapse: collapse; 
+                            width: 100%; 
+                            margin: 12pt 0;
+                            page-break-inside: avoid;
+                        }}
+                        td, th {{ 
+                            border: 1px solid #ccc; 
+                            padding: 8px 12px; 
+                            text-align: left;
+                            vertical-align: top;
+                        }}
+                        th {{ 
+                            background-color: #f5f5f5; 
+                            font-weight: bold;
+                        }}
+                        tr:nth-child(even) {{ background-color: #fafafa; }}
+                        
+                        /* Lists */
+                        ul, ol {{ margin: 10pt 0; padding-left: 24pt; }}
+                        li {{ margin: 4pt 0; }}
+                        
+                        /* Images */
+                        img {{ 
+                            max-width: 100%; 
+                            height: auto; 
+                            margin: 12pt 0;
+                            page-break-inside: avoid;
+                        }}
+                        
+                        /* Links */
+                        a {{ color: #0066cc; text-decoration: underline; }}
+                        
+                        /* Blockquotes */
+                        blockquote {{ 
+                            margin: 12pt 0; 
+                            padding: 10pt 20pt; 
+                            border-left: 4px solid #ddd; 
+                            background: #f9f9f9;
+                            font-style: italic;
+                        }}
+                        
+                        /* Code */
+                        code {{ 
+                            font-family: 'Consolas', 'Monaco', monospace; 
+                            background: #f4f4f4; 
+                            padding: 2px 6px; 
+                            border-radius: 3px;
+                            font-size: 10pt;
+                        }}
+                        pre {{ 
+                            background: #f4f4f4; 
+                            padding: 12pt; 
+                            overflow-x: auto;
+                            border-radius: 4px;
+                            margin: 12pt 0;
+                        }}
+                        pre code {{ background: none; padding: 0; }}
+                        
+                        /* Strong/Bold and Emphasis */
+                        strong, b {{ font-weight: bold; }}
+                        em, i {{ font-style: italic; }}
+                        
+                        /* Horizontal Rule */
+                        hr {{ 
+                            border: none; 
+                            border-top: 1px solid #ddd; 
+                            margin: 20pt 0; 
+                        }}
                     </style>
                 </head>
                 <body>{html}</body>
@@ -159,11 +254,40 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
                 html_body = f"<pre style='white-space: pre-wrap;'>{escaped}</pre>"
             
             html_doc = f"""
+            <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8">
                 <style>
-                    @page {{ margin: 2cm; size: A4; }}
-                    body {{ font-family: monospace; font-size: 12px; }}
+                    @page {{ 
+                        margin: 2cm; 
+                        size: A4;
+                        @bottom-center {{
+                            content: counter(page);
+                            font-size: 10px;
+                            color: #666;
+                        }}
+                    }}
+                    body {{ 
+                        font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+                        font-size: 11pt;
+                        line-height: 1.5;
+                        color: #333;
+                    }}
+                    pre {{
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                        margin: 0;
+                    }}
+                    /* Markdown specific styles */
+                    h1 {{ font-size: 22pt; margin: 20pt 0 12pt 0; border-bottom: 2px solid #333; padding-bottom: 6pt; }}
+                    h2 {{ font-size: 18pt; margin: 18pt 0 10pt 0; border-bottom: 1px solid #666; padding-bottom: 4pt; }}
+                    h3 {{ font-size: 14pt; margin: 14pt 0 8pt 0; }}
+                    p {{ margin: 0 0 10pt 0; font-family: 'Segoe UI', Arial, sans-serif; }}
+                    code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
+                    blockquote {{ border-left: 4px solid #ddd; margin: 12pt 0; padding: 8pt 16pt; background: #f9f9f9; }}
+                    ul, ol {{ margin: 10pt 0; padding-left: 24pt; }}
+                    a {{ color: #0066cc; }}
                 </style>
             </head>
             <body>{html_body}</body>
