@@ -807,7 +807,7 @@ export const documentApi = {
         uploadFile('/api/document/to-image', file, { output_format: outputFormat }, onProgress, 'document'),
 
     dataConvert: (file: File, outputFormat: string, onProgress?: (e: AxiosProgressEvent) => void) =>
-        uploadFile('/api/data/convert', file, { output_format: outputFormat }, onProgress, 'document'),
+        uploadFile('/api/document/data-convert', file, { output_format: outputFormat }, onProgress, 'document'),
 
     metadata: async (file: File, action: string = 'view') => {
         const validation = validateFile(file, 'document');
