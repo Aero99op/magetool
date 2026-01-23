@@ -113,80 +113,55 @@ function getInstantServer(): string {
 }
 
 /**
- * Get the next healthy server using INSTANT-FIRST routing
+ * Get the next healthy server using HF-FIRST routing
  * 
- * STRATEGY:
- * 1. For heavy tasks (video/audio): Use 24/7 servers (HF/NF) - INSTANT
- * 2. For light tasks: 
- *    - If sleeping servers are CONFIRMED healthy → Use them (save powerful servers)
- *    - Otherwise → Use 24/7 servers INSTANTLY (no waiting!)
+ * STRATEGY (Updated):
+ * 1. ALL TASKS: Use 24/7 servers (HF/Northflank) FIRST - INSTANT, no waiting
+ * 2. BACKUP ONLY: If 24/7 servers fail, fallback to sleeping servers (Render/Zeabur)
+ * 
+ * Render/Zeabur are now BACKUP ONLY - sideline mode
  * 
  * @param category - Optional tool category (e.g. 'video', 'image')
  */
 function getNextServer(category?: string): string {
     // ==========================================
-    // HEAVY TASKS: Always use 24/7 powerful servers
+    // PRIMARY: Always try 24/7 servers FIRST (HF/Northflank)
+    // These are kept alive by keep-alive bot
     // ==========================================
-    if (category === 'video' || category === 'audio') {
-        // Get healthy 24/7 servers
-        const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
+    const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-        if (healthyAwakeServers.length > 0) {
-            // Random selection for load balancing
-            const randomIndex = Math.floor(Math.random() * healthyAwakeServers.length);
-            const server = healthyAwakeServers[randomIndex];
-            console.log(`[LoadBalancer] 🎬 Heavy task (${category}): Using ${getServerName(server)}`);
-            lastUsedServerUrl = server;
-            return server;
-        }
-
-        // Fallback: If 24/7 servers are somehow down, try sleeping servers
-        const healthySleeping = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
-        if (healthySleeping.length > 0) {
-            const server = healthySleeping[sleepingServerIndex % healthySleeping.length];
-            sleepingServerIndex = (sleepingServerIndex + 1) % healthySleeping.length;
-            console.warn(`[LoadBalancer] 🎬 24/7 servers down! Using ${getServerName(server)} for ${category}`);
-            lastUsedServerUrl = server;
-            return server;
-        }
-    }
-
-    // ==========================================
-    // LIGHT TASKS: Prefer sleeping servers IF AWAKE
-    // ==========================================
-    const healthySleepingServers = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
-
-    if (healthySleepingServers.length > 0) {
-        // Sleeping servers are AWAKE! Use them to save 24/7 servers for heavy tasks
-        const server = healthySleepingServers[sleepingServerIndex % healthySleepingServers.length];
-        sleepingServerIndex = (sleepingServerIndex + 1) % healthySleepingServers.length;
-        console.log(`[LoadBalancer] 🖼️ Light task: Using awake ${getServerName(server)}`);
+    if (healthyAwakeServers.length > 0) {
+        // Random selection for load balancing within 24/7 servers
+        const randomIndex = Math.floor(Math.random() * healthyAwakeServers.length);
+        const server = healthyAwakeServers[randomIndex];
+        console.log(`[LoadBalancer] 🚀 PRIMARY: Using ${getServerName(server)} for ${category || 'general'} task`);
         lastUsedServerUrl = server;
         return server;
     }
 
     // ==========================================
-    // INSTANT FALLBACK: Sleeping servers not ready
-    // Use 24/7 servers IMMEDIATELY - no waiting!
+    // BACKUP: 24/7 servers unavailable, try sleeping servers
+    // Render/Zeabur are BACKUP ONLY
     // ==========================================
-    const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
+    const healthySleepingServers = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
 
-    if (healthyAwakeServers.length > 0) {
-        const server = getInstantServer();
-        console.log(`[LoadBalancer] ⚡ INSTANT: Sleeping servers not ready, using ${getServerName(server)}`);
+    if (healthySleepingServers.length > 0) {
+        const server = healthySleepingServers[sleepingServerIndex % healthySleepingServers.length];
+        sleepingServerIndex = (sleepingServerIndex + 1) % healthySleepingServers.length;
+        console.warn(`[LoadBalancer] 🔄 BACKUP: 24/7 servers down! Using ${getServerName(server)}`);
         lastUsedServerUrl = server;
         return server;
     }
 
     // ==========================================
     // LAST RESORT: All servers seem down
-    // Still try 24/7 server (most likely to work)
+    // Try 24/7 server anyway (most likely to recover)
     // ==========================================
     console.warn('[LoadBalancer] ⚠️ All servers marked unhealthy! Trying 24/7 server anyway...');
     const server = getInstantServer();
     lastUsedServerUrl = server;
 
-    // Trigger background recovery
+    // Trigger background recovery for all servers
     [...ALWAYS_AWAKE_SERVERS, ...SLEEPING_SERVERS].forEach(s => checkServerHealth(s));
 
     return server;
@@ -444,13 +419,19 @@ export const uploadFile = async (
 
             if (error instanceof AxiosError) {
                 // Determine if we should retry
+                // Added 404 - if endpoint missing on one server, try another
                 const shouldRetry =
+                    error.response?.status === 404 || // Endpoint not found - try another server
                     (error.response?.status && error.response.status >= 500) || // Server error
                     error.code === 'ERR_NETWORK' ||
                     error.code === 'ECONNABORTED'; // Connection error
 
                 if (shouldRetry) {
-                    markServerUnhealthy(serverUrl); // Mark bad, so next iteration picks different one
+                    // Only mark unhealthy for 500+ or network errors, NOT for 404
+                    // 404 means endpoint missing, but server might be fine for other endpoints
+                    if (error.response?.status !== 404) {
+                        markServerUnhealthy(serverUrl);
+                    }
                     if (attempt < 2) {
                         console.log(`[LoadBalancer] Retrying on next healthy server...`);
                         continue; // Retry loop
@@ -524,13 +505,18 @@ export const uploadFiles = async (
             console.warn(`[LoadBalancer] Attempt ${attempt + 1} failed on ${serverUrl}`);
 
             if (error instanceof AxiosError) {
+                // Added 404 - if endpoint missing on one server, try another
                 const shouldRetry =
+                    error.response?.status === 404 || // Endpoint not found - try another server
                     (error.response?.status && error.response.status >= 500) ||
                     error.code === 'ERR_NETWORK' ||
                     error.code === 'ECONNABORTED';
 
                 if (shouldRetry) {
-                    markServerUnhealthy(serverUrl);
+                    // Only mark unhealthy for 500+ or network errors, NOT for 404
+                    if (error.response?.status !== 404) {
+                        markServerUnhealthy(serverUrl);
+                    }
                     if (attempt < 2) {
                         console.log(`[LoadBalancer] Retrying on next healthy server...`);
                         continue;
