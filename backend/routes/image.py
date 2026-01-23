@@ -549,7 +549,7 @@ async def upscale_image(
 
 
 def process_image_watermark_add(task_id: str, input_path: Path, original_filename: str, **params):
-    """Background task: Add watermark to image"""
+    """Background task: Add watermark to image with smart color detection"""
     try:
         text = params.get("text", "© 2026")
         position = params.get("position", "bottom-right")
@@ -559,6 +559,7 @@ def process_image_watermark_add(task_id: str, input_path: Path, original_filenam
         update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
         
         from PIL import ImageDraw, ImageFont
+        import numpy as np
         
         with Image.open(input_path) as img:
             update_task(task_id, progress_percent=30)
@@ -590,8 +591,58 @@ def process_image_watermark_add(task_id: str, input_path: Path, original_filenam
             else:
                 pos = (img.width - text_width - padding, img.height - text_height - padding)
             
+            update_task(task_id, progress_percent=50)
+            
+            # ==========================================
+            # SMART COLOR DETECTION
+            # Analyze brightness at watermark position
+            # ==========================================
+            
+            # Get the region where watermark will be placed
+            x1 = max(0, pos[0] - 10)
+            y1 = max(0, pos[1] - 10)
+            x2 = min(img.width, pos[0] + text_width + 10)
+            y2 = min(img.height, pos[1] + text_height + 10)
+            
+            # Crop the region and convert to grayscale to measure brightness
+            region = img.crop((x1, y1, x2, y2))
+            
+            # Convert to grayscale for brightness calculation
+            if region.mode == "RGBA":
+                # Handle transparency - composite on white background for accurate brightness
+                bg = Image.new("RGB", region.size, (255, 255, 255))
+                bg.paste(region, mask=region.split()[3])  # Use alpha as mask
+                gray_region = bg.convert("L")
+            else:
+                gray_region = region.convert("L")
+            
+            # Calculate average brightness (0=black, 255=white)
+            region_array = np.array(gray_region)
+            avg_brightness = np.mean(region_array)
+            
+            # Decide watermark color based on brightness
+            # threshold 128 = midpoint, but using 140 for slightly better visibility
+            if avg_brightness > 140:
+                # Light background -> use BLACK watermark
+                watermark_color = (0, 0, 0)
+                logger.info(f"Watermark: Light background detected (brightness: {avg_brightness:.0f}) -> Black text")
+            else:
+                # Dark background -> use WHITE watermark
+                watermark_color = (255, 255, 255)
+                logger.info(f"Watermark: Dark background detected (brightness: {avg_brightness:.0f}) -> White text")
+            
             alpha = int(255 * opacity / 100)
-            draw.text(pos, text, fill=(255, 255, 255, alpha), font=font)
+            fill_color = (*watermark_color, alpha)
+            
+            # Draw watermark with outline for better visibility
+            outline_color = (255, 255, 255, alpha) if watermark_color == (0, 0, 0) else (0, 0, 0, alpha)
+            
+            # Draw outline (subtle, 1px offset)
+            for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                draw.text((pos[0] + dx, pos[1] + dy), text, fill=outline_color, font=font)
+            
+            # Draw main text
+            draw.text(pos, text, fill=fill_color, font=font)
             
             update_task(task_id, progress_percent=70)
             

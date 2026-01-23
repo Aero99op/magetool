@@ -39,7 +39,7 @@
   --glass-blur: 20px;
 
   /* Spacing */
-  --header-height: 64px;
+  --header-height: 60px;
   --container-max: 1280px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -427,6 +427,16 @@ textarea::placeholder {
   grid-template-columns: repeat(4, 1fr);
 }
 
+/* Tablet */
+@media (max-width: 1024px) {
+
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
 
   .grid-cols-2,
