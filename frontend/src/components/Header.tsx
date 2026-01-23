@@ -13,7 +13,6 @@ import {
     Menu,
     X,
     ChevronDown,
-    Github,
     HelpCircle,
     Sparkles,
 } from 'lucide-react';
@@ -329,25 +328,18 @@ export default function Header() {
                     })}
                 </nav>
 
+
                 {/* Right Actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <a
-                        href="https://github.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <Link
+                        href="/support"
                         className="btn btn-ghost"
                         style={{ padding: '8px' }}
-                        title="GitHub"
-                    >
-                        <Github size={20} />
-                    </a>
-                    <button
-                        className="btn btn-ghost"
-                        style={{ padding: '8px' }}
-                        title="Help"
+                        title="Help & Support"
                     >
                         <HelpCircle size={20} />
-                    </button>
+                    </Link>
+
 
                     {/* Mobile Menu Toggle */}
                     <button
