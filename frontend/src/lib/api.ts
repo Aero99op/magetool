@@ -113,42 +113,52 @@ function getInstantServer(): string {
 }
 
 /**
- * Get the next healthy server using HF-FIRST routing
+ * Get the next healthy server using ROUND-ROBIN routing
  * 
- * STRATEGY (Updated):
- * 1. ALL TASKS: Use 24/7 servers (HF/Northflank) FIRST - INSTANT, no waiting
- * 2. BACKUP ONLY: If 24/7 servers fail, fallback to sleeping servers (Render/Zeabur)
+ * STRATEGY:
+ * 1. PRIMARY (HF + Northflank): True round-robin alternation
+ *    - Task 1 → HF, Task 2 → NF, Task 3 → HF, Task 4 → NF...
+ *    - If one is down, use the other
+ *    - Both down → fallback to backup
  * 
- * Render/Zeabur are now BACKUP ONLY - sideline mode
+ * 2. BACKUP (Render + Zeabur): Only when BOTH primary servers fail
  * 
  * @param category - Optional tool category (e.g. 'video', 'image')
  */
 function getNextServer(category?: string): string {
     // ==========================================
-    // PRIMARY: Always try 24/7 servers FIRST (HF/Northflank)
-    // These are kept alive by keep-alive bot
+    // PRIMARY: Round-robin between HF and Northflank
+    // Alternates: HF → NF → HF → NF...
     // ==========================================
     const healthyAwakeServers = ALWAYS_AWAKE_SERVERS.filter(s => SERVER_HEALTH[s]);
 
     if (healthyAwakeServers.length > 0) {
-        // Random selection for load balancing within 24/7 servers
-        const randomIndex = Math.floor(Math.random() * healthyAwakeServers.length);
-        const server = healthyAwakeServers[randomIndex];
-        console.log(`[LoadBalancer] 🚀 PRIMARY: Using ${getServerName(server)} for ${category || 'general'} task`);
-        lastUsedServerUrl = server;
-        return server;
+        // Get the next server in round-robin order from ALL awake servers
+        // But only use it if it's healthy
+        let attempts = 0;
+        while (attempts < ALWAYS_AWAKE_SERVERS.length) {
+            const candidateServer = ALWAYS_AWAKE_SERVERS[awakeServerIndex % ALWAYS_AWAKE_SERVERS.length];
+            awakeServerIndex = (awakeServerIndex + 1) % ALWAYS_AWAKE_SERVERS.length;
+
+            if (SERVER_HEALTH[candidateServer]) {
+                console.log(`[LoadBalancer] 🚀 PRIMARY (Round-Robin): Using ${getServerName(candidateServer)} for ${category || 'general'} task`);
+                lastUsedServerUrl = candidateServer;
+                return candidateServer;
+            }
+            attempts++;
+        }
     }
 
     // ==========================================
-    // BACKUP: 24/7 servers unavailable, try sleeping servers
-    // Render/Zeabur are BACKUP ONLY
+    // BACKUP: Both HF and Northflank unavailable
+    // Use Render/Zeabur with round-robin
     // ==========================================
     const healthySleepingServers = SLEEPING_SERVERS.filter(s => SERVER_HEALTH[s]);
 
     if (healthySleepingServers.length > 0) {
         const server = healthySleepingServers[sleepingServerIndex % healthySleepingServers.length];
         sleepingServerIndex = (sleepingServerIndex + 1) % healthySleepingServers.length;
-        console.warn(`[LoadBalancer] 🔄 BACKUP: 24/7 servers down! Using ${getServerName(server)}`);
+        console.warn(`[LoadBalancer] 🔄 BACKUP: HF & Northflank down! Using ${getServerName(server)}`);
         lastUsedServerUrl = server;
         return server;
     }
