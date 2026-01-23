@@ -2,12 +2,13 @@
 
 import { motion } from 'framer-motion';
 import { Loader2, Check, AlertCircle, Upload, Cog, Download } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 export type ProcessingStage = 'idle' | 'uploading' | 'uploaded' | 'processing' | 'complete' | 'error';
 
 interface ProgressDisplayProps {
     stage: ProcessingStage;
-    progress: number; // 0-100
+    progress: number; // 0-100 (Target progress from backend)
     uploadSpeed?: string; // e.g., "12.3 MB/s"
     estimatedTime?: string; // e.g., "1 minute 23 seconds"
     fileName?: string;
@@ -26,6 +27,75 @@ export default function ProgressDisplay({
     errorMessage,
     onProcessClick,
 }: ProgressDisplayProps) {
+    // Local state for smooth visual progress
+    const [visualProgress, setVisualProgress] = useState(0);
+    const progressInterval = useRef<NodeJS.Timeout | null>(null);
+
+    // Reset visual progress when stage changes significantly
+    useEffect(() => {
+        if (stage === 'idle' || stage === 'uploading') {
+            setVisualProgress(progress);
+        }
+        if (stage === 'complete') {
+            setVisualProgress(100);
+        }
+    }, [stage]);
+
+    // SMART PROGRESS SIMULATION LOGIC
+    useEffect(() => {
+        // Clear any existing intervals
+        if (progressInterval.current) {
+            clearInterval(progressInterval.current);
+            progressInterval.current = null;
+        }
+
+        // If we are complete, force 100%
+        if (stage === 'complete' || progress === 100) {
+            setVisualProgress(100);
+            return;
+        }
+
+        // Check if we are in a state that needs smoothing
+        const needsSmoothing = stage === 'processing' || stage === 'uploading';
+
+        if (needsSmoothing) {
+            const step = () => {
+                setVisualProgress((current) => {
+                    // 1. CATCH UP MODE: If backend is ahead, move quickly to catch up
+                    if (current < progress) {
+                        // Move 10% of the distance or at least 1, but don't overshoot
+                        const jump = Math.max(1, Math.ceil((progress - current) / 10));
+                        return Math.min(progress, current + jump);
+                    }
+
+                    // 2. SIMULATION MODE: If we are "stuck" awaiting backend, creep forward slowly
+                    // Only creep if we are processing (not uploading, uploads are usually accurate)
+                    // limit to 98% to avoid fake completion
+                    if (stage === 'processing' && current >= progress && current < 98) {
+                        // Very slow increment to show "aliveness"
+                        // Random chance to increment to make it look organic
+                        return Math.random() > 0.7 ? current + 1 : current;
+                    }
+
+                    return current;
+                });
+            };
+
+            // Run this loop frequently
+            progressInterval.current = setInterval(step, 200);
+        } else {
+            // honest mode for other states
+            setVisualProgress(progress);
+        }
+
+        return () => {
+            if (progressInterval.current) {
+                clearInterval(progressInterval.current);
+            }
+        };
+    }, [stage, progress]); // Re-evaluate when target progress or stage changes
+
+
     if (stage === 'idle') return null;
 
     const getStageIcon = () => {
@@ -151,14 +221,15 @@ export default function ProgressDisplay({
                             color: 'var(--text-secondary)',
                         }}
                     >
-                        <span>{Math.round(progress)}% complete</span>
+                        <span>{Math.round(visualProgress)}% complete</span>
                         {estimatedTime && <span>ETA: {estimatedTime}</span>}
                     </div>
                     <div className="progress-bar">
                         <motion.div
                             className="progress-bar-fill"
+                            // Use visualProgress here for the width
                             initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
+                            animate={{ width: `${visualProgress}%` }}
                             transition={{ duration: 0.3 }}
                         />
                     </div>
