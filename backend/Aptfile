@@ -4,3 +4,5 @@ ghostscript
 poppler-utils
 imagemagick
 libmagic1
+libreoffice
+fonts-liberation
