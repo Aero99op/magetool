@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         "https://magetool-api.onrender.com",        # Self (Render)
         "https://magetool-new.pages.dev",           # Cloudflare Pages
         "https://magetool.pages.dev",               # Cloudflare Pages (main)
+        "https://magetool.site",                    # Custom Domain
+        "https://www.magetool.site",                # Custom Domain WWW
         "https://*.hf.space",                       # Hugging Face Spaces (Wildcard)
         "https://spandan1234-magetool-backend-api.hf.space", # Specific HF Space
     ]
