@@ -216,6 +216,8 @@ export default function QRExtreme() {
             title="QR Code Factory"
             subtitle="Generate enterprise-grade QR codes with WiFi, vCard, and specialized formats."
             onFilesSelected={() => { }} // Not used
+            processingStage="complete"  // Shows custom content, hides upload zone
+            downloadReady={false}       // Handled manually in customContent
             configPanel={configPanel}
             customContent={
                 <div className="h-full min-h-[400px] flex items-center justify-center bg-black/20 rounded-2xl border border-dashed border-neutral-800 relative group overflow-hidden">

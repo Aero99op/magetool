@@ -172,7 +172,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # ==========================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["https://magetool.site", "https://magetool-api.onrender.com", "http://localhost:3000"] + settings.CORS_ORIGINS,
     allow_origin_regex=r"https://.*\.pages\.dev|https://.*\.netlify\.app|https://.*\.vercel\.app|https://magetool\.site",
     allow_credentials=True,
     allow_methods=["*"],
