@@ -57,6 +57,7 @@ const navItems: NavItem[] = [
             { name: 'Image Size Adjuster', href: '/images/size-adjuster' },
             { name: 'Negative/Invert', href: '/images/negative' },
             { name: 'Favicon Generator', href: '/images/favicon' },
+            { name: 'QR Code Factory', href: '/images/qr-factory' },
         ],
     },
     {
@@ -109,6 +110,7 @@ const navItems: NavItem[] = [
             { name: 'Metadata Editor', href: '/documents/metadata' },
             { name: 'Text Editor', href: '/documents/text-editor' },
             { name: 'File Size Adjuster', href: '/documents/size-adjuster' },
+            { name: 'Hash Verifier', href: '/documents/hash-verifier' },
         ],
     },
 ];
