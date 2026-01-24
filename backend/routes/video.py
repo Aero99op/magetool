@@ -82,7 +82,7 @@ def process_video_convert(task_id: str, input_path: Path, original_filename: str
             ffmpeg_args.extend(["-b:v", bitrate])
         
         # Balanced preset: good quality + reasonable speed
-        ffmpeg_args.extend(["-preset", "medium", "-tune", "film"])  # film = less blur, more detail
+        ffmpeg_args.extend(["-preset", "medium"])
         
         ffmpeg_args.append(str(output_path))
         
@@ -252,7 +252,6 @@ def process_video_compress(task_id: str, input_path: Path, original_filename: st
             "-c:v", "libx264",
             "-crf", crf,
             "-preset", "medium",
-            "-tune", "film",  # FLASH MODE: Less blur, more detail
             "-c:a", "aac",
             "-b:a", "192k",  # Higher audio bitrate
             str(output_path),
