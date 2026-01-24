@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import ToolLayout from "@/components/ToolLayout";
 import { FiWifi, FiType, FiUser, FiDownload, FiShare2, FiZap, FiCode, FiCpu, FiLayers, FiGrid } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
+import QRCode from "qrcode";
 
 export default function QRExtreme() {
     const [activeTab, setActiveTab] = useState("text");
@@ -12,7 +13,8 @@ export default function QRExtreme() {
 
     // Customization
     const [fillColor, setFillColor] = useState("#00d9ff"); // Neon Blue default
-    const [bgColor, setBgColor] = useState("#0a0a0a");    // Dark default
+    const [bgColor, setBgColor] = useState("#00000000");  // Transparent default
+    const [bgHex, setBgHex] = useState("#0a0a0a"); // For UI input
     const [style, setStyle] = useState("rounded");
 
     // Data States
@@ -20,15 +22,16 @@ export default function QRExtreme() {
     const [wifiData, setWifiData] = useState({ ssid: "", password: "", encryption: "WPA" });
     const [vcardData, setVcardData] = useState({ fn: "", tel: "", email: "", url: "" });
 
-    // Auto-generate on mount for "wow" factor
+    // Auto-generate on mount
     useEffect(() => {
-        if (!qrUrl) {
-            // generateQR(); // Optional: could auto-gen a demo QR
-        }
+        // Optional: Generate default
     }, []);
 
     const generateQR = async () => {
         setLoading(true);
+        // Add artificial delay for "processing" feel + allow UI to update
+        await new Promise(r => setTimeout(r, 600));
+
         try {
             let finalData = "";
             if (activeTab === "text") {
@@ -39,26 +42,21 @@ export default function QRExtreme() {
                 finalData = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.fn}\nTEL:${vcardData.tel}\nEMAIL:${vcardData.email}\nURL:${vcardData.url}\nEND:VCARD`;
             }
 
-            const formData = new FormData();
-            formData.append("data", finalData);
-            formData.append("type", activeTab);
-            formData.append("fill_color", fillColor);
-            formData.append("back_color", bgColor);
-            formData.append("style", style);
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/tools/qr/generate`, {
-                method: "POST",
-                body: formData,
+            // Client-Side Generation
+            const url = await QRCode.toDataURL(finalData, {
+                width: 1024,
+                margin: 2,
+                color: {
+                    dark: fillColor,
+                    light: bgHex // Use the hex value
+                },
+                errorCorrectionLevel: 'H'
             });
 
-            if (!response.ok) throw new Error("Failed to generate");
-
-            const blob = await response.blob();
-            setQrUrl(URL.createObjectURL(blob));
+            setQrUrl(url);
 
         } catch (e) {
             console.error(e);
-            // alert("Failed to generate QR Code"); // Don't use alerts in 2026
         } finally {
             setLoading(false);
         }
@@ -90,8 +88,8 @@ export default function QRExtreme() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
-                                    ? "bg-gradient-to-br from-[#222] to-[#111] text-[#00d9ff] shadow-[0_4px_12px_rgba(0,217,255,0.1)] border border-[#00d9ff]/20"
-                                    : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
+                                ? "bg-gradient-to-br from-[#222] to-[#111] text-[#00d9ff] shadow-[0_4px_12px_rgba(0,217,255,0.1)] border border-[#00d9ff]/20"
+                                : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
                                 }`}
                         >
                             <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? "drop-shadow-[0_0_8px_rgba(0,217,255,0.5)]" : ""}`} />
@@ -197,10 +195,10 @@ export default function QRExtreme() {
                         <div className="flex items-center gap-2">
                             <div className="relative">
                                 <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 shadow-lg">
-                                    <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-[150%] h-[150%] -m-[25%] cursor-pointer p-0 border-0" />
+                                    <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-[150%] h-[150%] -m-[25%] cursor-pointer p-0 border-0" />
                                 </div>
                             </div>
-                            <span className="text-[10px] font-mono text-gray-400 bg-black px-2 py-1 rounded">{bgColor}</span>
+                            <span className="text-[10px] font-mono text-gray-400 bg-black px-2 py-1 rounded">{bgHex}</span>
                         </div>
                     </div>
                 </div>
