@@ -1,4 +1,4 @@
-FROM python:3.11-slim as preparer
+FROM python:3.10-slim as preparer
 
 # This stage is responsible for finding requirements.txt
 # regardless of the build context (root vs backend directory)
@@ -17,7 +17,7 @@ RUN if [ -f "requirements.txt" ]; then \
     echo "No requirements.txt found!" && exit 1; \
     fi
 
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
