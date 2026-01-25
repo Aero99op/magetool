@@ -17,7 +17,9 @@ import {
     Sparkles,
     Sun,
     Moon,
+    Smartphone,
 } from 'lucide-react';
+import InstallAppModal from './InstallAppModal';
 
 interface NavItem {
     label: string;
@@ -120,6 +122,7 @@ const navItems: NavItem[] = [
 export default function Header() {
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showInstallModal, setShowInstallModal] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
@@ -384,8 +387,29 @@ export default function Header() {
                     >
                         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
+
+                    {/* Get App Button */}
+                    <button
+                        id="get-app-btn"
+                        className="btn btn-primary"
+                        style={{
+                            padding: '8px 16px',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
+                            border: 'none',
+                        }}
+                        onClick={() => setShowInstallModal(true)}
+                    >
+                        <Smartphone size={16} />
+                        <span className="desktop-nav">Get App</span>
+                    </button>
                 </div>
             </div>
+
+            <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
 
             {/* Mobile Menu Overlay */}
             <AnimatePresence>

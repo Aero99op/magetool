@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Image, Video, Music, FileText, ArrowRight } from 'lucide-react';
+import { Image, Video, Music, FileText, ArrowRight, Smartphone } from 'lucide-react';
 import AdSlot from '@/components/AdSlot';
 import { wakeUpServers } from '@/lib/api';
 
@@ -92,9 +92,14 @@ export default function HomePage() {
                         Start Converting
                         <ArrowRight size={18} />
                     </Link>
-                    <Link href="#tools" className="btn btn-secondary">
-                        Browse All Tools
-                    </Link>
+                    <button
+                        onClick={() => document.getElementById('get-app-btn')?.click()}
+                        className="btn btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Smartphone size={18} />
+                        Download App
+                    </button>
                 </div>
             </motion.section>
 
