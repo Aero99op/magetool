@@ -4,6 +4,7 @@
     "description": "Magetool is the ultimate free online file tool. Convert PDF, compress images, edit videos, and more. No ads, no limits, secure and fast.",
     "id": "magetool-app-v1",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "display_override": [
         "window-controls-overlay",
@@ -12,33 +13,36 @@
     "background_color": "#ffffff",
     "theme_color": "#000000",
     "orientation": "portrait",
+    "lang": "en",
+    "dir": "ltr",
     "categories": [
         "utilities",
         "productivity",
         "photo",
         "video"
     ],
+    "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
     "icons": [
         {
-            "src": "/icon-192x192.png",
+            "src": "/logo.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/icon-512x512.png",
+            "src": "/logo.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "/icon-192x192.png",
+            "src": "/logo.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
-            "src": "/icon-512x512.png",
+            "src": "/logo.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
@@ -46,14 +50,14 @@
     ],
     "screenshots": [
         {
-            "src": "/screenshots/desktop.png",
+            "src": "/ss1.png",
             "sizes": "1920x1080",
             "type": "image/png",
             "form_factor": "wide",
             "label": "Magetool Desktop Home"
         },
         {
-            "src": "/screenshots/mobile.png",
+            "src": "/ss2.png",
             "sizes": "1080x1920",
             "type": "image/png",
             "form_factor": "narrow",
@@ -68,7 +72,7 @@
             "url": "/#image-tools",
             "icons": [
                 {
-                    "src": "/icon-192x192.png",
+                    "src": "/logo.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
@@ -81,11 +85,49 @@
             "url": "/#video-tools",
             "icons": [
                 {
-                    "src": "/icon-192x192.png",
+                    "src": "/logo.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
             ]
+        }
+    ],
+    "share_target": {
+        "action": "/share-target",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [
+                {
+                    "name": "file",
+                    "accepted_types": [
+                        "image/*",
+                        "application/pdf",
+                        "video/*",
+                        "audio/*"
+                    ]
+                }
+            ]
+        }
+    },
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "image/*": [
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
+                    ".webp",
+                    ".svg"
+                ],
+                "application/pdf": [
+                    ".pdf"
+                ]
+            }
         }
     ],
     "launch_handler": {
@@ -93,5 +135,32 @@
     },
     "edge_side_panel": {
         "preferred_width": 400
-    }
+    },
+    "protocol_handlers": [
+        {
+            "protocol": "web+magetool",
+            "url": "/?start=%s"
+        }
+    ],
+    "widgets": [
+        {
+            "name": "Magetool Quick Access",
+            "short_name": "Magetool",
+            "description": "Quickly access Magetool tools",
+            "tag": "magetool-widget",
+            "template": "widget-template",
+            "ms_ac_template": "widget-template",
+            "data": "widget-data",
+            "type": "application/json",
+            "screenshots": [
+                {
+                    "src": "/screenshots/mobile.png",
+                    "sizes": "1080x1920",
+                    "label": "Widget Preview"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
 }
