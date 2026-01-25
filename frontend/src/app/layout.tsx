@@ -54,6 +54,8 @@ export const metadata: Metadata = {
             'max-snippet': -1,
         },
     },
+    manifest: '/manifest.json',
+    themeColor: '#000000',
 };
 
 export default function RootLayout({
@@ -80,6 +82,18 @@ export default function RootLayout({
                     {children}
                 </main>
                 <Footer />
+
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            if ('serviceWorker' in navigator) {
+                                window.addEventListener('load', function() {
+                                    navigator.serviceWorker.register('/sw.js');
+                                });
+                            }
+                        `,
+                    }}
+                />
             </body>
         </html>
     );
