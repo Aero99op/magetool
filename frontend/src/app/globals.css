@@ -20,6 +20,12 @@
   /* Accent RGB Components (for rgba usage) */
   --accent-rgb: 0, 217, 255;
 
+  /* Header & Gradients (Dark Mode Default) */
+  --header-bg: rgba(5, 5, 5, 0.9);
+  /* Platinum Premium Black */
+  --gradient-title: linear-gradient(135deg, #FFFFFF, #00D9FF);
+  --gradient-logo-text: linear-gradient(135deg, #FFFFFF, #00D9FF);
+
   /* Background Layers - DARK (Default) */
   --bg-deep: #050505;
   --bg-dark: #0A0A0B;
@@ -130,12 +136,7 @@
   --gradient-logo-text: linear-gradient(135deg, #18181B, #3F3F46);
 }
 
-:root {
-  /* ... existing variables ... */
-  --header-bg: rgba(15, 15, 15, 0.8);
-  --gradient-title: linear-gradient(135deg, #FFFFFF, #00D9FF);
-  --gradient-logo-text: linear-gradient(135deg, #FFFFFF, #00D9FF);
-}
+
 
 /* Reset */
 *,
