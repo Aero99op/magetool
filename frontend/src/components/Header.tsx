@@ -171,10 +171,10 @@ export default function Header() {
                 right: 0,
                 height: '60px',
                 zIndex: 1000,
-                background: 'rgba(15, 15, 15, 0.8)',
+                background: 'var(--header-bg)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: '1px solid rgba(0, 217, 255, 0.2)',
+                borderBottom: '1px solid var(--glass-border)',
             }}
         >
             <div
@@ -212,7 +212,7 @@ export default function Header() {
                     </div>
                     <span
                         style={{
-                            background: 'linear-gradient(135deg, #FFFFFF, #00D9FF)',
+                            background: 'var(--gradient-logo-text)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
@@ -249,7 +249,7 @@ export default function Header() {
                                         background: isActive ? 'rgba(0, 217, 255, 0.1)' : 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        color: isActive ? item.color : 'rgba(255, 255, 255, 0.7)',
+                                        color: isActive ? item.color : 'var(--text-secondary)',
                                         fontSize: '0.9rem',
                                         fontWeight: 500,
                                         cursor: 'pointer',
@@ -262,7 +262,7 @@ export default function Header() {
                                     onMouseLeave={(e) => {
                                         if (!isActive && !isOpen) {
                                             e.currentTarget.style.background = 'transparent';
-                                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                            e.currentTarget.style.color = 'var(--text-secondary)';
                                         }
                                     }}
                                 >
@@ -293,10 +293,10 @@ export default function Header() {
                                                 minWidth: '260px',
                                                 maxHeight: '70vh',
                                                 overflowY: 'auto',
-                                                background: 'rgba(26, 26, 26, 0.95)',
+                                                background: 'var(--bg-surface)',
                                                 backdropFilter: 'blur(20px)',
                                                 WebkitBackdropFilter: 'blur(20px)',
-                                                border: '1px solid rgba(0, 255, 255, 0.2)',
+                                                border: '1px solid var(--glass-border)',
                                                 borderRadius: '12px',
                                                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
                                                 padding: '8px 0',
@@ -312,7 +312,7 @@ export default function Header() {
                                                         alignItems: 'center',
                                                         justifyContent: 'space-between',
                                                         padding: '10px 16px',
-                                                        color: tool.isAI ? '#00FFFF' : 'rgba(255, 255, 255, 0.7)',
+                                                        color: tool.isAI ? '#00FFFF' : 'var(--text-secondary)',
                                                         fontSize: '0.875rem',
                                                         transition: 'all 0.15s ease',
                                                     }}
@@ -322,7 +322,7 @@ export default function Header() {
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.background = 'transparent';
-                                                        e.currentTarget.style.color = tool.isAI ? '#00FFFF' : 'rgba(255, 255, 255, 0.7)';
+                                                        e.currentTarget.style.color = tool.isAI ? '#00FFFF' : 'var(--text-secondary)';
                                                     }}
                                                 >
                                                     {tool.name}
@@ -401,7 +401,7 @@ export default function Header() {
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            background: 'rgba(10, 10, 10, 0.99)',
+                            background: 'var(--bg-deep)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
                             overflowY: 'auto',
@@ -439,7 +439,7 @@ export default function Header() {
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
                                                     padding: '10px 12px',
-                                                    color: tool.isAI ? '#00FFFF' : 'rgba(255, 255, 255, 0.6)',
+                                                    color: tool.isAI ? '#00FFFF' : 'var(--text-secondary)',
                                                     fontSize: '0.9rem',
                                                     borderRadius: '8px',
                                                 }}

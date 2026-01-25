@@ -89,7 +89,17 @@
   --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.08);
   --shadow-glow-sm: 0 0 20px rgba(0, 217, 255, 0.2);
 
-  /* Override specific component styles if needed manually here or via class strategies */
+  /* Gradients & Backgrounds */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --gradient-title: linear-gradient(135deg, #0077FF, #00D9FF);
+  --gradient-logo-text: linear-gradient(135deg, #0077FF, #00D9FF);
+}
+
+:root {
+  /* ... existing variables ... */
+  --header-bg: rgba(15, 15, 15, 0.8);
+  --gradient-title: linear-gradient(135deg, #FFFFFF, #00D9FF);
+  --gradient-logo-text: linear-gradient(135deg, #FFFFFF, #00D9FF);
 }
 
 /* Reset */

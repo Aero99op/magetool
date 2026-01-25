@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
     ImageIcon, Crop, Maximize, Camera, Grid, Eraser,
     Sparkles, ScanText, Droplets, FileImage, Palette,
-    LayoutGrid, Eye, Pen, Reply, Star
+    LayoutGrid, Eye, Pen, Reply, Star, QrCode
 } from 'lucide-react';
 
 const tools = [
@@ -26,6 +26,7 @@ const tools = [
     { name: 'Blur Face', href: '/images/blur-face', icon: Eye, description: 'Anonymize faces', isAI: true },
     { name: 'Favicon Generator', href: '/images/favicon', icon: Star, description: 'Create multi-size favicons' },
     { name: 'Negative/Invert', href: '/images/negative', icon: Reply, description: 'Invert colors and effects' },
+    { name: 'QR Code Factory', href: '/images/qr-factory', icon: QrCode, description: 'Generate custom QR codes' },
 ];
 
 export default function ImagesPageClient() {

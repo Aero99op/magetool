@@ -65,7 +65,7 @@ export default function HomePage() {
                         fontSize: 'clamp(2.5rem, 5vw, 4rem)',
                         fontWeight: 800,
                         marginBottom: '16px',
-                        background: 'linear-gradient(135deg, #FFFFFF, #00D9FF)',
+                        background: 'var(--gradient-title)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
@@ -76,7 +76,7 @@ export default function HomePage() {
                 <p
                     style={{
                         fontSize: '1.25rem',
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        color: 'var(--text-secondary)',
                         maxWidth: '600px',
                         margin: '0 auto 32px',
                     }}
@@ -150,7 +150,7 @@ export default function HomePage() {
                                     </h3>
                                     <p
                                         style={{
-                                            color: 'rgba(255, 255, 255, 0.6)',
+                                            color: 'var(--text-secondary)',
                                             marginBottom: '16px',
                                             fontSize: '0.9rem',
                                         }}
@@ -165,8 +165,8 @@ export default function HomePage() {
                                                     fontSize: '0.75rem',
                                                     padding: '4px 10px',
                                                     borderRadius: '4px',
-                                                    background: 'rgba(255, 255, 255, 0.05)',
-                                                    color: 'rgba(255, 255, 255, 0.5)',
+                                                    background: 'var(--bg-elevated)',
+                                                    color: 'var(--text-muted)',
                                                 }}
                                             >
                                                 {tool}
@@ -192,7 +192,7 @@ export default function HomePage() {
                 transition={{ duration: 0.5 }}
                 style={{
                     padding: '60px 0',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderTop: '1px solid var(--glass-border)',
                 }}
             >
                 <div
@@ -206,7 +206,7 @@ export default function HomePage() {
                     <div>
                         <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🚀</div>
                         <h4 style={{ marginBottom: '8px' }}>Lightning Fast</h4>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             Optimized processing for quick results
                         </p>
                     </div>

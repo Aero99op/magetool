@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
     FileText, FilePlus, FileX, Archive, Lock,
-    Unlock, Image, FileJson, Edit, Maximize
+    Unlock, Image, FileJson, Edit, Maximize, Shield
 } from 'lucide-react';
 
 const tools = [
@@ -18,6 +18,7 @@ const tools = [
     { name: 'Data Converter', href: '/documents/data-convert', icon: FileJson, description: 'CSV ↔ JSON ↔ XML' },
     { name: 'Metadata Editor', href: '/documents/metadata', icon: Edit, description: 'Edit file metadata' },
     { name: 'File Size Adjuster', href: '/documents/size-adjuster', icon: Maximize, description: 'Resize file capacity' },
+    { name: 'Hash Verifier', href: '/documents/hash-verifier', icon: Shield, description: 'Verify file integrity (SHA256)' },
 ];
 
 export default function DocumentsPageClient() {
@@ -28,7 +29,7 @@ export default function DocumentsPageClient() {
                 animate={{ opacity: 1, y: 0 }}
                 style={{ textAlign: 'center', marginBottom: '48px' }}
             >
-                <h1 style={{ background: 'linear-gradient(135deg, #FFFFFF, #FFFFFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontSize: '2rem', fontWeight: 700 }}>Document Tools</h1>
+                <h1 className="tool-title">Document Tools</h1>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
                     Convert, merge, split, and manage your documents and PDFs
                 </p>
@@ -54,13 +55,13 @@ export default function DocumentsPageClient() {
                                         width: '44px',
                                         height: '44px',
                                         borderRadius: '10px',
-                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        background: 'var(--bg-elevated)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
                                     }}>
-                                        <Icon size={22} color="#FFFFFF" />
+                                        <Icon size={22} color="var(--text-primary)" />
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <span style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>{tool.name}</span>
