@@ -20,7 +20,7 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
     // If direct download is preferred, we can just link to it, but a modal helps explain "Unknown Sources"
     const handleDownload = () => {
         const link = document.createElement('a');
-        link.href = '/Magetool-unsigned.apk';
+        link.href = '/Magetool.apk';
         link.download = 'Magetool.apk';
         document.body.appendChild(link);
         link.click();
