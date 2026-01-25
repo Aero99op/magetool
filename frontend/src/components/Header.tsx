@@ -15,6 +15,8 @@ import {
     ChevronDown,
     HelpCircle,
     Sparkles,
+    Sun,
+    Moon,
 } from 'lucide-react';
 
 interface NavItem {
@@ -118,8 +120,25 @@ const navItems: NavItem[] = [
 export default function Header() {
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+
+    // Initialize Theme
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+        if (savedTheme) {
+            setTheme(savedTheme);
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const newTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+    };
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -333,10 +352,24 @@ export default function Header() {
 
                 {/* Right Actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Theme Toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        className="btn btn-ghost"
+                        style={{ padding: '8px', color: theme === 'light' ? '#0F0F0F' : 'inherit' }}
+                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    >
+                        {theme === 'dark' ? (
+                            <Moon size={20} className="text-gray-400 hover:text-white transition-colors" />
+                        ) : (
+                            <Sun size={20} className="text-orange-500 hover:text-orange-600 transition-colors" />
+                        )}
+                    </button>
+
                     <Link
                         href="/support"
                         className="btn btn-ghost"
-                        style={{ padding: '8px' }}
+                        style={{ padding: '8px', color: theme === 'light' ? '#0F0F0F' : 'inherit' }}
                         title="Help & Support"
                     >
                         <HelpCircle size={20} />

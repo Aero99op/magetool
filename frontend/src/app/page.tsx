@@ -14,7 +14,7 @@ const categories = [
         icon: Image,
         href: '/images',
         color: '#00D9FF',
-        tools: ['Converter', 'Cropper', 'Resizer', 'Background Remover', 'Upscaler'],
+        tools: ['Converter', 'Cropper', 'Resizer', 'Background Remover', 'Upscaler', 'QR Code Factory'],
     },
     {
         title: 'Video Tools',
@@ -38,7 +38,7 @@ const categories = [
         icon: FileText,
         href: '/documents',
         color: '#FFFFFF',
-        tools: ['Converter', 'PDF Merge', 'PDF Split', 'Text Editor'],
+        tools: ['Converter', 'PDF Merge', 'PDF Split', 'Text Editor', 'Hash Verifier'],
     },
 ];
 
