@@ -103,7 +103,7 @@
             "files": [
                 {
                     "name": "file",
-                    "accepted_types": [
+                    "accept": [
                         "image/*",
                         "application/pdf",
                         "video/*",
