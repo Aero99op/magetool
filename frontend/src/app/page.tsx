@@ -13,7 +13,8 @@ const categories = [
         description: 'Convert, resize, crop, remove backgrounds, and more',
         icon: Image,
         href: '/images',
-        color: '#00D9FF',
+        color: 'var(--neon-blue)',
+        rgbVar: '--neon-blue-rgb',
         tools: ['Converter', 'Cropper', 'Resizer', 'Background Remover', 'Upscaler', 'QR Code Factory'],
     },
     {
@@ -21,7 +22,8 @@ const categories = [
         description: 'Convert, trim, compress, and download videos',
         icon: Video,
         href: '/videos',
-        color: '#0099FF',
+        color: 'var(--neon-blue-dark)',
+        rgbVar: '--neon-blue-dark-rgb',
         tools: ['Converter', 'YouTube Downloader', 'Trimmer', 'Compressor'],
     },
     {
@@ -29,7 +31,8 @@ const categories = [
         description: 'Convert, trim, boost volume, detect BPM',
         icon: Music,
         href: '/audio',
-        color: '#00FFFF',
+        color: 'var(--neon-cyan)',
+        rgbVar: '--neon-cyan-rgb',
         tools: ['Converter', 'Trimmer', 'Volume Booster', 'BPM Detector'],
     },
     {
@@ -37,7 +40,8 @@ const categories = [
         description: 'Convert documents, merge PDFs, extract text',
         icon: FileText,
         href: '/documents',
-        color: '#FFFFFF',
+        color: 'var(--text-primary)',
+        rgbVar: '--accent-rgb', // Use accent (black/neon) for documents background
         tools: ['Converter', 'PDF Merge', 'PDF Split', 'Text Editor', 'Hash Verifier'],
     },
 ];
@@ -129,7 +133,8 @@ export default function HomePage() {
                                             width: '56px',
                                             height: '56px',
                                             borderRadius: '12px',
-                                            background: `rgba(${category.color === '#FFFFFF' ? '255,255,255' : category.color.match(/\d+/g)?.join(',')},0.1)`,
+                                            background: `rgba(var(${// @ts-ignore
+                                                category.rgbVar}), 0.1)`,
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',

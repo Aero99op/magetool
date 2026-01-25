@@ -7,10 +7,15 @@
 :root {
   /* Primary Colors */
   --neon-blue: #00D9FF;
+  --neon-blue-rgb: 0, 217, 255;
   --neon-blue-dark: #0099FF;
+  --neon-blue-dark-rgb: 0, 153, 255;
   --neon-cyan: #00FFFF;
+  --neon-cyan-rgb: 0, 255, 255;
   --neon-purple: #8B5CF6;
+  --neon-purple-rgb: 139, 92, 246;
   --neon-pink: #EC4899;
+  --neon-pink-rgb: 236, 72, 153;
 
   /* Accent RGB Components (for rgba usage) */
   --accent-rgb: 0, 217, 255;
@@ -102,14 +107,19 @@
   /* Accents - Premium Neutral (Zinc/Black) overrides Neon */
   --neon-blue: #18181B;
   /* Zinc 900 */
+  --neon-blue-rgb: 24, 24, 27;
   --neon-blue-dark: #09090B;
   /* Zinc 950 */
+  --neon-blue-dark-rgb: 9, 9, 11;
   --neon-cyan: #3F3F46;
   /* Zinc 700 */
+  --neon-cyan-rgb: 63, 63, 70;
   --neon-purple: #52525B;
   /* Zinc 600 */
+  --neon-purple-rgb: 82, 82, 91;
   --neon-pink: #71717A;
   /* Zinc 500 */
+  --neon-pink-rgb: 113, 113, 122;
 
   /* Accent RGB Components - Pure Black */
   --accent-rgb: 0, 0, 0;

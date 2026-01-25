@@ -108,7 +108,7 @@ export default function Footer() {
                 .logo-text {
                     font-size: 1.1rem;
                     font-weight: 700;
-                    background: linear-gradient(135deg, #fff, #00D9FF);
+                    background: var(--gradient-logo-text);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
@@ -146,7 +146,7 @@ export default function Footer() {
                 }
                 
                 .footer-link:hover {
-                    color: #00D9FF;
+                    color: var(--neon-blue);
                 }
                 
                 .footer-ad-slot {

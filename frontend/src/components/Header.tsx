@@ -36,7 +36,7 @@ const navItems: NavItem[] = [
         label: 'Images',
         href: '/images',
         icon: Image,
-        color: '#00D9FF',
+        color: 'var(--neon-blue)',
         tools: [
             { name: 'Format Converter', href: '/images/converter' },
             { name: 'Cropper', href: '/images/cropper' },
@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
         label: 'Videos',
         href: '/videos',
         icon: Video,
-        color: '#0099FF',
+        color: 'var(--neon-blue-dark)',
         tools: [
             { name: 'Universal Converter', href: '/videos/converter' },
             { name: 'Video Rotator', href: '/videos/rotate' },
@@ -86,7 +86,7 @@ const navItems: NavItem[] = [
         label: 'Audio',
         href: '/audio',
         icon: Music,
-        color: '#00FFFF',
+        color: 'var(--neon-cyan)',
         tools: [
             { name: 'Universal Converter', href: '/audio/converter' },
             { name: 'Audio Trimmer', href: '/audio/trimmer' },
@@ -99,7 +99,7 @@ const navItems: NavItem[] = [
         label: 'Documents',
         href: '/documents',
         icon: FileText,
-        color: '#FFFFFF',
+        color: 'var(--text-primary)',
         tools: [
             { name: 'Universal Converter', href: '/documents/converter' },
             { name: 'PDF Merger', href: '/documents/pdf-merge' },
@@ -201,7 +201,7 @@ export default function Header() {
                         style={{
                             width: '36px',
                             height: '36px',
-                            background: 'linear-gradient(135deg, #00D9FF, #0099FF)',
+                            background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-blue-dark))',
                             borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
@@ -246,7 +246,7 @@ export default function Header() {
                                         alignItems: 'center',
                                         gap: '6px',
                                         padding: '8px 16px',
-                                        background: isActive ? 'rgba(0, 217, 255, 0.1)' : 'transparent',
+                                        background: isActive ? 'rgba(var(--accent-rgb), 0.1)' : 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
                                         color: isActive ? item.color : 'var(--text-secondary)',
@@ -256,7 +256,7 @@ export default function Header() {
                                         transition: 'all 0.2s ease',
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(0, 217, 255, 0.1)';
+                                        e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)';
                                         e.currentTarget.style.color = item.color;
                                     }}
                                     onMouseLeave={(e) => {
@@ -312,17 +312,17 @@ export default function Header() {
                                                         alignItems: 'center',
                                                         justifyContent: 'space-between',
                                                         padding: '10px 16px',
-                                                        color: tool.isAI ? '#00FFFF' : 'var(--text-secondary)',
+                                                        color: tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)',
                                                         fontSize: '0.875rem',
                                                         transition: 'all 0.15s ease',
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(0, 217, 255, 0.1)';
-                                                        e.currentTarget.style.color = '#00D9FF';
+                                                        e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)';
+                                                        e.currentTarget.style.color = 'var(--neon-blue)';
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.background = 'transparent';
-                                                        e.currentTarget.style.color = tool.isAI ? '#00FFFF' : 'var(--text-secondary)';
+                                                        e.currentTarget.style.color = tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)';
                                                     }}
                                                 >
                                                     {tool.name}
@@ -332,7 +332,7 @@ export default function Header() {
                                                                 fontSize: '0.65rem',
                                                                 fontWeight: 700,
                                                                 padding: '2px 6px',
-                                                                background: 'rgba(0, 255, 255, 0.2)',
+                                                                background: 'rgba(var(--neon-cyan-rgb), 0.2)',
                                                                 borderRadius: '3px',
                                                             }}
                                                         >
@@ -439,7 +439,7 @@ export default function Header() {
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
                                                     padding: '10px 12px',
-                                                    color: tool.isAI ? '#00FFFF' : 'var(--text-secondary)',
+                                                    color: tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)',
                                                     fontSize: '0.9rem',
                                                     borderRadius: '8px',
                                                 }}
@@ -451,7 +451,7 @@ export default function Header() {
                                                             fontSize: '0.65rem',
                                                             fontWeight: 700,
                                                             padding: '2px 6px',
-                                                            background: 'rgba(0, 255, 255, 0.2)',
+                                                            background: 'rgba(var(--neon-cyan-rgb), 0.2)',
                                                             borderRadius: '3px',
                                                         }}
                                                     >
