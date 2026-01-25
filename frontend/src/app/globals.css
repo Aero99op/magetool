@@ -85,14 +85,29 @@
   --glass-border-hover: rgba(0, 217, 255, 0.4);
 
   /* Shadows - Light Mode */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
-  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.08);
-  --shadow-glow-sm: 0 0 20px rgba(0, 217, 255, 0.2);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.12);
+  --shadow-glow-sm: 0 0 10px rgba(0, 0, 0, 0.1);
+  /* Override glows to be subtle shadows in light mode */
+  --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --shadow-glow-lg: 0 8px 30px rgba(0, 0, 0, 0.2);
+
+  /* Accents - Platinum Dark (Overrides Neon) */
+  --neon-blue: #2D3748;
+  /* Platinum Dark / Slate-800 */
+  --neon-blue-dark: #1A202C;
+  /* darker slate */
+  --neon-cyan: #4A5568;
+  /* lighter platinum */
+  --neon-purple: #718096;
+  /* metallic purple-grey */
+  --neon-pink: #A0AEC0;
+  /* metallic pink-grey */
 
   /* Gradients & Backgrounds */
-  --header-bg: rgba(255, 255, 255, 0.85);
-  --gradient-title: linear-gradient(135deg, #0077FF, #00D9FF);
-  --gradient-logo-text: linear-gradient(135deg, #0077FF, #00D9FF);
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --gradient-title: linear-gradient(135deg, #1A202C, #4A5568);
+  --gradient-logo-text: linear-gradient(135deg, #1A202C, #4A5568);
 }
 
 :root {
