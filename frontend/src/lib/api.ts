@@ -9,7 +9,8 @@ import axios, { AxiosError, AxiosProgressEvent } from 'axios';
 // TIER 1: 24/7 Always-Awake Servers (kept alive by keep-alive bot)
 // These are used IMMEDIATELY - no health check wait
 const ALWAYS_AWAKE_SERVERS = [
-    process.env.NEXT_PUBLIC_API_URL_4 || 'https://spandan1234-magetool-backend-api.hf.space', // HF (Primary 24/7)
+    process.env.NEXT_PUBLIC_API_URL_4 || 'https://spandan1234-magetool-backend-api.hf.space', // HF 1 (Primary 24/7)
+    'https://spandan1234-magetool-backend-1.hf.space',                                        // HF 2 (Primary 24/7)
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run',      // Northflank (Backup 24/7)
 ].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
 

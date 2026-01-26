@@ -43,13 +43,20 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_NAME: Spandan1234/magetool-backend-api
+          HF_SPACE_NAME_2: Spandan1234/Magetool-backend-1
         run: |
           if [ -z "$HF_TOKEN" ]; then
             echo "Error: HF_TOKEN is not set in GitHub Secrets!"
             exit 1
           fi
-          echo "Pushing to Hugging Face Space: $HF_SPACE_NAME"
+          
+          echo "Pushing to Hugging Face Space 1: $HF_SPACE_NAME"
           cd hf_deploy
           # Add hf remote and force push
           git remote add hf https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME
           git push hf main --force
+          
+          echo "Pushing to Hugging Face Space 2: $HF_SPACE_NAME_2"
+          # Add hf2 remote and force push
+          git remote add hf2 https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME_2
+          git push hf2 main --force
