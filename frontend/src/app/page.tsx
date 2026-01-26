@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { Image, Video, Music, FileText, ArrowRight, Smartphone } from 'lucide-react';
 import AdSlot from '@/components/AdSlot';
 import { wakeUpServers } from '@/lib/api';
+import InstallAppModal from '@/components/InstallAppModal';
+import { useState } from 'react';
 
 const categories = [
     {
@@ -47,6 +49,8 @@ const categories = [
 ];
 
 export default function HomePage() {
+    const [showInstallModal, setShowInstallModal] = useState(false);
+
     // Lazy Wake Strategy: Wake up servers when user lands on home page
     useEffect(() => {
         wakeUpServers();
@@ -93,7 +97,7 @@ export default function HomePage() {
                         <ArrowRight size={18} />
                     </Link>
                     <button
-                        onClick={() => document.getElementById('get-app-btn')?.click()}
+                        onClick={() => setShowInstallModal(true)}
                         className="btn btn-secondary"
                         style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                     >
@@ -243,6 +247,9 @@ export default function HomePage() {
                     </div>
                 </div>
             </motion.section>
-        </div>
+            </motion.section>
+
+            <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
+        </div >
     );
 }
