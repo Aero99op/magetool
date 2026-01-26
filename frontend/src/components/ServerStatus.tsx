@@ -17,9 +17,6 @@ export function ServerStatus() {
     const { isMobileApp } = useAppMode();
     // ... existing state
 
-    // Hide completely on mobile app to prevent UI clutter
-    if (isMobileApp) return null;
-
     // Start with "ready" state - 24/7 servers are always ready
     const [status, setStatus] = useState<"checking" | "waking" | "ready" | "error">("ready");
 
@@ -108,6 +105,9 @@ export function ServerStatus() {
             clearInterval(nameUpdateInterval);
         };
     }, []);
+
+    // Hide completely on mobile app to prevent UI clutter
+    if (isMobileApp) return null;
 
     return (
         <>
