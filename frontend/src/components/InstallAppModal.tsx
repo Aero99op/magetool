@@ -33,8 +33,8 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
     };
 
     const handleWindowsDownload = () => {
-        // Direct link to the hosted ZIP on Hugging Face
-        window.open('https://huggingface.co/spaces/Spandan1234/magetool-backend-api/resolve/main/Magetool-Windows.zip', '_blank');
+        // Direct link to the hosted ZIP on Hugging Face Datasets (Permanent Storage)
+        window.open('https://huggingface.co/datasets/Spandan1234/magetool-files/resolve/main/Magetool-Windows.zip', '_blank');
     };
 
     return (
