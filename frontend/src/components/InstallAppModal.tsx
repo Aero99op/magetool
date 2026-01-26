@@ -28,12 +28,8 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
     }, []);
 
     const handleAndroidDownload = () => {
-        const link = document.createElement('a');
-        link.href = '/Magetool.apk';
-        link.download = 'Magetool.apk';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Direct navigation is more reliable on mobile browsers for APK downloads
+        window.location.href = '/Magetool.apk';
     };
 
     const handleWindowsDownload = () => {
@@ -53,7 +49,7 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        zIndex: 10000,
+                        zIndex: 20000,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

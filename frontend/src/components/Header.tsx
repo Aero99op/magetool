@@ -441,6 +441,28 @@ export default function Header() {
                         }}
                         className="mobile-menu"
                     >
+                        {/* Get App Button (Mobile Only) */}
+                        <button
+                            className="btn btn-primary"
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px',
+                                marginBottom: '24px',
+                                padding: '16px',
+                                background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
+                            }}
+                            onClick={() => {
+                                setMobileMenuOpen(false);
+                                setShowInstallModal(true);
+                            }}
+                        >
+                            <Smartphone size={20} />
+                            Get App
+                        </button>
+
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             return (
