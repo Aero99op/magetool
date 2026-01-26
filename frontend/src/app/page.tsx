@@ -247,9 +247,8 @@ export default function HomePage() {
                     </div>
                 </div>
             </motion.section>
-            </motion.section>
 
             <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
-        </div >
+        </div>
     );
 }
