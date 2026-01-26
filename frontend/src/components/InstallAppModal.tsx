@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Smartphone, AlertTriangle, Monitor, Share } from 'lucide-react';
+import { X, Download, Smartphone, Monitor, AlertTriangle, Share } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface InstallAppModalProps {
@@ -10,7 +10,7 @@ interface InstallAppModalProps {
 }
 
 export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProps) {
-    const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop'>('desktop');
+    const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'unknown'>('unknown');
 
     useEffect(() => {
         const userAgent = navigator.userAgent.toLowerCase();
@@ -23,13 +23,18 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
         }
     }, []);
 
-    const handleDownload = () => {
+    const handleAndroidDownload = () => {
         const link = document.createElement('a');
         link.href = '/Magetool.apk';
         link.download = 'Magetool.apk';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleWindowsDownload = () => {
+        // Direct link to the hosted ZIP on Hugging Face
+        window.open('https://huggingface.co/spaces/Spandan1234/magetool-backend-api/resolve/main/Magetool-Windows.zip', '_blank');
     };
 
     return (
@@ -62,7 +67,7 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                             border: '1px solid var(--glass-border)',
                             borderRadius: '24px',
                             padding: '30px',
-                            maxWidth: '450px',
+                            maxWidth: '500px', // Slightly wider for two columns
                             width: '100%',
                             position: 'relative',
                             boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
@@ -83,121 +88,81 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                             <X size={24} />
                         </button>
 
-                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                            <div
-                                style={{
-                                    width: '64px',
-                                    height: '64px',
-                                    background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-blue-dark))',
-                                    borderRadius: '16px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    margin: '0 auto 16px',
-                                }}
-                            >
-                                {platform === 'desktop' ? <Monitor size={32} color="white" /> : <Smartphone size={32} color="white" />}
-                            </div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>
-                                Install Magetool
+                        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '8px', background: 'linear-gradient(to right, #fff, #aaa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                Get Magetool
                             </h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
-                                {platform === 'desktop'
-                                    ? 'Install directly on your Computer for a native experience.'
-                                    : 'Get the full experience on your device. Faster, ad-free, and works offline!'}
+                                Choose your platform for the best experience.
                             </p>
                         </div>
 
-                        {platform === 'android' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <button
-                                    onClick={handleDownload}
-                                    className="btn btn-primary"
-                                    style={{
-                                        width: '100%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '10px',
-                                        padding: '14px',
-                                        fontSize: '1.1rem',
-                                    }}
-                                >
-                                    <Download size={20} />
-                                    Download Android APK
-                                </button>
+                        {/* Dual Options Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
 
-                                <div
-                                    style={{
-                                        background: 'rgba(255, 193, 7, 0.1)',
-                                        border: '1px solid rgba(255, 193, 7, 0.3)',
-                                        borderRadius: '12px',
-                                        padding: '16px',
-                                        fontSize: '0.9rem',
-                                        color: '#ffc107',
-                                        display: 'flex',
-                                        gap: '12px',
-                                        alignItems: 'start',
-                                        textAlign: 'left'
-                                    }}
-                                >
-                                    <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
-                                    <div>
-                                        <strong>Android Note:</strong> You might need to allow "Unknown Sources" to install this standalone APK.
-                                    </div>
+                            {/* Android Option */}
+                            <button
+                                onClick={handleAndroidDownload}
+                                style={{
+                                    background: platform === 'android' ? 'rgba(var(--neon-blue-rgb), 0.1)' : 'rgba(255,255,255,0.03)',
+                                    border: platform === 'android' ? '1px solid var(--neon-blue)' : '1px solid var(--glass-border)',
+                                    borderRadius: '16px',
+                                    padding: '20px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    color: 'white'
+                                }}
+                            >
+                                <Smartphone size={40} color={platform === 'android' ? 'var(--neon-blue)' : '#888'} />
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>Android</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Download APK</div>
                                 </div>
-                            </div>
-                        )}
+                            </button>
 
-                        {platform === 'ios' && (
-                            <div
+                            {/* Windows Option */}
+                            <button
+                                onClick={handleWindowsDownload}
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    borderRadius: '12px',
+                                    background: platform === 'desktop' ? 'rgba(var(--neon-purple-rgb), 0.1)' : 'rgba(255,255,255,0.03)',
+                                    border: platform === 'desktop' ? '1px solid var(--neon-purple)' : '1px solid var(--glass-border)',
+                                    borderRadius: '16px',
                                     padding: '20px',
-                                    textAlign: 'left',
-                                    fontSize: '0.95rem',
-                                    color: 'var(--text-primary)',
-                                    lineHeight: '1.6',
-                                    border: '1px solid var(--glass-border)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    color: 'white'
                                 }}
                             >
-                                <p style={{ marginBottom: '12px' }}><strong>To install on iOS:</strong></p>
-                                <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <li>Tap the <strong>Share</strong> button <Share size={16} style={{ display: 'inline' }} /> in Safari.</li>
-                                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong> ➕.</li>
-                                    <li>Tap <strong>Add</strong> in the top right corner.</li>
-                                </ol>
-                            </div>
-                        )}
+                                <Monitor size={40} color={platform === 'desktop' ? 'var(--neon-purple)' : '#888'} />
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>Windows</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Download Portable</div>
+                                </div>
+                            </button>
+                        </div>
 
-                        {platform === 'desktop' && (
-                            <div
-                                style={{
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    textAlign: 'left',
-                                    fontSize: '0.95rem',
-                                    color: 'var(--text-primary)',
-                                    lineHeight: '1.6',
-                                    border: '1px solid var(--glass-border)',
-                                }}
-                            >
-                                <p style={{ marginBottom: '12px' }}><strong>To install on Desktop (Chrome/Edge):</strong></p>
-                                <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        1. Look for the <strong>Install Icon</strong> <Download size={16} /> in your specific browser address bar (top right).
-                                    </li>
-                                    <li>
-                                        2. Click it and select <strong>"Install Magetool"</strong>.
-                                    </li>
-                                </ul>
-                                <p style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic' }}>
-                                    It will open in its own window and work just like a native app!
-                                </p>
-                            </div>
-                        )}
+                        {/* Smart Footer / Instructions */}
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                            {platform === 'ios' ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <strong>iOS User?</strong>
+                                    <span>Tap <Share size={12} style={{ display: 'inline' }} /> Share -&gt; "Add to Home Screen"</span>
+                                </div>
+                            ) : (
+                                <div>
+                                    No installation required. Just download and run. <br />
+                                    100% Free & Open Source.
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
                 </div>
             )}
