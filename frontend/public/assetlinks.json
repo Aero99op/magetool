@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "site.magetool.app",
+        "sha256_cert_fingerprints": ["BA:7A:A2:58:44:D7:F2:A0:7F:68:C3:89:3F:C0:52:FF:CC:38:1B:B3:94:F8:2E:24:AB:E8:72:EE:FB:A1:FC:AC"]
+      }
+    }]

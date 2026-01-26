@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import JsonLd from '@/components/JsonLd';
+import AppShell from '@/components/AppShell';
 
 import { ServerStatus } from '@/components/ServerStatus';
 import { WakeUpManager } from '@/components/WakeUpManager';
@@ -55,7 +54,22 @@ export const metadata: Metadata = {
         },
     },
     manifest: '/manifest.json',
-    themeColor: '#000000',
+    icons: {
+        icon: '/logo.png',
+        shortcut: '/logo.png',
+        apple: '/logo.png',
+    },
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'black-translucent',
+        title: 'Magetool',
+    },
+    viewport: {
+        width: 'device-width',
+        initialScale: 1,
+        maximumScale: 1,
+        userScalable: false, // Prevents zooming for native feel
+    },
 };
 
 export default function RootLayout({
@@ -77,11 +91,9 @@ export default function RootLayout({
                 <ServerStatus />
                 <WakeUpManager />
                 <JsonLd />
-                <Header />
-                <main className="main-content">
+                <AppShell>
                     {children}
-                </main>
-                <Footer />
+                </AppShell>
 
                 <script
                     dangerouslySetInnerHTML={{
