@@ -20,6 +20,7 @@ import {
     Smartphone,
 } from 'lucide-react';
 import InstallAppModal from './InstallAppModal';
+import { useAppMode } from '@/hooks/useAppMode';
 
 interface NavItem {
     label: string;
@@ -126,6 +127,7 @@ export default function Header() {
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+    const { isMobileApp } = useAppMode();
 
     // Initialize Theme
     useEffect(() => {
@@ -379,33 +381,37 @@ export default function Header() {
                     </Link>
 
 
-                    {/* Mobile Menu Toggle */}
-                    <button
-                        className="btn btn-ghost mobile-menu-toggle"
-                        style={{ padding: '8px' }}
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
+                    {/* Mobile Menu Toggle - HIDE on Mobile App (since we have bottom nav) */}
+                    {!isMobileApp && (
+                        <button
+                            className="btn btn-ghost mobile-menu-toggle"
+                            style={{ padding: '8px' }}
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+                    )}
 
-                    {/* Get App Button */}
-                    <button
-                        id="get-app-btn"
-                        className="btn btn-primary"
-                        style={{
-                            padding: '8px 16px',
-                            fontSize: '0.9rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
-                            border: 'none',
-                        }}
-                        onClick={() => setShowInstallModal(true)}
-                    >
-                        <Smartphone size={16} />
-                        <span className="desktop-nav">Get App</span>
-                    </button>
+                    {/* Get App Button - HIDE on Mobile App */}
+                    {!isMobileApp && (
+                        <button
+                            id="get-app-btn"
+                            className="btn btn-primary"
+                            style={{
+                                padding: '8px 16px',
+                                fontSize: '0.9rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
+                                border: 'none',
+                            }}
+                            onClick={() => setShowInstallModal(true)}
+                        >
+                            <Smartphone size={16} />
+                            <span className="desktop-nav">Get App</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

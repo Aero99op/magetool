@@ -8,9 +8,22 @@ import { getLastUsedServerName } from "../lib/api";
 // Primary 24/7 server for health check - always awake
 const PRIMARY_INSTANT_SERVER = "https://spandan1234-magetool-backend-api.hf.space";
 
+// ... existing imports
+import { useAppMode } from "@/hooks/useAppMode";
+
+// ... existing code
+
 export function ServerStatus() {
+    const { isMobileApp } = useAppMode();
+    // ... existing state
+
+    // Hide completely on mobile app to prevent UI clutter
+    if (isMobileApp) return null;
+
     // Start with "ready" state - 24/7 servers are always ready
     const [status, setStatus] = useState<"checking" | "waking" | "ready" | "error">("ready");
+
+    // ... existing useEffect
     const [seconds, setSeconds] = useState(0);
     // Default to HF as the instant provider - shown immediately
     const [activeServer, setActiveServer] = useState<string>("Hugging Face");

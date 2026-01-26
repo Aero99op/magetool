@@ -15,7 +15,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className={`app-shell ${isMobileApp ? 'mobile-app-mode' : ''} ${isDesktopApp ? 'desktop-app-mode' : ''}`}>
             {/* Show Header ONLY if NOT a mobile app */}
             {/* Desktop App might still want a Header but maybe a simplified one. For now, we keep it consistent with Website */}
-            {!isMobileApp && <Header />}
+            {/* Show Header ALWAYS (Responsive behavior handled inside Header) */}
+            <Header />
 
             <main className="main-content" style={{
                 paddingBottom: isMobileApp ? '80px' : '0' // Add padding for BottomNav
