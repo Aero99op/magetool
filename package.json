@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "crypto-js": "^4.2.0",
-    "qrcode.react": "^4.2.0"
+    "electron-winstaller": "^5.4.0",
+    "qrcode.react": "^4.2.0",
+    "semver": "^7.7.3"
   }
 }

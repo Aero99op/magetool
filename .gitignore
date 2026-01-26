@@ -82,4 +82,11 @@ htmlcov/
 *.p12
 secrets.json
 credentials.json
-magetool-backend-api/ 
+magetool-backend-api/
+Magetool-win32-x64/
+Magetool-Windows.zip
+installer_output/
+installers/
+installer/
+*.nupkg
+*.exe
