@@ -63,14 +63,15 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                         exit={{ opacity: 0, scale: 0.9 }}
                         onClick={(e) => e.stopPropagation()}
                         style={{
-                            background: 'var(--bg-deep)',
-                            border: '1px solid var(--glass-border)',
+                            background: 'rgba(20, 20, 20, 0.95)', // Darker, more premium background
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '24px',
-                            padding: '30px',
-                            maxWidth: '500px', // Slightly wider for two columns
-                            width: '100%',
+                            padding: '40px', // More breathing room
+                            maxWidth: '600px', // Wider on desktop for better presence
+                            width: '90%', // Mobile responsive
                             position: 'relative',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', // Deeper shadow
+                            backdropFilter: 'blur(20px)', // Glassmorphism
                         }}
                     >
                         <button
@@ -144,13 +145,13 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                                 <Monitor size={40} color={platform === 'desktop' ? 'var(--neon-purple)' : '#888'} />
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>Windows</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Download Portable</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Download Installer</div>
                                 </div>
                             </button>
                         </div>
 
                         {/* Smart Footer / Instructions */}
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
                             {platform === 'ios' ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                     <strong>iOS User?</strong>
@@ -158,7 +159,8 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                                 </div>
                             ) : (
                                 <div>
-                                    No installation required. Just download and run. <br />
+                                    <strong>Native Experience</strong><br />
+                                    Fast, Secure, and Ad-Free. <br />
                                     100% Free & Open Source.
                                 </div>
                             )}
