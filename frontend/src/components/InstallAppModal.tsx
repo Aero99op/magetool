@@ -1,5 +1,7 @@
 'use client';
 
+import { createPortal } from 'react-dom';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Smartphone, Monitor, AlertTriangle, Share } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -11,8 +13,10 @@ interface InstallAppModalProps {
 
 export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProps) {
     const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'unknown'>('unknown');
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         const userAgent = navigator.userAgent.toLowerCase();
         if (/android/.test(userAgent)) {
             setPlatform('android');
@@ -37,7 +41,9 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
         window.open('https://huggingface.co/datasets/Spandan1234/magetool-files/resolve/main/MagetoolSetup.exe', '_blank');
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <div
@@ -168,6 +174,7 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }
