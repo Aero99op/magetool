@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Smartphone, AlertTriangle } from 'lucide-react';
+import { X, Download, Smartphone, AlertTriangle, Monitor, Share } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface InstallAppModalProps {
@@ -10,14 +10,19 @@ interface InstallAppModalProps {
 }
 
 export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProps) {
-    const [isAndroid, setIsAndroid] = useState(false);
+    const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop'>('desktop');
 
     useEffect(() => {
         const userAgent = navigator.userAgent.toLowerCase();
-        setIsAndroid(/android/.test(userAgent));
+        if (/android/.test(userAgent)) {
+            setPlatform('android');
+        } else if (/iphone|ipad|ipod/.test(userAgent)) {
+            setPlatform('ios');
+        } else {
+            setPlatform('desktop');
+        }
     }, []);
 
-    // If direct download is preferred, we can just link to it, but a modal helps explain "Unknown Sources"
     const handleDownload = () => {
         const link = document.createElement('a');
         link.href = '/Magetool.apk';
@@ -91,55 +96,108 @@ export default function InstallAppModal({ isOpen, onClose }: InstallAppModalProp
                                     margin: '0 auto 16px',
                                 }}
                             >
-                                <Smartphone size={32} color="white" />
+                                {platform === 'desktop' ? <Monitor size={32} color="white" /> : <Smartphone size={32} color="white" />}
                             </div>
                             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '8px' }}>
-                                Install Magetool App
+                                Install Magetool
                             </h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
-                                Get the full experience on your device. Faster, ad-free, and works offline!
+                                {platform === 'desktop'
+                                    ? 'Install directly on your Computer for a native experience.'
+                                    : 'Get the full experience on your device. Faster, ad-free, and works offline!'}
                             </p>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <button
-                                onClick={handleDownload}
-                                className="btn btn-primary"
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    padding: '14px',
-                                    fontSize: '1.1rem',
-                                }}
-                            >
-                                <Download size={20} />
-                                Download Android APK
-                            </button>
+                        {platform === 'android' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <button
+                                    onClick={handleDownload}
+                                    className="btn btn-primary"
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        padding: '14px',
+                                        fontSize: '1.1rem',
+                                    }}
+                                >
+                                    <Download size={20} />
+                                    Download Android APK
+                                </button>
 
-                            <div
-                                style={{
-                                    background: 'rgba(255, 193, 7, 0.1)',
-                                    border: '1px solid rgba(255, 193, 7, 0.3)',
-                                    borderRadius: '12px',
-                                    padding: '16px',
-                                    fontSize: '0.9rem',
-                                    color: '#ffc107',
-                                    display: 'flex',
-                                    gap: '12px',
-                                    alignItems: 'start',
-                                    textAlign: 'left'
-                                }}
-                            >
-                                <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <div>
-                                    <strong>Note:</strong> Since this is a direct download, your phone might ask to
-                                    "Allow installation from unknown sources". Please click <strong>Allow</strong> to install.
+                                <div
+                                    style={{
+                                        background: 'rgba(255, 193, 7, 0.1)',
+                                        border: '1px solid rgba(255, 193, 7, 0.3)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        fontSize: '0.9rem',
+                                        color: '#ffc107',
+                                        display: 'flex',
+                                        gap: '12px',
+                                        alignItems: 'start',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                                    <div>
+                                        <strong>Android Note:</strong> You might need to allow "Unknown Sources" to install this standalone APK.
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+
+                        {platform === 'ios' && (
+                            <div
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    textAlign: 'left',
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-primary)',
+                                    lineHeight: '1.6',
+                                    border: '1px solid var(--glass-border)',
+                                }}
+                            >
+                                <p style={{ marginBottom: '12px' }}><strong>To install on iOS:</strong></p>
+                                <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <li>Tap the <strong>Share</strong> button <Share size={16} style={{ display: 'inline' }} /> in Safari.</li>
+                                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong> ➕.</li>
+                                    <li>Tap <strong>Add</strong> in the top right corner.</li>
+                                </ol>
+                            </div>
+                        )}
+
+                        {platform === 'desktop' && (
+                            <div
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    textAlign: 'left',
+                                    fontSize: '0.95rem',
+                                    color: 'var(--text-primary)',
+                                    lineHeight: '1.6',
+                                    border: '1px solid var(--glass-border)',
+                                }}
+                            >
+                                <p style={{ marginBottom: '12px' }}><strong>To install on Desktop (Chrome/Edge):</strong></p>
+                                <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        1. Look for the <strong>Install Icon</strong> <Download size={16} /> in your specific browser address bar (top right).
+                                    </li>
+                                    <li>
+                                        2. Click it and select <strong>"Install Magetool"</strong>.
+                                    </li>
+                                </ul>
+                                <p style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic' }}>
+                                    It will open in its own window and work just like a native app!
+                                </p>
+                            </div>
+                        )}
                     </motion.div>
                 </div>
             )}
