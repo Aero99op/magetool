@@ -5,10 +5,11 @@ import { motion } from 'framer-motion';
 import {
     ImageIcon, Crop, Maximize, Camera, Grid, Eraser,
     Sparkles, ScanText, Droplets, FileImage, Palette,
-    LayoutGrid, Eye, Pen, Reply, Star, QrCode
+    LayoutGrid, Eye, Pen, Reply, Star, QrCode, Sliders
 } from 'lucide-react';
 
 const tools = [
+    { name: 'Advanced Photo Editor', href: '/images/editor', icon: Sliders, description: 'Pro Editor: Filters, Collage, Adjustments' },
     { name: 'Format Converter', href: '/images/converter', icon: ImageIcon, description: 'Convert between JPG, PNG, WebP, etc.' },
     { name: 'Resizer', href: '/images/resizer', icon: Maximize, description: 'Resize to exact dimensions' },
     { name: 'Cropper', href: '/images/cropper', icon: Crop, description: 'Crop with aspect ratio presets' },
