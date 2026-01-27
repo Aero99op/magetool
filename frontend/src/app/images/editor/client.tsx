@@ -687,25 +687,27 @@ function CollageMaker() {
                 </div>
 
                 {/* 2. MAIN CANVAS AREA */}
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                {/* 2. MAIN CANVAS AREA (THE WORKSPACE) */}
+                <div className="canvas-workspace" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'auto', padding: '40px' }}>
 
-                    <div style={{ position: 'absolute', top: 20, textAlign: 'center', width: '100%', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', zIndex: 5 }}>
-                        &larr; Drag photos into the boxes below
+                    <div style={{ position: 'absolute', top: 20, textAlign: 'center', width: '100%', color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', zIndex: 5, letterSpacing: '1px' }}>
+                        PROJECT BOARD &bull; DRAG & DROP PHOTOS
                     </div>
 
-                    {/* The Visual Container */}
+                    {/* The Visual Container (Fixed size based on Aspect Ratio) */}
                     <div
                         ref={collageRef}
                         style={{
-                            width: '90%',
-                            maxWidth: '700px',
+                            width: '100%',
+                            maxWidth: '750px',
                             padding: `${spacing}px`,
                             aspectRatio: String(aspectRatio),
                             ...getGridStyles() as any,
                             background: bgColor,
-                            boxShadow: '0 20px 80px rgba(0,0,0,0.8)',
-                            borderRadius: '4px', // Subtle paper feel
-                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                            boxShadow: '0 30px 100px rgba(0,0,0,0.9)',
+                            borderRadius: '4px',
+                            transition: 'all 0.3s ease-in-out',
+                            flexShrink: 0
                         }}
                     >
                         {cells.map((cell) => (
@@ -761,14 +763,14 @@ function CollageMaker() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 <div className="s-group">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                        <span>Photos Across</span>
+                                        <span>Columns</span>
                                         <span style={{ fontWeight: 800 }}>{cols}</span>
                                     </div>
                                     <input type="range" min="1" max="10" value={cols} onChange={e => setCols(Number(e.target.value))} />
                                 </div>
                                 <div className="s-group">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                        <span>Photos Down</span>
+                                        <span>Rows</span>
                                         <span style={{ fontWeight: 800 }}>{rows}</span>
                                     </div>
                                     <input type="range" min="1" max="10" value={rows} onChange={e => setRows(Number(e.target.value))} />
