@@ -559,19 +559,26 @@ const SIZE_PRESETS = [
 
 function CollageMaker() {
     const [library, setLibrary] = useState<string[]>([]);
+
+    // Grid Configuration
     const [mode, setMode] = useState<'preset' | 'grid'>('grid');
     const [rows, setRows] = useState(2);
     const [cols, setCols] = useState(2);
     const [layoutId, setLayoutId] = useState('4grid');
+
+    // Cell Content Map: Index -> Image URL
     const [cellImages, setCellImages] = useState<Record<number, string>>({});
+
+    // Canvas Settings
     const [spacing, setSpacing] = useState(15);
-    const [borderRadius, setBorderRadius] = useState(8);
+    const [borderRadius, setBorderRadius] = useState(0);
     const [bgColor, setBgColor] = useState('#ffffff');
     const [aspectRatio, setAspectRatio] = useState(1);
     const [customSize, setCustomSize] = useState({ w: 1200, h: 1200 });
     const [isCustom, setIsCustom] = useState(false);
-    const [draggedImage, setDraggedImage] = useState<string | null>(null);
+
     const collageRef = useRef<HTMLDivElement>(null);
+    const [draggedImage, setDraggedImage] = useState<string | null>(null);
 
     // Determines if we should use dark or light borders based on canvas background
     const isDarkBg = () => {
@@ -638,11 +645,28 @@ function CollageMaker() {
     const handleDownload = async () => {
         if (!collageRef.current) return;
         const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(collageRef.current, { useCORS: true, scale: 3, backgroundColor: bgColor });
+
+        // Temporarily hide ignored elements if data-attribute doesn't catch all
+        const canvas = await html2canvas(collageRef.current, {
+            useCORS: true,
+            scale: 3,
+            backgroundColor: bgColor,
+            ignoreElements: (element) => element.hasAttribute('data-html2canvas-ignore')
+        });
+
         const link = document.createElement('a');
         link.download = `mage-collage-${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
+    };
+
+    const handlePresetChange = (val: number) => {
+        if (val === -1) {
+            setIsCustom(true);
+        } else {
+            setIsCustom(false);
+            setAspectRatio(val);
+        }
     };
 
     useEffect(() => {
@@ -653,61 +677,57 @@ function CollageMaker() {
     const darkTheme = isDarkBg();
 
     return (
-        <div className="collage-studio" style={{ color: '#fff', height: '100%', padding: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 340px', gap: '20px', height: 'calc(100vh - 120px)' }}>
+        <div className="collage-studio" style={{ color: '#fff', height: '100%', padding: '0', display: 'flex', flexDirection: 'column' }}>
 
-                {/* 1. MEDIA LIBRARY */}
-                <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', borderRadius: '16px', background: 'rgba(15,15,15,0.7)', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ImageIcon size={18} className="text-neon" /> My Photos
+            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '300px 1fr 340px', overflow: 'hidden' }}>
+
+                {/* 1. LEFT: MEDIA LIBRARY */}
+                <div style={{ background: '#090909', borderRight: '1px solid #222', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <ImageIcon size={18} className="text-neon" /> My Library
                         </h4>
                     </div>
 
                     <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
                         <label style={{ width: '100%', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '14px', borderRadius: '12px', background: 'var(--neon-blue)', color: '#000', fontWeight: 700, transition: '0.2s' }} className="upload-btn">
                             <input type="file" onChange={handleFiles} multiple accept="image/*" style={{ display: 'none' }} />
-                            <Upload size={18} /> Add Photos
+                            <Upload size={18} /> Upload Photos
                         </label>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             {library.map((src, i) => (
-                                <div key={i} draggable onDragStart={() => setDraggedImage(src)} style={{ aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', cursor: 'grab', position: 'relative' }} className="library-card">
+                                <div key={i} draggable onDragStart={() => setDraggedImage(src)} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #333', cursor: 'grab', position: 'relative' }} className="library-card">
                                     <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <div className="drag-hint" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', opacity: 0, transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>DRAG ME</div>
+                                    <div className="drag-hint" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', opacity: 0, transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>DRAG</div>
                                 </div>
                             ))}
                             {library.length === 0 && (
                                 <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '40px 10px', opacity: 0.3, fontSize: '0.85rem' }}>
-                                    Upload photos to start designing
+                                    Upload photos to start
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* 2. MAIN CANVAS AREA */}
-                {/* 2. MAIN CANVAS AREA (THE WORKSPACE) */}
-                <div className="canvas-workspace" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'auto', padding: '40px' }}>
+                {/* 2. CENTER: INFINITE WORKSPACE */}
+                <div className="workspace-area" style={{ background: '#111', position: 'relative', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px' }}>
 
-                    <div style={{ position: 'absolute', top: 20, textAlign: 'center', width: '100%', color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', zIndex: 5, letterSpacing: '1px' }}>
-                        PROJECT BOARD &bull; DRAG & DROP PHOTOS
-                    </div>
-
-                    {/* The Visual Container (Fixed size based on Aspect Ratio) */}
+                    {/* The Canvas itself */}
                     <div
                         ref={collageRef}
                         style={{
+                            // The magic makes it scale to fit but maintain ratio
                             width: '100%',
-                            maxWidth: '750px',
-                            padding: `${spacing}px`,
+                            maxWidth: '650px', // Max visual width
+                            minWidth: '300px',
                             aspectRatio: String(aspectRatio),
+                            // Grid logic is INSIDE this fixed container
                             ...getGridStyles() as any,
                             background: bgColor,
-                            boxShadow: '0 30px 100px rgba(0,0,0,0.9)',
-                            borderRadius: '4px',
-                            transition: 'all 0.3s ease-in-out',
-                            flexShrink: 0
+                            boxShadow: '0 0 0 1px rgba(255,255,255,0.1), 0 20px 60px rgba(0,0,0,0.5)',
+                            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
                         }}
                     >
                         {cells.map((cell) => (
@@ -725,20 +745,27 @@ function CollageMaker() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    border: `2px dashed ${darkTheme ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
-                                    transition: '0.3s'
+                                    border: `1px dashed ${darkTheme ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
+                                    transition: '0.2s'
                                 }}
                                 className="collage-cell"
                             >
                                 {cellImages[cell.index] ? (
                                     <>
                                         <img src={cellImages[cell.index]} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
-                                        <button onClick={() => clearCell(cell.index)} style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,0,0,0.8)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', zIndex: 10 }}><X size={14} /></button>
+                                        {/* BUTTON HIDDEN FROM DOWNLOAD */}
+                                        <button
+                                            data-html2canvas-ignore="true"
+                                            onClick={() => clearCell(cell.index)}
+                                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            <X size={14} />
+                                        </button>
                                     </>
                                 ) : (
-                                    <div style={{ textAlign: 'center', opacity: 0.5, pointerEvents: 'none' }}>
-                                        <ImageIcon size={24} style={{ marginBottom: '4px' }} />
-                                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Drop Image</div>
+                                    <div style={{ textAlign: 'center', opacity: 0.3, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                                        <ImageIcon size={20} />
+                                        <span style={{ fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Drop</span>
                                     </div>
                                 )}
                             </div>
@@ -746,50 +773,53 @@ function CollageMaker() {
                     </div>
                 </div>
 
-                {/* 3. SETTINGS & CONTROLS */}
-                <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', borderRadius: '16px', background: 'rgba(15,15,15,0.7)', border: '1px solid rgba(255,255,255,0.1)', overflowY: 'auto' }}>
+                {/* 3. RIGHT: SETTINGS */}
+                <div style={{ background: '#090909', borderLeft: '1px solid #222', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
 
-                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px' }}>
-                        <button onClick={() => setMode('grid')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: mode === 'grid' ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>Simple Grid</button>
-                        <button onClick={() => setMode('preset')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: mode === 'preset' ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>Pro Layouts</button>
+                    <div>
+                        <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Mode</h3>
+                        <div style={{ display: 'flex', background: '#222', padding: '4px', borderRadius: '8px' }}>
+                            <button onClick={() => setMode('grid')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: mode === 'grid' ? 'var(--neon-blue)' : 'transparent', color: mode === 'grid' ? '#000' : '#888', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Grid</button>
+                            <button onClick={() => setMode('preset')} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: mode === 'preset' ? 'var(--neon-blue)' : 'transparent', color: mode === 'preset' ? '#000' : '#888', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>Layouts</button>
+                        </div>
                     </div>
 
-                    <section>
-                        <h5 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--neon-blue)', marginBottom: '16px' }}>
-                            {mode === 'grid' ? 'Grid Setup' : 'Choose Layout'}
-                        </h5>
-
-                        {mode === 'grid' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div className="s-group">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                        <span>Columns</span>
-                                        <span style={{ fontWeight: 800 }}>{cols}</span>
-                                    </div>
-                                    <input type="range" min="1" max="10" value={cols} onChange={e => setCols(Number(e.target.value))} />
+                    {mode === 'grid' ? (
+                        <div>
+                            <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Structure</h3>
+                            <div className="s-group" style={{ marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
+                                    <span>Columns</span>
+                                    <span style={{ fontWeight: 800 }}>{cols}</span>
                                 </div>
-                                <div className="s-group">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                        <span>Rows</span>
-                                        <span style={{ fontWeight: 800 }}>{rows}</span>
-                                    </div>
-                                    <input type="range" min="1" max="10" value={rows} onChange={e => setRows(Number(e.target.value))} />
-                                </div>
+                                <input type="range" min="1" max="10" value={cols} onChange={e => setCols(Number(e.target.value))} />
                             </div>
-                        ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                            <div className="s-group">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
+                                    <span>Rows</span>
+                                    <span style={{ fontWeight: 800 }}>{rows}</span>
+                                </div>
+                                <input type="range" min="1" max="10" value={rows} onChange={e => setRows(Number(e.target.value))} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Templates</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                                 {COLLAGE_LAYOUTS.map(l => (
-                                    <button key={l.id} onClick={() => setLayoutId(l.id)} style={{ aspectRatio: '1', border: `2px solid ${layoutId === l.id ? 'var(--neon-blue)' : 'rgba(255,255,255,0.05)'}`, background: layoutId === l.id ? 'rgba(0, 217, 255, 0.1)' : 'rgba(255,255,255,0.02)', borderRadius: '8px', cursor: 'pointer', padding: '4px' }}>
-                                        <div style={{ color: layoutId === l.id ? 'var(--neon-blue)' : '#fff', fontSize: '10px', fontWeight: 800 }}>{l.count}P</div>
+                                    <button key={l.id} onClick={() => setLayoutId(l.id)} style={{ aspectRatio: '1', border: `1px solid ${layoutId === l.id ? 'var(--neon-blue)' : '#333'}`, background: layoutId === l.id ? 'rgba(0, 217, 255, 0.1)' : '#1a1a1a', borderRadius: '6px', cursor: 'pointer', padding: '4px' }}>
+                                        <div style={{ color: layoutId === l.id ? 'var(--neon-blue)' : '#888', fontSize: '10px', fontWeight: 800 }}>{l.count}</div>
                                     </button>
                                 ))}
                             </div>
-                        )}
-                    </section>
+                        </div>
+                    )}
 
-                    <section>
-                        <h5 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--neon-blue)', marginBottom: '16px' }}>Canvas Size</h5>
-                        <select onChange={(e) => { const v = Number(e.target.value); setIsCustom(v === -1); if (v !== -1) setAspectRatio(v); }} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', fontSize: '0.9rem', outline: 'none' }}>
+                    <hr style={{ borderColor: '#222', margin: '0' }} />
+
+                    <div>
+                        <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Canvas Size</h3>
+                        <select onChange={(e) => handlePresetChange(Number(e.target.value))} style={{ width: '100%', padding: '12px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', outline: 'none' }}>
                             {SIZE_PRESETS.map(p => <option key={p.name} value={p.ratio}>{p.name}</option>)}
                         </select>
                         {isCustom && (
@@ -798,46 +828,47 @@ function CollageMaker() {
                                 <input type="number" value={customSize.h} onChange={e => setCustomSize(p => ({ ...p, h: Number(e.target.value) }))} className="px-input" placeholder="Height" />
                             </div>
                         )}
-                    </section>
+                    </div>
 
-                    <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div className="s-group">
+                    <div>
+                        <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Style</h3>
+                        <div className="s-group" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                <span>Gap Size</span>
+                                <span>Gap</span>
                                 <span style={{ opacity: 0.5 }}>{spacing}px</span>
                             </div>
                             <input type="range" min="0" max="80" value={spacing} onChange={e => setSpacing(Number(e.target.value))} />
                         </div>
-                        <div className="s-group">
+                        <div className="s-group" style={{ marginBottom: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '8px' }}>
-                                <span>Rounded Corners</span>
+                                <span>Roundness</span>
                                 <span style={{ opacity: 0.5 }}>{borderRadius}px</span>
                             </div>
                             <input type="range" min="0" max="100" value={borderRadius} onChange={e => setBorderRadius(Number(e.target.value))} />
                         </div>
                         <div className="s-group">
-                            <span style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px' }}>Box Color</span>
+                            <span style={{ fontSize: '0.85rem', display: 'block', marginBottom: '8px' }}>Background</span>
                             <div style={{ display: 'flex', gap: '10px' }}>
-                                <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ width: '44px', height: '44px', border: 'none', padding: 0, background: 'none', cursor: 'pointer' }} />
-                                <input type="text" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0 12px', color: '#fff', fontSize: '0.9rem' }} />
+                                <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', padding: 0, background: 'none', cursor: 'pointer' }} />
+                                <input type="text" value={bgColor} onChange={e => setBgColor(e.target.value)} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0 12px', color: '#fff', fontSize: '0.9rem' }} />
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    <button onClick={handleDownload} style={{ width: '100%', marginTop: 'auto', padding: '18px', borderRadius: '14px', background: 'var(--neon-blue)', color: '#000', border: 'none', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 40px rgba(0, 217, 255, 0.3)' }} className="download-cta">
-                        <Download size={22} /> Download Photo
+                    <button onClick={handleDownload} style={{ width: '100%', marginTop: 'auto', padding: '16px', borderRadius: '10px', background: 'var(--neon-blue)', color: '#000', border: 'none', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }} className="download-cta">
+                        <Download size={20} /> Export Design
                     </button>
                 </div>
             </div>
 
             <style jsx>{`
-                input[type="range"] { width: 100%; accent-color: var(--neon-blue); height: 6px; border-radius: 3px; cursor: pointer; }
-                .px-input { width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 0.8rem; }
+                input[type="range"] { width: 100%; accent-color: var(--neon-blue); height: 4px; border-radius: 2px; cursor: pointer; background: #333; }
+                .px-input { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 0.8rem; }
                 .library-card:hover .drag-hint { opacity: 1; }
                 .library-card:hover { border-color: var(--neon-blue) !important; transform: translateY(-2px); }
                 .collage-cell:hover { border-color: var(--neon-blue) !important; }
                 .active-drop { border-color: var(--neon-blue) !important; background: rgba(0, 217, 255, 0.1) !important; box-shadow: inset 0 0 20px rgba(0, 217, 255, 0.2); }
-                .download-cta:hover { transform: scale(1.02); filter: brightness(1.1); }
+                .download-cta:hover { filter: brightness(1.1); }
                 .upload-btn:hover { filter: brightness(1.1); }
             `}</style>
         </div>
