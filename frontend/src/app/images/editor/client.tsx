@@ -601,6 +601,11 @@ function CollageMaker() {
     const [draggedImage, setDraggedImage] = useState<string | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(true);
 
+    // --- TOUCH SUPPORT STATES ---
+    const [selectedImage, setSelectedImage] = useState<string | null>(null); // For Tap-to-Select
+    const [dragTouch, setDragTouch] = useState<{ x: number, y: number, src: string } | null>(null);
+    const dragTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Determines if we should use dark or light borders based on canvas background
     const isDarkBg = () => {
         const rgb = bgColor.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => r + r + g + g + b + b);
@@ -618,9 +623,11 @@ function CollageMaker() {
     };
 
     const handleDrop = (index: number) => {
-        if (draggedImage) {
-            setCellImages(prev => ({ ...prev, [index]: draggedImage }));
+        const img = draggedImage || selectedImage;
+        if (img) {
+            setCellImages(prev => ({ ...prev, [index]: img }));
             setDraggedImage(null);
+            setSelectedImage(null); // Clear selection after placement
         }
     };
 
@@ -631,6 +638,68 @@ function CollageMaker() {
             return next;
         });
     };
+
+    // --- TOUCH HANDLERS ---
+    const handleTouchStart = (e: React.TouchEvent, src: string) => {
+        const touch = e.touches[0];
+        const clientX = touch.clientX;
+        const clientY = touch.clientY;
+
+        // Start timer for Long Press detection
+        dragTimer.current = setTimeout(() => {
+            setDragTouch({
+                x: clientX,
+                y: clientY,
+                src
+            });
+            setDraggedImage(src);
+            if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
+        }, 400);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        // If getting dragTouch (active drag), update position and prevent scroll
+        if (dragTouch) {
+            if (e.cancelable) e.preventDefault();
+            const touch = e.touches[0];
+            setDragTouch(prev => prev ? { ...prev, x: touch.clientX, y: touch.clientY } : null);
+        } else {
+            // If we moved BUT drag hasn't started yet, it's a scroll. Cancel the timer.
+            if (dragTimer.current) {
+                clearTimeout(dragTimer.current);
+                dragTimer.current = null;
+            }
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        // Clear timer on release (in case it was a short tap)
+        if (dragTimer.current) {
+            clearTimeout(dragTimer.current);
+            dragTimer.current = null;
+        }
+
+        if (!dragTouch) return;
+
+        // Find drop target
+        const touch = e.changedTouches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+        // Check if we dropped on a cell
+        const cell = target?.closest('.collage-cell');
+        if (cell) {
+            const indexStr = cell.getAttribute('data-index');
+            if (indexStr !== null) {
+                handleDrop(parseInt(indexStr));
+            }
+        }
+
+        setDragTouch(null);
+        setDraggedImage(null);
+    };
+
+    // Global listener for touch move/end is tricky in React without ref to Window.
+    // We'll attach to the main container, but `elementFromPoint` works globally.
 
     const getGridStyles = () => {
         if (mode === 'preset') {
@@ -724,9 +793,33 @@ function CollageMaker() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             {library.map((src, i) => (
-                                <div key={i} draggable onDragStart={() => setDraggedImage(src)} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #333', cursor: 'grab', position: 'relative' }} className="library-card">
-                                    <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <div className="drag-hint" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', opacity: 0, transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>DRAG</div>
+                                <div
+                                    key={i}
+                                    draggable
+                                    onDragStart={() => setDraggedImage(src)}
+                                    // Touch Events
+                                    onTouchStart={(e) => handleTouchStart(e, src)}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                    onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
+                                    // Click Selection (Tap to Select)
+                                    onClick={() => setSelectedImage(selectedImage === src ? null : src)}
+
+                                    style={{
+                                        aspectRatio: '1',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        border: selectedImage === src ? '2px solid var(--neon-blue)' : '1px solid #333',
+                                        cursor: 'grab',
+                                        position: 'relative',
+                                        opacity: (draggedImage === src && !dragTouch) ? 0.5 : 1 // Dim only on desktop drag
+                                    }}
+                                    className="library-card"
+                                >
+                                    <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+                                    <div className="drag-hint" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', opacity: selectedImage === src ? 1 : 0, transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
+                                        {selectedImage === src ? 'SELECTED' : 'DRAG'}
+                                    </div>
                                 </div>
                             ))}
                             {library.length === 0 && (
@@ -786,9 +879,12 @@ function CollageMaker() {
                         {cells.map((cell) => (
                             <div
                                 key={cell.id}
+                                data-index={cell.index} // For touch detection
                                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('active-drop'); }}
                                 onDragLeave={(e) => e.currentTarget.classList.remove('active-drop')}
                                 onDrop={(e) => { e.currentTarget.classList.remove('active-drop'); handleDrop(cell.index); }}
+                                // Tap to Place
+                                onClick={() => selectedImage && handleDrop(cell.index)}
                                 style={{
                                     gridArea: cell.area !== 'auto' ? cell.area : undefined,
                                     background: darkTheme ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -913,6 +1009,31 @@ function CollageMaker() {
                     </button>
                 </div>
             </div>
+
+            {/* Ghost Image for Touch Dragging */}
+            {
+                dragTouch && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: dragTouch.x,
+                            top: dragTouch.y,
+                            width: '80px',
+                            height: '80px',
+                            transform: 'translate(-50%, -50%)',
+                            pointerEvents: 'none', // Allow touch to pass through to underlying elements (critical for elementFromPoint)
+                            zIndex: 9999,
+                            opacity: 0.8,
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            border: '2px solid var(--neon-blue)'
+                        }}
+                    >
+                        <img src={dragTouch.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                )
+            }
 
             <style jsx>{`
                 .collage-container {
