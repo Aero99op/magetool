@@ -248,53 +248,169 @@ export default function HomePage() {
                 </div>
             </motion.section>
 
-            {/* Rich Content Section for SEO & AdSense */}
-            <section style={{ padding: '60px 0', borderTop: '1px solid var(--glass-border)' }}>
-                <div style={{ maxWidth: '800px', margin: '0 auto', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-                    <div style={{ marginBottom: '40px' }}>
-                        <h2 style={{ color: '#fff', fontSize: '1.75rem', marginBottom: '16px' }}>Your All-in-One Digital Toolkit</h2>
-                        <p style={{ marginBottom: '20px' }}>
-                            Magetool is a comprehensive suite of free online tools designed to simplify your digital workflow.
-                            Whether you're a photographer looking to edit images, a student needing to convert documents, or a content creator working with audio and video,
-                            we have the specialized tools you need—all in one place.
-                        </p>
-                        <p>
-                            We believe that powerful tools shouldn't be complicated or expensive. That's why every tool on Magetool is completely free,
-                            requires no software installation, and runs directly in your secure browser environment.
-                        </p>
-                    </div>
+            {/* Premium All-in-One Card Area */}
+            <motion.section
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                style={{ padding: '80px 0' }}
+            >
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,217,255,0.05) 100%)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '32px',
+                    padding: 'clamp(30px, 5vw, 60px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    backdropFilter: 'blur(20px)',
+                }}>
+                    {/* Background Decorative Elements */}
+                    <div style={{
+                        position: 'absolute', top: -100, right: -100, width: '400px', height: '400px',
+                        background: 'radial-gradient(circle, rgba(0,217,255,0.15) 0%, transparent 70%)',
+                        filter: 'blur(80px)', pointerEvents: 'none'
+                    }} />
+                    <div style={{
+                        position: 'absolute', bottom: -100, left: -100, width: '300px', height: '300px',
+                        background: 'radial-gradient(circle, rgba(255, 0, 128, 0.08) 0%, transparent 70%)',
+                        filter: 'blur(80px)', pointerEvents: 'none'
+                    }} />
 
-                    <div style={{ padding: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-                        <h3 style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '20px' }}>Everything You Need</h3>
+                    <div className="card-grid">
+                        {/* Left Side: The Vision */}
+                        <div className="card-content">
+                            <span style={{
+                                display: 'inline-block',
+                                padding: '6px 16px',
+                                borderRadius: '20px',
+                                background: 'rgba(0, 217, 255, 0.1)',
+                                color: 'var(--neon-blue)',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                marginBottom: '24px'
+                            }}>
+                                ✨ The Magetool Promise
+                            </span>
+                            <h2 style={{
+                                fontSize: 'clamp(2rem, 4vw, 3rem)',
+                                fontWeight: 800,
+                                marginBottom: '24px',
+                                lineHeight: 1.1,
+                                background: 'linear-gradient(to right, #ffffff 30%, rgba(255,255,255,0.5))',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }}>
+                                Your Digital<br />Swiss Army Knife
+                            </h2>
+                            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, maxWidth: '500px' }}>
+                                Magetool isn't just a website; it's your creative companion.
+                                We've packed enterprise-grade power into a beautiful, free dashboard
+                                that respects your privacy and fuels your workflow.
+                            </p>
+                            <Link href="/images/editor" className="btn btn-primary" style={{ display: 'inline-flex', padding: '14px 32px', borderRadius: '12px' }}>
+                                Explore The Studio <ArrowRight size={20} style={{ marginLeft: 8 }} />
+                            </Link>
+                        </div>
 
-                        <div style={{ display: 'grid', gap: '24px' }}>
-                            <div>
-                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>📸 Advanced Image Tools</h4>
-                                <p>
-                                    Go beyond simple cropping. Our suite includes AI-powered background removal, image upscaling,
-                                    forensic AI analysis, and a fully-featured photo editor with layer support.
-                                </p>
-                            </div>
+                        {/* Right Side: The Features Stack */}
+                        <div className="features-stack">
+                            {/* Feature 1 */}
+                            <motion.div
+                                whileHover={{ scale: 1.02, x: 5 }}
+                                className="feature-card"
+                            >
+                                <div className="feature-icon icon-blue">
+                                    <Image size={24} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Pixel Perfect</h4>
+                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>AI background removal, forensic analysis, and granular photo editing.</p>
+                                </div>
+                            </motion.div>
 
-                            <div>
-                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>📄 Document Management</h4>
-                                <p>
-                                    Handle PDFs and office documents with ease. Convert between formats (PDF to Word, JSON to CSV),
-                                    merge or split files, and verify file integrity—all without uploading sensitive data to a cloud server.
-                                </p>
-                            </div>
+                            {/* Feature 2 */}
+                            <motion.div
+                                whileHover={{ scale: 1.02, x: 5 }}
+                                className="feature-card"
+                            >
+                                <div className="feature-icon icon-gold">
+                                    <FileText size={24} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Document Mastery</h4>
+                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Convert, merge, and split PDFs securely. Zero server uploads for max privacy.</p>
+                                </div>
+                            </motion.div>
 
-                            <div>
-                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>🎥 Video & Audio Studio</h4>
-                                <p>
-                                    Trim, compress, and convert multimedia files for any platform. From boosting audio volume
-                                    to compressing videos for email, our tools handle the heavy lifting instantly.
-                                </p>
-                            </div>
+                            {/* Feature 3 */}
+                            <motion.div
+                                whileHover={{ scale: 1.02, x: 5 }}
+                                className="feature-card"
+                            >
+                                <div className="feature-icon icon-red">
+                                    <Video size={24} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Media Studio</h4>
+                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Compress 4K videos, trim audio clips, and optimize content for social.</p>
+                                </div>
+                            </motion.div>
                         </div>
                     </div>
                 </div>
-            </section>
+
+                <style jsx>{`
+                    .card-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 80px;
+                        align-items: center;
+                    }
+                    
+                    .features-stack {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 24px;
+                    }
+
+                    .feature-card {
+                        background: rgba(0,0,0,0.3);
+                        padding: 24px;
+                        border-radius: 24px;
+                        border: 1px solid rgba(255,255,255,0.05);
+                        display: flex;
+                        gap: 24px;
+                        align-items: center; /* Centered alignment looks cleaner */
+                        transition: all 0.3s ease;
+                    }
+
+                    .feature-icon {
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 16px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                    }
+
+                    .icon-blue { background: rgba(0, 217, 255, 0.1); color: var(--neon-blue); }
+                    .icon-gold { background: rgba(255, 215, 0, 0.1); color: #FFD700; }
+                    .icon-red { background: rgba(255, 107, 107, 0.1); color: #FF6B6B; }
+
+                    @media (max-width: 900px) {
+                        .card-grid {
+                            grid-template-columns: 1fr;
+                            gap: 48px;
+                        }
+                        .feature-card {
+                            padding: 20px;
+                            gap: 16px;
+                            align-items: flex-start;
+                        }
+                    }
+                `}</style>
+            </motion.section>
 
             <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
         </div>

@@ -52,6 +52,13 @@ export default function Footer() {
                                 </Link>
                             ))}
                         </div>
+
+                        <div className="link-group">
+                            <span className="link-title">Legal</span>
+                            <Link href="/privacy" className="footer-link">Privacy Policy</Link>
+                            <Link href="/terms" className="footer-link">Terms of Service</Link>
+                            <Link href="/support" className="footer-link">Contact & Support</Link>
+                        </div>
                     </div>
 
                     {/* Mini Ad Slot */}
@@ -215,6 +222,6 @@ export default function Footer() {
                     }
                 }
             `}</style>
-        </footer>
+        </footer >
     );
 }

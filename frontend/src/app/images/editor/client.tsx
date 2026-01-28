@@ -449,7 +449,7 @@ function SingleEditor() {
     };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 340px', gap: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="editor-grid-layout">
 
             {/* Canvas Area */}
             <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px', background: '#0a0a0a', position: 'relative' }}>
@@ -520,6 +520,13 @@ function SingleEditor() {
             </div>
 
             <style jsx>{`
+                .editor-grid-layout {
+                    display: grid;
+                    grid-template-columns: minmax(300px, 1fr) 340px;
+                    gap: 24px;
+                    max-width: 1400px;
+                    margin: 0 auto;
+                }
                 .btn-icon {
                     height: 36px;
                     display: flex;
@@ -536,6 +543,19 @@ function SingleEditor() {
                 .btn-icon:hover {
                     background: rgba(0, 217, 255, 0.1);
                     border-color: var(--neon-blue);
+                }
+
+                @media (max-width: 900px) {
+                    .editor-grid-layout {
+                        grid-template-columns: 1fr;
+                    }
+                    /* Reorder: Canvas first, then controls */
+                    .editor-grid-layout > :first-child {
+                        order: 1;
+                    }
+                    .editor-grid-layout > :last-child {
+                        order: 2;
+                    }
                 }
             `}</style>
         </motion.div>
@@ -579,6 +599,7 @@ function CollageMaker() {
 
     const collageRef = useRef<HTMLDivElement>(null);
     const [draggedImage, setDraggedImage] = useState<string | null>(null);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(true);
 
     // Determines if we should use dark or light borders based on canvas background
     const isDarkBg = () => {
@@ -677,16 +698,22 @@ function CollageMaker() {
     const darkTheme = isDarkBg();
 
     return (
-        <div className="collage-studio" style={{ color: '#fff', height: '100%', padding: '0', display: 'flex', flexDirection: 'column' }}>
+        <div className="collage-studio" style={{ color: '#fff', minHeight: '80vh', padding: '0', display: 'flex', flexDirection: 'column' }}>
 
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '300px 1fr 340px', overflow: 'hidden' }}>
+            <div className="collage-container">
 
                 {/* 1. LEFT: MEDIA LIBRARY */}
-                <div style={{ background: '#090909', borderRight: '1px solid #222', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>
+                <div
+                    className={`library-panel ${isLibraryOpen ? 'open' : 'closed'} ${draggedImage ? 'transparent-pulse' : ''}`}
+                    style={{ background: '#090909', borderRight: '1px solid #222', display: isLibraryOpen ? 'flex' : 'none', flexDirection: 'column' }}
+                >
+                    <div style={{ padding: '20px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <ImageIcon size={18} className="text-neon" /> My Library
                         </h4>
+                        <button onClick={() => setIsLibraryOpen(false)} className="mobile-only-close" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+                            <X size={18} />
+                        </button>
                     </div>
 
                     <div style={{ padding: '16px', flex: 1, overflowY: 'auto' }}>
@@ -713,6 +740,32 @@ function CollageMaker() {
 
                 {/* 2. CENTER: INFINITE WORKSPACE */}
                 <div className="workspace-area" style={{ background: '#111', position: 'relative', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px' }}>
+
+                    {/* Toggle Library Button (Mobile/Floating) */}
+                    {!isLibraryOpen && (
+                        <button
+                            onClick={() => setIsLibraryOpen(true)}
+                            style={{
+                                position: 'absolute',
+                                top: '20px',
+                                left: '20px',
+                                zIndex: 100,
+                                background: 'var(--neon-blue)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 12px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            <ImageIcon size={16} /> Photos
+                        </button>
+                    )}
 
                     {/* The Canvas itself */}
                     <div
@@ -774,7 +827,7 @@ function CollageMaker() {
                 </div>
 
                 {/* 3. RIGHT: SETTINGS */}
-                <div style={{ background: '#090909', borderLeft: '1px solid #222', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
+                <div className="settings-panel" style={{ background: '#090909', borderLeft: '1px solid #222', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
 
                     <div>
                         <h3 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Mode</h3>
@@ -862,6 +915,14 @@ function CollageMaker() {
             </div>
 
             <style jsx>{`
+                .collage-container {
+                    flex: 1;
+                    display: grid;
+                    grid-template-columns: 300px 1fr 340px;
+                    overflow: hidden;
+                    height: 700px; /* Fixed height for desktop */
+                }
+
                 input[type="range"] { width: 100%; accent-color: var(--neon-blue); height: 4px; border-radius: 2px; cursor: pointer; background: #333; }
                 .px-input { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 0.8rem; }
                 .library-card:hover .drag-hint { opacity: 1; }
@@ -870,6 +931,48 @@ function CollageMaker() {
                 .active-drop { border-color: var(--neon-blue) !important; background: rgba(0, 217, 255, 0.1) !important; box-shadow: inset 0 0 20px rgba(0, 217, 255, 0.2); }
                 .download-cta:hover { filter: brightness(1.1); }
                 .upload-btn:hover { filter: brightness(1.1); }
+                
+                .mobile-only-close { display: none; }
+                .transparent-pulse { opacity: 0.3 !important; transition: opacity 0.3s; pointer-events: none; }
+
+                @media (max-width: 1024px) {
+                    .collage-container {
+                        grid-template-columns: 250px 1fr 280px;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .collage-container {
+                        display: flex;
+                        flex-direction: column;
+                        height: auto; /* Allow growth on mobile */
+                    }
+                    
+                    /* Library Panel: Full width, closable */
+                    .library-panel {
+                        width: 100%;
+                        height: auto;
+                        max-height: 250px; /* Limit height when open */
+                        border-right: none;
+                        border-bottom: 1px solid #333;
+                    }
+
+                    .mobile-only-close { display: block; }
+                    
+                    /* Workspace: Give it standard height */
+                    .workspace-area {
+                        min-height: 50vh;
+                        padding: 20px !important;
+                    }
+
+                    /* Settings: Stack at bottom */
+                    .settings-panel {
+                        width: 100%;
+                        border-left: none;
+                        border-top: 1px solid #333;
+                        height: auto;
+                    }
+                }
             `}</style>
         </div>
     );
