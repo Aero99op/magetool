@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { HelpCircle, Star, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
