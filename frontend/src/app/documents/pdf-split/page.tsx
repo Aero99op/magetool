@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'application/pdf': ['.pdf'] };
 
@@ -106,6 +107,23 @@ export default function PDFSplitPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Extract specific pages from a large PDF document to create a smaller, more focused file. Whether you need just one chapter from a book or a single invoice from a monthly statement, our PDF Splitter does the job precisely."
+                    features={[
+                        "Flexible Selection: Choose single pages (e.g., '5') or ranges (e.g., '1-5').",
+                        "High Precision: Extracts exactly what you request, keeping the original quality.",
+                        "Fast Processing: Splits even large documents in seconds.",
+                        "Secure handling: Files are processed securely and deleted automatically."
+                    ]}
+                    howTo={[
+                        { step: "Upload PDF", description: "Select the PDF file you want to split." },
+                        { step: "Specify Pages", description: "Enter page numbers (e.g., '1,3,5-10')." },
+                        { step: "Process", description: "Click 'Process' to extract the selected pages." },
+                        { step: "Download", description: "Get your new, smaller PDF." }
+                    ]}
+                />
+            }
         />
     );
 }

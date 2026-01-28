@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import MemeCanvas, { TextElement, createTextElement, generateId } from '@/components/MemeCanvas';
+import ToolContent from '@/components/ToolContent';
 import { Plus, Trash2, Download, RotateCw, Type } from 'lucide-react';
 
 const FONTS = [
@@ -331,6 +332,22 @@ export default function MemeGeneratorPage() {
                     }
                 }
             `}</style>
+
+            <ToolContent
+                overview="Create viral memes in seconds with our advanced Meme Generator. Upload any image, add unlimited text layers, and customize fonts and colors to make your message pop."
+                features={[
+                    "Free Positioning: Drag and drop text anywhere on the canvas.",
+                    "Custom Styling: Change fonts, sizes, colors, and stroke outlines.",
+                    "Rotation: Rotate text for dynamic effects.",
+                    "No Watermark: Download clean, high-quality memes."
+                ]}
+                howTo={[
+                    { step: "Upload Template", description: "Choose a meme image or upload your own." },
+                    { step: "Add Text", description: "Click 'Add Text' to create a new layer." },
+                    { step: "Customize", description: "Font, color, size, and position." },
+                    { step: "Download", description: "Save your creation and share!" }
+                ]}
+            />
         </div>
     );
 }

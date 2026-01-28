@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function OCRScannerPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -115,6 +116,9 @@ export default function OCRScannerPage() {
                     <textarea value={extractedText} readOnly placeholder="Extracted text will appear here..." style={{ width: '100%', minHeight: '300px', padding: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'vertical', fontFamily: 'monospace' }} />
                 </div>
             </div>
+
+                ]}
+            />
         </div>
     );
 }

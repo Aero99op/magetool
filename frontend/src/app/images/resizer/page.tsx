@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = {
     'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff'],
@@ -242,6 +243,23 @@ export default function ImageResizerPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Resize images to specific dimensions instantly. Scale up or down while preserving aspect ratio. Ideal for reducing file size for web use or meeting social media requirements."
+                    features={[
+                        "Precise Dimensions: Enter exact Width and Height.",
+                        "Aspect Ratio Lock: Keep your image from stretching.",
+                        "High Speed: Resizes instantly on the server.",
+                        "Format Support: Works with JPG, PNG, WEBP, and more."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the image to resize." },
+                        { step: "Set Size", description: "Enter desired dimensions." },
+                        { step: "Resize", description: "Click to process." },
+                        { step: "Download", description: "Save the resized image." }
+                    ]}
+                />
+            }
         />
     );
 }

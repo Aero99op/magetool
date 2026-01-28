@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const SPEED_OPTIONS = [
     { value: '0.25', label: '0.25x (Super Slow Motion)' },
@@ -207,6 +208,24 @@ export default function VideoSpeedPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Create slow-motion or fast-forward effects with our Video Speed Changer. Slow down footage to 0.25x for dramatic effect or speed up to 4x for time-lapses. Optionally preserve audio pitch so voices don't sound like chipmunks."
+                    features={[
+                        "Wide Range: From 0.25x (slow) to 4x (fast).",
+                        "Audio Pitch Correction: Keep audio sounding natural even when speed changes.",
+                        "Smooth Processing: Interpolates frames for smoother slow motion.",
+                        "Simple Controls: Presets for common speed adjustments."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select your video file." },
+                        { step: "Select Speed", description: "Choose a multiplier (e.g., 0.5x, 2x)." },
+                        { step: "Configure Audio", description: "Check 'Preserve audio' to correct pitch." },
+                        { step: "Process", description: "Click to apply speed change." },
+                        { step: "Download", description: "Get your retimed video." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = {
     'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
@@ -157,6 +158,22 @@ export default function BackgroundRemoverPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Remove image backgrounds automatically in seconds. Our AI-powered tool detects the subject and creates a transparent background with high precision. Perfect for e-commerce product photos, marketing materials, and portraits."
+                    features={[
+                        "AI Precision: Accurately handles hair, fur, and complex edges.",
+                        "Instant Transparency: Returns a PNG file with a transparent background.",
+                        "No Editing Skills Needed: Just upload and let the AI do the work.",
+                        "High Resolution: Maintains original image quality."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the image to process." },
+                        { step: "AI Processing", description: "Wait a few seconds for automatic removal." },
+                        { step: "Download", description: "Save your transparent PNG." }
+                    ]}
+                />
+            }
         />
     );
 }

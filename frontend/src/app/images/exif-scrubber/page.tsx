@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { AxiosProgressEvent } from 'axios';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
@@ -106,6 +107,22 @@ export default function ExifScrubberPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Protect your privacy by removing hidden metadata from your photos. Cameras and phones record GPS location, device model, and date/time in every photo. Use this tool to strip that data before sharing online."
+                    features={[
+                        "Total Privacy: Removes GPS, Camera, and Software info.",
+                        "No Quality Loss: Image pixels remain untouched.",
+                        "Fast Processing: Cleans metadata instantly.",
+                        "Secure: Edited files are deleted from our servers automatically."
+                    ]}
+                    howTo={[
+                        { step: "Upload Photo", description: "Choose the image with metadata." },
+                        { step: "Process", description: "The tool automatically scrubs the data." },
+                        { step: "Download", description: "Save the clean, privacy-safe image." }
+                    ]}
+                />
+            }
         />
     );
 }

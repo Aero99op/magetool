@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { '*/*': [] };
 
@@ -150,6 +151,23 @@ export default function FileSizeAdjusterPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Adjust the file size of your documents or images to meet specific requirements. Whether you need to increase a file's size (e.g., for testing upload limits) or decrease it (compressing for email/web), this tool gives you precise control."
+                    features={[
+                        "Increase Size: Adds safe, non-corrupting padding to reach a specific target size (MB/GB).",
+                        "Decrease Size: Attempts to compress the file into a ZIP archive to save space.",
+                        "Precise Targeting: Set exact target size in KB, MB, or GB.",
+                        "Universal: Works on any file type."
+                    ]}
+                    howTo={[
+                        { step: "Upload File", description: "Select any file you wish to modify." },
+                        { step: "Select Mode", description: "Choose 'Increase' to add padding or 'Decrease' to compress." },
+                        { step: "Set Target", description: "Enter the desired final size (e.g., 5 MB)." },
+                        { step: "Process", description: "Download the modified file." }
+                    ]}
+                />
+            }
         />
     );
 }

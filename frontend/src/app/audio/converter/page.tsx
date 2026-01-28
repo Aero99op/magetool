@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const OUTPUT_FORMATS = [
     { value: 'mp3', label: 'MP3 (.mp3)' },
@@ -203,6 +204,24 @@ export default function AudioConverterPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Convert your audio files freely between all major formats with our universal Audio Converter. Whether you need an MP3 for your phone, a high-quality FLAC for archiving, or an OGG file for a game project, this tool handles it all. We offer full control over audio quality, allowing you to choose bitrates from 128kbps up to 320kbps for crystal clear sound."
+                    features={[
+                        "Multi-Format Support: Convert between MP3, WAV, AAC, FLAC, OGG, M4A, and more.",
+                        "Quality Control: selectable bitrates (128k, 192k, 256k, 320k) to balance size and quality.",
+                        "Lossless Conversion: Support for FLAC and WAV ensures no quality loss for audiophiles.",
+                        "Fast Processing: Optimized backend ensures your files are converted in seconds.",
+                        "Secure: Your files are auto-deleted after 1 hour."
+                    ]}
+                    howTo={[
+                        { step: "Upload Audio", description: "Choose the audio file you wish to convert." },
+                        { step: "Configure Output", description: "Select your desired file format and bitrate quality." },
+                        { step: "Convert", description: "Click 'Convert' to start the transformation." },
+                        { step: "Download", description: "Save your new audio file instantly." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm'] };
 
@@ -103,6 +104,23 @@ export default function VideoTrimmerPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Cut unwanted parts from the beginning or end of your videos. Our Video Trimmer lets you specify exact start and end times to keep only the footage you need. Ideal for removing intros, outros, or extracting a specific scene."
+                    features={[
+                        "Precision Cutting: Enter exact timecodes (HH:MM:SS) for accuracy.",
+                        "No Re-encoding: Uses stream copying for instant trimming without quality loss.",
+                        "Original Quality: Output is identical in quality to the source.",
+                        "Broad Format Support: Trim MP4, MKV, AVI, etc."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the video to trim." },
+                        { step: "Set Times", description: "Enter Start Time and End Time (e.g., 00:00:10 to 00:00:20)." },
+                        { step: "Trim", description: "Click to cut the video." },
+                        { step: "Download", description: "Get your trimmed clip." }
+                    ]}
+                />
+            }
         />
     );
 }

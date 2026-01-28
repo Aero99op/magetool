@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function VideoMetadataPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -129,6 +130,21 @@ export default function VideoMetadataPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Get detailed technical specifications for any video file. View hidden metadata including codecs, bitrate, frame rate, aspect ratio, audio sampling, and more without uploading the full video content to a server."
+                features={[
+                    "Detailed Analysis: Shows format, duration, resolution, and size.",
+                    "Stream info: breakdown of video and audio tracks (codecs, FPS, channels).",
+                    "Privacy First: Analysis happens on the server but files are processed and discarded immediately.",
+                    "Broad Compatibility: Supports MP4, MOV, MKV, AVI, WEBM."
+                ]}
+                howTo={[
+                    { step: "Select Video", description: "Choose the video file you want to examine." },
+                    { step: "Analyze", description: "Click 'Extract Metadata' to scan the file header." },
+                    { step: "View Info", description: "See all the technical details in an organized dashboard." }
+                ]}
+            />
         </div>
     );
 }

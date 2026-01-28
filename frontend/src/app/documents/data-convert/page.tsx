@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'application/json': ['.json'], 'text/csv': ['.csv'], 'text/xml': ['.xml'], 'application/xml': ['.xml'] };
 
@@ -129,6 +130,23 @@ export default function DataConvertPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Transform your data effortlessly with our Data Format Converter. Built for developers and data analysts, this tool converts between JSON, CSV, and XML formats instantly. Whether you need to import data into Excel (CSV from JSON) or prepare a configuration file (XML from JSON), we've got you covered."
+                    features={[
+                        "Universal Interoperability: Convert between JSON (JavaScript Object Notation), CSV (Comma Separated Values), and XML.",
+                        "Developer Friendly: Clean output formatting compatible with most data processing tools.",
+                        "Instant Preview: Get your converted file immediately without server delays.",
+                        "Strict Privacy: Your sensitive data never leaves your browser."
+                    ]}
+                    howTo={[
+                        { step: "Upload Data", description: "Select your source file (.json, .csv, or .xml)." },
+                        { step: "Select Target", description: "Choose the output format you need (e.g., convert JSON to CSV)." },
+                        { step: "Convert", description: "The tool automatically processes and transforms the structure." },
+                        { step: "Download", description: "Save the newly formatted data file." }
+                    ]}
+                />
+            }
         />
     );
 }

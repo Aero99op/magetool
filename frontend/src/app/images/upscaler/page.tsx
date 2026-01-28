@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const SCALE_OPTIONS = [
     { value: 2, label: '2x (Double)' },
@@ -112,6 +113,23 @@ export default function AIUpscalerPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Enhance low-resolution images with our AI Upscaler. Increase resolution up to 8x while sharpening details and removing noise for print-ready quality."
+                    features={[
+                        "AI Enhancement: Reconstructs lost details intelligently.",
+                        "Up to 8x Zoom: Scale small images to massive sizes.",
+                        "Noise Reduction: Cleans up grain and artifacts.",
+                        "Fast Processing: Get results in seconds."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select a low-res photo." },
+                        { step: "Select Scale", description: "Choose 2x, 4x, or 8x." },
+                        { step: "Upscale", description: "Let AI enhance your image." },
+                        { step: "Download", description: "Save the high-res version." }
+                    ]}
+                />
+            }
         />
     );
 }

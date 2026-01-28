@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const OUTPUT_FORMATS = [
     { value: 'mp3', label: 'MP3 (.mp3)' },
@@ -212,6 +213,23 @@ export default function ExtractAudioPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Extract the soundtrack, speech, or background music from any video file. Convert video to high-quality audio formats like MP3, WAV, or FLAC. Perfect for saving songs from concerts, speeches from lectures, or sound effects from clips."
+                    features={[
+                        "Multiple Audio Formats: MP3, WAV, AAC, FLAC, OGG, M4A.",
+                        "Bitrate Selection: Choose from 128kbps up to 320kbps for best quality.",
+                        "Lossless Extraction: Support for FLAC and WAV to preserve original audio fidelity.",
+                        "Fast Extraction: Rips audio in seconds."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the video containing the audio you want." },
+                        { step: "Choose Format", description: "Select MP3, WAV, etc. and desired bitrate." },
+                        { step: "Extract", description: "Click to separate the audio track." },
+                        { step: "Download", description: "Save your new audio file." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_VIDEO_FORMATS = {
     'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
@@ -242,6 +243,24 @@ export default function AddMusicPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Elevate your videos by adding the perfect soundtrack. Our 'Add Music to Video' tool allows you to merge audio files (MP3, WAV, etc.) with your video clips instantly. You can choose to replace the original audio or mix the new track with the existing sound."
+                    features={[
+                        "Audio Mixing: Keep original sound and add background music, or replace it entirely.",
+                        "Volume Control: Adjust the volume of the added track for perfect balance.",
+                        "Wide Support: Works with all major video (MP4, AVI, MOV) and audio (MP3, M4A) formats.",
+                        "Fast Processing: Merges streams without re-encoding the video track when possible."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the video file you want to edit." },
+                        { step: "Upload Audio", description: "Choose the music track to add." },
+                        { step: "Configure", description: "Choose to 'Replace original audio' or mix. Adjust volume." },
+                        { step: "Process", description: "Click to merge the streams." },
+                        { step: "Download", description: "Get your new music video." }
+                    ]}
+                />
+            }
         />
     );
 }

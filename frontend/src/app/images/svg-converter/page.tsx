@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.bmp'] };
 const SMOOTHING_OPTIONS = ['Sharp', 'Normal', 'Smooth'];
@@ -121,6 +122,23 @@ export default function SVGConverterPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Convert raster images (JPG, PNG) into scalable vector graphics (SVG). Ideal for logos, icons, and illustrations that need to be resized without pixelation."
+                    features={[
+                        "Vectorization: Traces shapes to create vector paths.",
+                        "Color Control: Preserve colors or convert to simple palettes.",
+                        "Smoothing: Adjust how smooth the curves should be.",
+                        "Scalable: Output can be resized infinitely."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select a JPG or PNG file." },
+                        { step: "Settings", description: "Choose smoothing and color options." },
+                        { step: "Convert", description: "Transform into SVG vector." },
+                        { step: "Download", description: "Save your scalable vector file." }
+                    ]}
+                />
+            }
         />
     );
 }

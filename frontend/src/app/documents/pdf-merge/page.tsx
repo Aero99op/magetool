@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = {
     'application/pdf': ['.pdf'],
@@ -198,6 +199,23 @@ export default function PDFMergePage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Combine multiple PDF files into a single, organized document with our PDF Merger. Perfect for compiling reports, invoices, or study materials. You can arrange the files in your desired order before merging them into one seamless PDF."
+                    features={[
+                        "Drag & Drop Ordering: Easily reorder your files before merging.",
+                        "Bulk Merging: Combine up to 40 files at once.",
+                        "Fast Processing: Merges documents in seconds on our secure servers.",
+                        "Universal: Works with all standard PDF files."
+                    ]}
+                    howTo={[
+                        { step: "Upload Files", description: "Select multiple PDF files you want to combine." },
+                        { step: "Arrange Order", description: "Use the Up/Down arrows to set the correct sequence." },
+                        { step: "Merge", description: "Click 'Merge PDFs' to join them together." },
+                        { step: "Download", description: "Save the single combined PDF document." }
+                    ]}
+                />
+            }
         />
     );
 }

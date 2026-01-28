@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api, { pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { AxiosProgressEvent } from 'axios';
 
 const LAYOUTS = [
@@ -141,6 +142,22 @@ export default function CollageMakerPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Combine multiple photos into a single beautiful collage. Choose from various grid layouts, adjust spacing, and create memorable photo collections in seconds."
+                features={[
+                    "Multiple Layouts: 2x2, 3x3, side-by-side, and more.",
+                    "Custom Spacing: Adjust the gap between images.",
+                    "Drag & Drop: Easily upload multiple images at once.",
+                    "High Quality: Generates a high-resolution combined image."
+                ]}
+                howTo={[
+                    { step: "Select Layout", description: "Choose a grid pattern (e.g., 2x2, 3x1)." },
+                    { step: "Add Photos", description: "Upload images to fill the slots." },
+                    { step: "Adjust", description: "Tweak spacing as needed." },
+                    { step: "Create", description: "Generate and download your collage." }
+                ]}
+            />
         </div>
     );
 }

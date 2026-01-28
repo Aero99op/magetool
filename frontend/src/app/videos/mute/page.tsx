@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = {
     'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
@@ -162,6 +163,22 @@ export default function MuteVideoPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Remove audio from your video files instantly. Whether it's to remove background noise, copyright music, or just to create a silent clip, our Mute Video tool removes the audio track completely without re-encoding the video stream."
+                    features={[
+                        "Lossless Video: Removes audio track without touching video quality.",
+                        "Lightning Fast: Processing takes seconds as no re-encoding is needed.",
+                        "Clean Output: Resulting file is strictly video-only.",
+                        "Wide Support: Works with MP4, AVI, MKV, MOV, etc."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the video you want to silence." },
+                        { step: "Process", description: "Click to remove the audio track." },
+                        { step: "Download", description: "Get your silent video file." }
+                    ]}
+                />
+            }
         />
     );
 }

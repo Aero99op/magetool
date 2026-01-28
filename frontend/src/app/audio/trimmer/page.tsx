@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'audio/*': ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a'] };
 
@@ -111,7 +112,24 @@ export default function AudioTrimmerPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
-            downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Create the perfect ringtone, sample, or audio clip with our precision Audio Trimmer. Easily cut unwanted parts from the start or end of your audio files. It also features professional Fade In and Fade Out controls, ensuring your clips sound smooth and professional, not abrupt."
+                    features={[
+                        "Precision Cutting: Define exact start and end times for your cut.",
+                        "Fade Effects: Smoothly fade audio in and out (up to 10 seconds) for professional results.",
+                        "Wide Compatibility: Trim MP3, WAV, AAC, FLAC, and more.",
+                        "Zero Quality Loss: Processing that preserves your original audio fidelity.",
+                        "Fast & Free: Edit your files in seconds within your browser."
+                    ]}
+                    howTo={[
+                        { step: "Upload Track", description: "Select the audio file you wish to trim." },
+                        { step: "Set Timing", description: "Enter the precise Start and End times for your clip." },
+                        { step: "Add Fades", description: "Optional: Set fade-in or fade-out duration in seconds." },
+                        { step: "Process & Save", description: "Click to trim and download your new clip." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = {
     'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'],
@@ -260,6 +261,23 @@ export default function ImageSizeAdjusterClient() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Precisely adjust your image size to meet strict requirements. Whether you need a 20KB photo for a form or want to reduce file size for faster loading, this tool does it all."
+                    features={[
+                        "Smart Fit: Intelligently adjusts quality to hit target size.",
+                        "KB/MB/GB Support: Target any file size unit.",
+                        "Compression Control: Choose between quality reduction or resizing.",
+                        "Padding Mode: Increase file size if needed (e.g., minimum 50KB)."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the image to adjust." },
+                        { step: "Set Target", description: "Enter desired size (e.g., 50 KB)." },
+                        { step: "Method", description: "Choose Smart Fit, Resolution, or Padding." },
+                        { step: "Process", description: "Compress/Expand and download." }
+                    ]}
+                />
+            }
         />
     );
 }

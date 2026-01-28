@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { audioApi } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function BPMDetectorPage() {
     const [fileName, setFileName] = useState('');
@@ -113,6 +114,23 @@ export default function BPMDetectorPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Find the tempo of your music instantly with our free online BPM (Beats Per Minute) Detector. Using advanced analysis algorithms (librosa), this tool accurately calculates the speed of any song, making it perfect for DJs, music producers, and dancers. Whether you're mixing tracks, creating a playlist by tempo, or just curious about a song's speed, get precise results in seconds."
+                features={[
+                    "High Precision Analysis: Utilizes industry-standard algorithms for accurate beat detection.",
+                    "Instant Results: No long waiting times; get your BPM and confidence score immediately.",
+                    "Genre Estimation: Smart suggestions for music genres based on the detected tempo range.",
+                    "Privacy First: Files are processed securely and not stored permanently.",
+                    "Broad Format Support: Works with MP3, WAV, and FLAC files."
+                ]}
+                howTo={[
+                    { step: "Upload Audio", description: "Select or drag & drop your music file (MP3, WAV, etc.) to begin." },
+                    { step: "Automatic Analysis", description: "The tool automatically processes the audio waveform to detect beats." },
+                    { step: "View Results", description: "See the estimated BPM along with a confidence score and tempo description." }
+                ]}
+            />
         </div>
+
     );
 }

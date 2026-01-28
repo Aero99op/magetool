@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const FPS_OPTIONS = [
     { value: '10', label: '10 FPS (Smaller file)' },
@@ -257,6 +258,23 @@ export default function VideoToGifPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Turn any video clip into a high-quality animated GIF. Perfect for memes, reactions, or sharing on platforms that support GIFs. Control frame rate and resolution to balance quality and file size."
+                    features={[
+                        "Custom FPS: Choose from 10 FPS (small size) to 30 FPS (smooth).",
+                        "Resize Options: Scale down to 320px, 480px, or keep original width.",
+                        "Trimming: Specify start time and duration to convert only a specific part.",
+                        "Optimized Output: Generates efficient GIF palettes for better colors."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the source video." },
+                        { step: "Configure Settings", description: "Set FPS, Width, and optional time range." },
+                        { step: "Convert", description: "Click to generate the GIF." },
+                        { step: "Download", description: "Save your new animated GIF." }
+                    ]}
+                />
+            }
         />
     );
 }

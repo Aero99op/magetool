@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
 
@@ -139,6 +140,23 @@ export default function WatermarkRemovePage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Remove unwanted watermarks, date stamps, and text overlays from your images using advanced AI inpainting technology."
+                    features={[
+                        "AI Inpainting: Intelligently fills in the removed area.",
+                        "Auto Detection: Automatically finds common watermarks.",
+                        "Manual Modes: Target specific areas like corners.",
+                        "Clean Results: Preserves original image quality."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select image with watermark." },
+                        { step: "Select Mode", description: "Choose Auto, Corner, or Center." },
+                        { step: "Process", description: "Let AI remove the object." },
+                        { step: "Download", description: "Save the clean image." }
+                    ]}
+                />
+            }
         />
     );
 }

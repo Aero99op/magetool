@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'application/pdf': ['.pdf'] };
 
@@ -101,6 +102,23 @@ export default function PDFUnlockPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Remove password protection from your PDF files so they can be opened and edited freely. If you have a legally accessible PDF that is locked and you know the password, this tool removes the restriction permanently for easier future access."
+                    features={[
+                        "Permanent Unlocking: Creates a new, unprotected copy of your file.",
+                        "Hassle-Free Access: No need to type the password every time you open the file.",
+                        "Secure Processing: Your password and file are used only for unlocking and then discarded.",
+                        "Fast & Easy: Unlocks in moments."
+                    ]}
+                    howTo={[
+                        { step: "Upload Locked PDF", description: "Select the password-protected file." },
+                        { step: "Enter Password", description: "Type the correct password to authorize the unlocking." },
+                        { step: "Unlock", description: "Click button to strip the security." },
+                        { step: "Download", description: "Save the fully accessible PDF." }
+                    ]}
+                />
+            }
         />
     );
 }

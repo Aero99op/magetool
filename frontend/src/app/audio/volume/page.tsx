@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'audio/*': ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a'] };
 
@@ -111,7 +112,23 @@ export default function VolumeBoosterPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
-            downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Is your audio recording too quiet? Or maybe too loud and distorted? Our Volume Booster tool lets you adjust the gain of your audio files with ease. Increase volume up to +20dB to make quiet recordings audible, or reduce it to prevent clipping. It also includes an auto-normalization feature to automatically set the perfect peak volume."
+                    features={[
+                        "Gain Control: Manually increase or decrease volume from -20dB to +20dB.",
+                        "Auto Normalization: Automatically detects and maximizes volume without clipping.",
+                        "Prevent Distortion: Smart buffering helps maintain audio quality while boosting.",
+                        "Universal Support: Works with all common audio formats like MP3 and WAV."
+                    ]}
+                    howTo={[
+                        { step: "Upload File", description: "Select the audio file you want to adjust." },
+                        { step: "Adjust Gain", description: "Use the slider to boost (+) or lower (-) the volume." },
+                        { step: "Normalize (Optional)", description: "Check 'Normalize' for automatic optimal volume." },
+                        { step: "Apply & Download", description: "Process the file and download the louder/quieter version." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { isFFmpegSupported, convertVideoClient } from '@/lib/ffmpeg-client';
 
 const OUTPUT_FORMATS = [
@@ -312,6 +313,23 @@ export default function VideoConverterPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Convert videos between all major formats effortlessly. Whether you need an MP4 for the web, an MKV for archiving, or a GIF/WebM for memes, this tool handles it all. Supports client-side fallback for privacy and speed."
+                    features={[
+                        "Universal Format Support: MP4, MKV, AVI, MOV, WebM, and GIF.",
+                        "Resolution Control: Resize videos to 1080p, 720p, 480p, or 360p.",
+                        "Hybrid Processing: Uses high-speed servers or your own browser (via WebAssembly) for conversion.",
+                        "No Limits: Convert files of various sizes and codecs."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select your source video file." },
+                        { step: "Configure", description: "Choose output format (e.g., MP4) and resolution." },
+                        { step: "Convert", description: "Click to start the transcoding process." },
+                        { step: "Download", description: "Save your converted video." }
+                    ]}
+                />
+            }
         />
     );
 }

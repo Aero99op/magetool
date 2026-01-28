@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import ToolContent from '@/components/ToolContent';
 
 export default function TextEditorPage() {
     const [content, setContent] = useState('');
@@ -90,6 +91,22 @@ export default function TextEditorPage() {
                     <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Start typing or open a file..." style={{ width: '100%', minHeight: '500px', padding: '16px', background: 'rgba(0, 0, 0, 0.3)', border: 'none', outline: 'none', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }} />
                 </div>
             </div>
+
+            <ToolContent
+                overview="A lightweight, distraction-free text and code editor that runs entirely in your browser. Perfect for quick edits, writing code snippets, or cleaning up data. It supports opening various text-based formats and provides essential features like Find & Replace and stats tracking."
+                features={[
+                    "Browser-Based: No software to install; opens instantly.",
+                    "Live Stats: Tracks characters, words, and lines in real-time.",
+                    "Find & Replace: Quickly modify text with a simple search tool.",
+                    "Multi-Format: Open and edit TXT, MD, JSON, HTML, CSS, PY, and more.",
+                    "Private: Your text stays in your browser's memory."
+                ]}
+                howTo={[
+                    { step: "Start Writing", description: "Type directly or click 'Open File' to upload an existing document." },
+                    { step: "Edit", description: "Use the editor to modifying text, find/replace, or copy content." },
+                    { step: "Save", description: "Click 'Save' to download your work as a file." }
+                ]}
+            />
         </div>
     );
 }

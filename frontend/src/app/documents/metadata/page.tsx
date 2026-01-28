@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function DocumentMetadataPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -89,6 +90,21 @@ export default function DocumentMetadataPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Reveal the hidden information inside your files with our Metadata Viewer. Documents like PDFs and Word files often contain invisible data such as author name, creation date, software used, and edit history. This tool extracts and displays these tags, helping you understand the origin and properties of your documents."
+                features={[
+                    "Comprehensive Extraction: Reads standard metadata fields from PDF, DOC, and DOCX files.",
+                    "Privacy & Forensics: Useful for checking if a file contains personal info before sharing.",
+                    "Details Revealed: See page counts, titles, authors, creation/mod dates, and generator software.",
+                    "Simple & Fast: Just upload to view the data instantly."
+                ]}
+                howTo={[
+                    { step: "Upload Document", description: "Select a PDF or Word document to analyze." },
+                    { step: "Wait for Extraction", description: "Our engine parses the file header and property tags." },
+                    { step: "View Metadata", description: "Read the extracted key-value pairs displayed in a clean list." }
+                ]}
+            />
         </div>
     );
 }

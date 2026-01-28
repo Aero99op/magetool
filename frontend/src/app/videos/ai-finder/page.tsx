@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { videoApi } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function AIVideoFinderPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -99,6 +100,21 @@ export default function AIVideoFinderPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Found a video clip but don't know where it's from? Our AI Video Finder helps you locate the original source. By analyzing visual fingerprints, frames, and content, we search across multiple platforms to find matches, similar videos, or the original creator."
+                features={[
+                    "Reverse Video Search: Find the source of viral clips or memes.",
+                    "Content Verification: Check if a video has been reused or re-uploaded.",
+                    "Visual Analysis: matches keyframes against a vast index of web content.",
+                    "Detailed Results: Provides links to potential matches with similarity scores."
+                ]}
+                howTo={[
+                    { step: "Upload Video", description: "Select the video clip you want to investigate." },
+                    { step: "Analyze", description: "Our AI scans the video frames and fingerprints." },
+                    { step: "Review Results", description: "See a list of matching videos and sources found on the web." }
+                ]}
+            />
         </div>
     );
 }

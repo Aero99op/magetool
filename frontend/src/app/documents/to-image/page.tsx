@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'application/pdf': ['.pdf'], 'application/msword': ['.doc'], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] };
 const OUTPUT_FORMATS = ['PNG', 'JPG', 'WebP'];
@@ -106,6 +107,23 @@ export default function ToImagePage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Convert PDF pages or Word documents into high-quality images. Great for sharing documents on social media, inserting them into presentations, or viewing them on devices that don't support PDF/DOCX."
+                    features={[
+                        "Multi-Format Output: Save as PNG, JPG, or WebP.",
+                        "Smart Conversion: Converts each page of a PDF into a separate image.",
+                        "Batch Download: Automatic ZIP creation for multi-page documents.",
+                        "High Quality: Preserves resolution and text clarity."
+                    ]}
+                    howTo={[
+                        { step: "Upload Document", description: "Select your PDF or Word file." },
+                        { step: "Select Format", description: "Choose JPG, PNG, or WebP output." },
+                        { step: "Convert", description: "The tool renders each page as an image." },
+                        { step: "Download", description: "Get your images (zipped if multiple pages)." }
+                    ]}
+                />
+            }
         />
     );
 }

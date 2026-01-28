@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { AxiosProgressEvent } from 'axios';
 
 const EFFECTS = [
@@ -126,6 +127,22 @@ export default function NegativeInvertPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Apply cool filter effects to your photos instantly. Invert colors for a negative film look, convert to grayscale, or apply sepia tones for a vintage vibe."
+                features={[
+                    "Negative/Invert: Reverses all colors.",
+                    "Grayscale: Converts to black and white.",
+                    "Sepia: Adds warmth for an old-photo effect.",
+                    "Adjustable Intensity: Control the strength of the effect."
+                ]}
+                howTo={[
+                    { step: "Upload Photo", description: "Select the image to edit." },
+                    { step: "Choose Effect", description: "Select Negative, Grayscale, etc." },
+                    { step: "Adjust", description: "Use the slider to fine-tune intensity." },
+                    { step: "Process", description: "Apply and download." }
+                ]}
+            />
         </div>
     );
 }

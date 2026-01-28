@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
@@ -121,6 +122,23 @@ export default function WatermarkAddPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Protect your intellectual property by adding custom text watermarks to your images. Customize the text, position, opacity, and size."
+                    features={[
+                        "Custom Text: Add copyright info or your name.",
+                        "Positioning: Place watermark in corners or center.",
+                        "Transparency: Adjust opacity for subtle branding.",
+                        "Batch Ready: Fast processing for single images."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the photo to protect." },
+                        { step: "Configure", description: "Enter text and adjust settings." },
+                        { step: "Preview", description: "Check placement and look." },
+                        { step: "Apply", description: "Process and download." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import ToolLayout from "@/components/ToolLayout";
 import { FiShield, FiCheckCircle, FiAlertTriangle, FiLock, FiActivity } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
+import ToolContent from "@/components/ToolContent";
 
 export default function HashVerifier() {
     const [file, setFile] = useState<File | null>(null);
@@ -84,8 +85,8 @@ export default function HashVerifier() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`p-4 rounded-lg flex items-start gap-3 border ${matchStatus === "match"
-                            ? "bg-emerald-900/20 border-emerald-500/30"
-                            : "bg-red-900/20 border-red-500/30"
+                        ? "bg-emerald-900/20 border-emerald-500/30"
+                        : "bg-red-900/20 border-red-500/30"
                         }`}
                 >
                     {matchStatus === "match" ? (

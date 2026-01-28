@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function FaviconGeneratorPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -106,6 +107,22 @@ export default function FaviconGeneratorPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Create a complete set of favicons for your website from a single image. Generates everything you need: .ico files, PNGs for Android/iOS icons, and a site manifest."
+                features={[
+                    "All Sizes: Generates 16x16, 32x32, 180x180 (Apple Touch), 192x192 (Android), and 512x512.",
+                    "Complete Pack: Downloads a ZIP file with all icons and code.",
+                    "Standard Compliant: Follows modern web standards for app icons.",
+                    "Auto-Resizing: Best results from high-res square inputs."
+                ]}
+                howTo={[
+                    { step: "Upload Icon", description: "Use a square image, ideally 512x512px." },
+                    { step: "Generate", description: "Create the icon pack." },
+                    { step: "Download", description: "Get the ZIP file." },
+                    { step: "Install", description: "Unzip and add the files to your website root." }
+                ]}
+            />
         </div>
     );
 }

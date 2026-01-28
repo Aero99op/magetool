@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { AxiosProgressEvent } from 'axios';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
@@ -128,6 +129,23 @@ export default function PassportPhotoPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Create compliant passport and ID photos from home. Select from standard sizes like US Passport (2x2 inch) or EU Standard (35x45mm) and customize the background color."
+                    features={[
+                        "Standard Sizes: Pre-configured dimensions for official documents.",
+                        "Background Options: White, Blue, Red, or Transparent.",
+                        "Face Centering: Helps position your photo correctly.",
+                        "High Resolution: 300 DPI output for printing."
+                    ]}
+                    howTo={[
+                        { step: "Upload Photo", description: "Use a front-facing photo with good lighting." },
+                        { step: "Select Size", description: "Choose the required dimensions." },
+                        { step: "Background", description: "Select the background color." },
+                        { step: "Download", description: "Save and print on photo paper." }
+                    ]}
+                />
+            }
         />
     );
 }

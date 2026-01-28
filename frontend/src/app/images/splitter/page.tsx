@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { imageApi, pollTaskStatus, getDownloadUrl, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function ImageSplitterPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -103,6 +104,22 @@ export default function ImageSplitterPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="Split large images into smaller grid tiles. Perfect for creating Instagram grid layouts, printing large posters on multiple pages, or segmenting game assets."
+                features={[
+                    "Custom Grids: Choose from 2x2 up to 5x5 grids.",
+                    "Instant Preview: See how your image will be divided.",
+                    "ZIP Download: Get all tiles in a single archive.",
+                    "High Quality: Splits images without losing resolution."
+                ]}
+                howTo={[
+                    { step: "Upload Image", description: "Select the photo you want to split." },
+                    { step: "Choose Grid", description: "Set the number of rows and columns." },
+                    { step: "Split", description: "Process the image." },
+                    { step: "Download", description: "Save the ZIP file containing all tiles." }
+                ]}
+            />
         </div>
     );
 }

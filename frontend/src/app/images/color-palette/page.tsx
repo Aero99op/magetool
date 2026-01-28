@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { imageApi } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function ColorPalettePage() {
     const [file, setFile] = useState<File | null>(null);
@@ -114,6 +115,22 @@ export default function ColorPalettePage() {
                     </div>
                 )}
             </div>
+
+            <ToolContent
+                overview="Extract a beautiful color palette from any image. Identify dominant colors and get their HEX and RGB codes. Perfect for designers looking for inspiration from photos."
+                features={[
+                    "Dominant Colors: Finds the most prominent colors in the image.",
+                    "Adjustable Quantity: Extract anywhere from 3 to 10 colors.",
+                    "Color Codes: Get HEX and RGB values for easy copying.",
+                    "Visual Preview: See the palette alongside the source image."
+                ]}
+                howTo={[
+                    { step: "Upload Image", description: "Choose a photo to analyze." },
+                    { step: "Settings", description: "Select how many colors you want." },
+                    { step: "Extract", description: "Click to generate the palette." },
+                    { step: "Copy", description: "Click any color code to copy it." }
+                ]}
+            />
         </div>
     );
 }

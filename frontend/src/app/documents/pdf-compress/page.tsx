@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const QUALITY_OPTIONS = [
     { value: 'low', label: 'Maximum Compression', desc: 'Smallest file size' },
@@ -109,6 +110,23 @@ export default function PDFCompressPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Reduce the file size of your PDF documents without sacrificing quality. Our intelligent PDF Compressor balances image optimization and font embedding to shrink files significantly, making them easier to email, upload, and store."
+                    features={[
+                        "Smart Compression: Select from 'Low', 'Medium', or 'High' compression profiles.",
+                        "Quality Preservation: Maintains text clarity while optimizing images.",
+                        "Significant Reduction: Can reduce file sizes by up to 80% depending on the content.",
+                        "Batch Processing: (Coming Soon) Handle multiple files efficiently."
+                    ]}
+                    howTo={[
+                        { step: "Upload PDF", description: "Select the large PDF file you want to shrink." },
+                        { step: "Choose Level", description: "Select 'Balanced' for good quality or 'Max Compression' for smallest size." },
+                        { step: "Compress", description: "Click to start the optimization process." },
+                        { step: "Download", description: "Get your lighter, optimized PDF file." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const ROTATION_OPTIONS = [
     { value: '90', label: 'Rotate 90° Clockwise' },
@@ -176,6 +177,23 @@ export default function VideoRotatePage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Fix sideways or upside-down videos easily. Rotate your clips 90 degrees clockwise or counter-clockwise, 180 degrees, or flip them horizontally/vertically. Correct orientation issues from mobile recordings in seconds."
+                    features={[
+                        "Flexible Rotation: 90°, 180°, 270° options.",
+                        "Mirroring: Flip video horizontally or vertically.",
+                        "Batch Support: Same rotation applied to single file processing.",
+                        "High Quality: Maintains original resolution and bitrate."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the video with incorrect orientation." },
+                        { step: "Choose Rotation", description: "Select 90° Clockwise, Flip, etc." },
+                        { step: "Rotate", description: "Click to apply the transformation." },
+                        { step: "Download", description: "Save the corrected video." }
+                    ]}
+                />
+            }
         />
     );
 }

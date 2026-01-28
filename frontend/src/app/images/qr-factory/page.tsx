@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ToolLayout from "@/components/ToolLayout";
+import ToolContent from '@/components/ToolContent';
 import { FiWifi, FiType, FiUser, FiDownload, FiShare2, FiZap, FiCode, FiCpu, FiLayers, FiGrid } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
@@ -304,6 +305,23 @@ export default function QRExtreme() {
             downloadReady={false}
             configPanel={configPanel}
             customContent={previewContent}
+            toolContent={
+                <ToolContent
+                    overview="Generate futuristic, high-tech QR codes for any purpose. Create codes for URLs, WiFi networks, or contact cards (vCards) with customizable colors and designs."
+                    features={[
+                        "Multiple Types: Text, WiFi, vCard.",
+                        "Custom Design: Choose colors and dot styles (Square/Fluid).",
+                        "High Contrast: Ensures scannability by all devices.",
+                        "Instant Preview: See your QR code update in real-time."
+                    ]}
+                    howTo={[
+                        { step: "Select Type", description: "Choose Text, WiFi, or ID Card." },
+                        { step: "Enter Data", description: "Fill in the required information." },
+                        { step: "Customize", description: "Pick your colors and style." },
+                        { step: "Download", description: "Get your QR code image." }
+                    ]}
+                />
+            }
         />
     );
 }

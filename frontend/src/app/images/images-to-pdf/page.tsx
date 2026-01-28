@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { FileImage, X, GripVertical, Download, Loader2 } from 'lucide-react';
 
 const ACCEPT_FORMATS = {
@@ -426,6 +427,22 @@ export default function ImagesToPdfPage() {
                     }
                 }
             `}</style>
+
+            <ToolContent
+                overview="Convert your images into a single, professional PDF document. Perfect for creating portfolios, archiving receipts, or sharing multiple photos in one file."
+                features={[
+                    "Drag & Drop: Easily reorder images before conversion.",
+                    "Page Sizes: Supports A4, Letter, Legal, and original size.",
+                    "Orientation: Choose between Portrait and Landscape.",
+                    "Compression Levels: Control the balance between quality and file size."
+                ]}
+                howTo={[
+                    { step: "Upload Images", description: "Select multiple JPG, PNG, or GIF files." },
+                    { step: "Arrange", description: "Drag images to set the page order." },
+                    { step: "Configure", description: "Choose page size and quality settings." },
+                    { step: "Convert", description: "Generate the PDF document." }
+                ]}
+            />
         </div >
     );
 }

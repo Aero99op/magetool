@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const OUTPUT_FORMATS = [
     { value: 'jpg', label: 'JPEG (.jpg)' },
@@ -227,6 +228,23 @@ export default function ImageConverterPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Convert images between all popular formats. Need a JPG for a form, a PNG for transparency, or a WebP for speed? Our Universal Image Converter handles it all."
+                    features={[
+                        "Many Formats: Convert to JPG, PNG, WEBP, GIF, BMP, TIFF, ICO.",
+                        "Batch Processing: Convert single files quickly.",
+                        "Smart Compression: Optimizes file size based on format.",
+                        "Privacy Secure: Files are deleted after processing."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the image you want to convert." },
+                        { step: "Select Format", description: "Choose output format (e.g., to PNG)." },
+                        { step: "Convert", description: "Process the conversion." },
+                        { step: "Download", description: "Save your new image file." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const QUALITY_OPTIONS = [
     { value: 'low', label: 'Low (Smallest file)', description: 'Maximum compression, some quality loss' },
@@ -187,6 +188,23 @@ export default function VideoCompressorPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Shrink your video files without losing distinct quality. Our Video Compressor uses advanced H.264/H.265 encoding techniques to reduce bitrate and file size, making it easier to share videos on WhatsApp, Email, or Discord."
+                    features={[
+                        "Smart Compression: Select 'Low', 'Medium', or 'High' quality profiles.",
+                        "Significant Savings: Reduce file size by up to 90% depending on the source.",
+                        "Format Maintenance: Output remains in standard MP4 format for compatibility.",
+                        "Secure: Videos are processed and deleted automatically."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the large video file." },
+                        { step: "Select Quality", description: "Choose 'Medium' for a good balance or 'Low' for max compression." },
+                        { step: "Compress", description: "Start the encoding process." },
+                        { step: "Download", description: "Get your optimized, smaller video file." }
+                    ]}
+                />
+            }
         />
     );
 }

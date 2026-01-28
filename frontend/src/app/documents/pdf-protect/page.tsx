@@ -5,6 +5,7 @@ import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
 import { AxiosProgressEvent } from 'axios';
+import ToolContent from '@/components/ToolContent';
 
 const ACCEPT_FORMATS = { 'application/pdf': ['.pdf'] };
 
@@ -112,6 +113,23 @@ export default function PDFProtectPage() {
             downloadReady={downloadReady}
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
+            toolContent={
+                <ToolContent
+                    overview="Secure your sensitive PDF documents with strong password protection. This tool encrypts your PDF file so it can only be opened by those who have the password. Ideal for bank statements, contracts, or personal records."
+                    features={[
+                        "Strong Encryption: Applies standard PDF security to prevent unauthorized access.",
+                        "Instant Locking: Protects your file in seconds.",
+                        "Zero Storage: The file is encrypted and returned immediately; we don't store your data or password.",
+                        "Universal Compatibility: Protected PDFs open in all standard readers (Adobe, Chrome, etc.)."
+                    ]}
+                    howTo={[
+                        { step: "Upload PDF", description: "Select the PDF file you want to secure." },
+                        { step: "Set Password", description: "Enter a strong password and confirm it." },
+                        { step: "Protect", description: "Click to apply the encryption." },
+                        { step: "Download", description: "Save your now-secure PDF." }
+                    ]}
+                />
+            }
         />
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const OUTPUT_FORMATS = [
     { value: 'mp4', label: 'MP4 (.mp4)' },
@@ -192,6 +193,23 @@ export default function VideoMergerPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Join multiple video clips into a single movie instantly. Our Video Merger concatenates your files seamlessly, maintaining the quality of your clips. Ideal for creating compilations, highlight reels, or combining parts of a recording."
+                    features={[
+                        "Batch Merging: Combine up to 10 videos at once.",
+                        "Sequential Ordering: Videos are joined in the order you upload them.",
+                        "Universal Output: Save result as MP4, MKV, AVI, etc.",
+                        "Smart Concatenation: Efficient processing for files with same codecs."
+                    ]}
+                    howTo={[
+                        { step: "Upload Videos", description: "Select multiple video files." },
+                        { step: "Select Output", description: "Choose the target format for the merged file." },
+                        { step: "Merge", description: "Click to join the clips together." },
+                        { step: "Download", description: "Get your single combined video." }
+                    ]}
+                />
+            }
         />
     );
 }

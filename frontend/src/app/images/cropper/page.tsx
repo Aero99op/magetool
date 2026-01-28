@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import ImageCropper from '@/components/ImageCropper';
 
 const ASPECT_RATIOS = [
@@ -300,6 +301,23 @@ export default function ImageCropperPage() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Crop your images to the perfect size and aspect ratio. Whether you need a square for Instagram, 16:9 for YouTube, or a custom dimensional crop, this tool gives you precise control."
+                    features={[
+                        "Preset Ratios: 1:1, 4:3, 16:9, and many more.",
+                        "Freeform Crop: Drag handles to crop exactly what you want.",
+                        "Pixel Precision: Input exact coordinates and dimensions.",
+                        "Visual Editor: See changes in real-time on your image."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the photo to crop." },
+                        { step: "Select Area", description: "Drag the box or choose a preset ratio." },
+                        { step: "Crop", description: "Click to apply the crop." },
+                        { step: "Download", description: "Get your perfectly framed image." }
+                    ]}
+                />
+            }
         />
     );
 }

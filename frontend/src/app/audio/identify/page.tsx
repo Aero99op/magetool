@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function SongIdentifierPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -105,6 +106,22 @@ export default function SongIdentifierPage() {
                     </div>
                 </div>
             </div>
+
+            <ToolContent
+                overview="Heard a song you like but don't know the name? Our Song Identifier tool helps you discover music title, artist, and album information from just a short audio clip. Whether it's from a video, a recording, or a live snip, simply upload it and let our database matching technology find the details for you."
+                features={[
+                    "Instant Recognition: Matches audio fingerprints against a massive music database.",
+                    "Detailed Info: Provides Title, Artist, and Album name when available.",
+                    "Simple to Use: Just uploading a short clip (10-20 seconds) is usually enough.",
+                    "Extensive Support: Works with MP3, WAV, M4A and other common audio formats."
+                ]}
+                howTo={[
+                    { step: "Record/Upload", description: "Upload a short audio clip of the song you want to identify." },
+                    { step: "Identify", description: "Click the button to scan the audio fingerprint." },
+                    { step: "Discover", description: "View the song title and artist information immediately." }
+                ]}
+            />
         </div>
+
     );
 }
