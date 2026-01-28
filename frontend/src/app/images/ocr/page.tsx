@@ -117,6 +117,19 @@ export default function OCRScannerPage() {
                 </div>
             </div>
 
+            <ToolContent
+                overview="Extract text from images automatically with our Optical Character Recognition (OCR) tool. Perfect for digitizing documents, receipts, or notes from photos."
+                features={[
+                    "High Accuracy: Uses advanced Tesseract OCR engine.",
+                    "Formatted Output: Get results as plain text or structured JSON.",
+                    "Multi-language Support: Recognizes text in various languages.",
+                    "Easy Export: Copy to clipboard or download as .txt file."
+                ]}
+                howTo={[
+                    { step: "Upload Image", description: "Select a photo containing text." },
+                    { step: "Select Format", description: "Choose Text or JSON output." },
+                    { step: "Extract", description: "Wait for the AI to read the text." },
+                    { step: "Export", description: "Copy or download the result." }
                 ]}
             />
         </div>
