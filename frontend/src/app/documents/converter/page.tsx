@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { documentApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 const OUTPUT_FORMATS = [
     { value: 'pdf', label: 'PDF (.pdf)' },
@@ -118,6 +119,32 @@ export default function DocumentConverterPage() {
         setTaskId(null);
     };
 
+    const toolContent = (
+        <ToolContent
+            overview="Our free online Document Converter is the ultimate definition of versatility when it comes to file transformation. Whether you need to convert a PDF to an editable Word document, extract data from a JSON file into a CSV spreadsheet, or simply switch between text formats, this tool handles it all with precision. Designed for both casual users and developers, it supports a wide range of formats including PDF, DOCX, TXT, JSON, CSV, and XML. The conversion process preserves the structure and formatting of your original files, ensuring that your data remains intact and usable."
+            features={[
+                "Universal Format Support: Convert between PDF, DOCX, TXT, JSON, CSV, and XML seamlessly.",
+                "Accurate Data Extraction: Smart parsing algorithms ensure tables in PDFs and keys in JSONs are converted correctly.",
+                "Developer Friendly: specialized support for JSON <-> CSV and XML conversions for data manipulation.",
+                "Secure Processing: All files are processed on secure servers and deleted automatically after 1 hour.",
+                "Batch Ready: Designed to handle large files (up to 50MB) with ease.",
+                "No Installation Required: Works entirely in your browser, on any device."
+            ]}
+            howTo={[
+                { step: "Upload your Document", description: "Click the upload area or drag and drop your file (PDF, DOCX, JSON, etc.) into the box." },
+                { step: "Select Output Format", description: "Choose your desired target format from the dropdown menu (e.g., 'JSON to CSV')." },
+                { step: "Convert", description: "Click the 'Convert' button to start the transformation process." },
+                { step: "Download", description: "Once finished, click 'Download' to save your new file immediately." }
+            ]}
+            faqs={[
+                { question: "Is this document converter free?", answer: "Yes, it is 100% free to use with no hidden charges or daily limits." },
+                { question: "How long are my files kept?", answer: "We prioritize your privacy. All uploaded and converted files are permanently deleted from our servers after 1 hour." },
+                { question: "Can I convert scanned PDFs to Word?", answer: "Currently, we support standard PDF to DOCX conversion. OCR for scanned documents is available in our dedicated OCR tool." },
+                { question: "Does it support large files?", answer: "You can upload files up to 50MB in size, which covers most documents and ebooks." }
+            ]}
+        />
+    );
+
     return (
         <ToolLayout
             title="Document Converter"
@@ -128,6 +155,7 @@ export default function DocumentConverterPage() {
             supportedFormatsText="Supported: PDF, DOCX, TXT, JSON, CSV, XML, XLSX | Max: 50MB"
             onFilesSelected={handleFilesSelected}
             onProcessClick={handleProcess}
+            toolContent={toolContent}
             configPanel={
                 <div>
                     <div style={{ marginBottom: '20px' }}>

@@ -20,6 +20,7 @@ interface ToolLayoutProps {
     onProcessClick?: () => void;
     configPanel?: ReactNode;
     customContent?: ReactNode;
+    toolContent?: ReactNode;
     processingStage?: ProcessingStage;
     progress?: number;
     uploadSpeed?: string;
@@ -44,6 +45,7 @@ export default function ToolLayout({
     onProcessClick,
     configPanel,
     customContent,
+    toolContent,
     processingStage = 'idle',
     progress = 0,
     uploadSpeed,
@@ -164,7 +166,15 @@ export default function ToolLayout({
                 <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                     <AdSlot variant="inline" />
                 </div>
+
+                {/* Rich Content - SEO & Usage Info */}
+                {toolContent && (
+                    <div style={{ marginTop: '0' }}>
+                        {toolContent}
+                    </div>
+                )}
             </div>
+
 
             {/* Responsive Styles - Comprehensive */}
             <style jsx global>{`
@@ -251,7 +261,7 @@ export default function ToolLayout({
                     }
                 }
             `}</style>
-        </div>
+        </div >
     );
 }
 

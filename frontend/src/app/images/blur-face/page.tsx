@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { imageApi, pollTaskStatus, getDownloadUrl, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 import { AxiosProgressEvent } from 'axios';
 
 const ACCEPT_FORMATS = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
@@ -100,7 +101,7 @@ export default function BlurFacePage() {
 
                     <div style={{ padding: '12px', background: 'rgba(255, 200, 100, 0.05)', borderRadius: '8px', marginBottom: '16px' }}>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            <strong style={{ color: '#FFAA00' }}>Note:</strong> Current version applies blur to entire image. AI face detection coming soon.
+                            <strong style={{ color: '#FFAA00' }}>Note:</strong> Apply blur intensity to anonymize content.
                         </p>
                     </div>
 
@@ -110,6 +111,29 @@ export default function BlurFacePage() {
                         </div>
                     )}
                 </div>
+            }
+            toolContent={
+                <ToolContent
+                    overview="Protect privacy and sensitive information with our online Image Blur tool. Whether it's blurring a face, a license plate, or confidential text in a screenshot, this tool provides a quick and secure way to obscure details. Currently operating as a full-image blur tool with adjustable intensity, it's perfect for creating background textures or anonymizing entire photos before sharing."
+                    features={[
+                        "Adjustable Intensity: Control the strength of the blur from subtle softening to complete obscurity.",
+                        "Privacy Focused: Images are processed securely and never stored.",
+                        "No Watermarks: Clean output without any branding.",
+                        "Fast Processing: Instant results powered by optimized algorithms.",
+                        "Cross-Platform: Works on desktop, tablet, and mobile browsers."
+                    ]}
+                    howTo={[
+                        { step: "Upload Image", description: "Select the photo you want to blur. JPG, PNG, and WebP supported." },
+                        { step: "Adjust Intensity", description: "Use the slider to set the blur level. Higher values mean more obscurity." },
+                        { step: "Process", description: "Click 'Process' to apply the effect." },
+                        { step: "Download", description: "Save the blurred image to your device." }
+                    ]}
+                    faqs={[
+                        { question: "Does this look for faces automatically?", answer: "This version allows you to apply a uniform blur to the image. Selective blurring is part of our future roadmap." },
+                        { question: "Is the original file modified?", answer: "No, your original file stays on your device unedited. We generate a new blurred copy for you to download." },
+                        { question: "Can I unblur an image?", answer: "Once an image is blurred and saved, the detail is definitively lost. It cannot be reversed to the original quality." }
+                    ]}
+                />
             }
             processingStage={stage}
             progress={progress}

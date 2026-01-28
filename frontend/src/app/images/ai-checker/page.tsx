@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
 
 export default function AIImageCheckerPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -108,6 +109,27 @@ export default function AIImageCheckerPage() {
                     )}
                 </div>
             </div>
+
+            <ToolContent
+                overview="In the age of generative AI, distinguishing between real photographs and synthetic images is becoming increasingly difficult. Our AI Image Checker uses advanced machine learning models to analyze image artifacts, noise patterns, and texture consistencies that are often invisible to the human eye. Whether you're a journalist verifying a source, a moderator checking content, or just curious about a viral image, this tool provides an instant analysis to help you discern reality from fabrication."
+                features={[
+                    "Deep Artifact Analysis: Detects subtle inconsistencies in pixel distribution typical of protected diffusion models.",
+                    "Confidence Scoring: Provides a percentage-based confidence level for transparency.",
+                    "Privacy First: Images are processed in real-time and not stored on our servers.",
+                    "Fast & Free: Get results in seconds without any subscription or signup.",
+                    "Works on Mobile: Fully optimized for checking images on the go."
+                ]}
+                howTo={[
+                    { step: "Upload Image", description: "Select the image you want to verify. We support JPG, PNG, and WebP formats." },
+                    { step: "Automatic Analysis", description: "Our system immediately scans the image for AI fingerprints." },
+                    { step: "Review Results", description: "See the verdict (Real vs AI) along with a confidence score and reasoning." }
+                ]}
+                faqs={[
+                    { question: "How accurate is the AI detection?", answer: "While our tool is highly effective at spotting common AI generation patterns (like from Midjourney or Stable Diffusion), no detector is 100% perfect. We recommend using it as one of several verification steps." },
+                    { question: "Is my image uploaded to a server?", answer: "The analysis happens via a secure API, but images are not permanently stored or used to train our models." },
+                    { question: "Can it detect edited photos?", answer: "This tool focuses on detecting fully AI-generated images. Heavily photoshopped real images might sometimes trigger false positives depending on the extent of manipulation." }
+                ]}
+            />
         </div>
     );
 }

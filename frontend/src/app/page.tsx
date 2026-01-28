@@ -248,6 +248,54 @@ export default function HomePage() {
                 </div>
             </motion.section>
 
+            {/* Rich Content Section for SEO & AdSense */}
+            <section style={{ padding: '60px 0', borderTop: '1px solid var(--glass-border)' }}>
+                <div style={{ maxWidth: '800px', margin: '0 auto', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                    <div style={{ marginBottom: '40px' }}>
+                        <h2 style={{ color: '#fff', fontSize: '1.75rem', marginBottom: '16px' }}>Your All-in-One Digital Swiss Army Knife</h2>
+                        <p style={{ marginBottom: '20px' }}>
+                            Magetool is a comprehensive suite of free online tools designed to simplify your digital workflow.
+                            Whether you're a photographer looking to edit images, a student needing to convert documents, or a content creator working with audio and video,
+                            we have the specialized tools you need—all in one place.
+                        </p>
+                        <p>
+                            We believe that powerful tools shouldn't be complicated or expensive. That's why every tool on Magetool is completely free,
+                            requires no software installation, and runs directly in your secure browser environment.
+                        </p>
+                    </div>
+
+                    <div style={{ padding: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                        <h3 style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '20px' }}>Everything You Need</h3>
+
+                        <div style={{ display: 'grid', gap: '24px' }}>
+                            <div>
+                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>📸 Advanced Image Tools</h4>
+                                <p>
+                                    Go beyond simple cropping. Our suite includes AI-powered background removal, image upscaling,
+                                    forensic AI analysis, and a fully-featured photo editor with layer support.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>📄 Document Management</h4>
+                                <p>
+                                    Handle PDFs and office documents with ease. Convert between formats (PDF to Word, JSON to CSV),
+                                    merge or split files, and verify file integrity—all without uploading sensitive data to a cloud server.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 style={{ color: 'var(--neon-blue)', marginBottom: '8px', fontWeight: 600 }}>🎥 Video & Audio Studio</h4>
+                                <p>
+                                    Trim, compress, and convert multimedia files for any platform. From boosting audio volume
+                                    to compressing videos for email, our tools handle the heavy lifting instantly.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
         </div>
     );
