@@ -136,12 +136,6 @@ export default function DocumentConverterPage() {
                 { step: "Convert", description: "Click the 'Convert' button to start the transformation process." },
                 { step: "Download", description: "Once finished, click 'Download' to save your new file immediately." }
             ]}
-            faqs={[
-                { question: "Is this document converter free?", answer: "Yes, it is 100% free to use with no hidden charges or daily limits." },
-                { question: "How long are my files kept?", answer: "We prioritize your privacy. All uploaded and converted files are permanently deleted from our servers after 1 hour." },
-                { question: "Can I convert scanned PDFs to Word?", answer: "Currently, we support standard PDF to DOCX conversion. OCR for scanned documents is available in our dedicated OCR tool." },
-                { question: "Does it support large files?", answer: "You can upload files up to 50MB in size, which covers most documents and ebooks." }
-            ]}
         />
     );
 

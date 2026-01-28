@@ -124,11 +124,6 @@ export default function AIImageCheckerPage() {
                     { step: "Automatic Analysis", description: "Our system immediately scans the image for AI fingerprints." },
                     { step: "Review Results", description: "See the verdict (Real vs AI) along with a confidence score and reasoning." }
                 ]}
-                faqs={[
-                    { question: "How accurate is the AI detection?", answer: "While our tool is highly effective at spotting common AI generation patterns (like from Midjourney or Stable Diffusion), no detector is 100% perfect. We recommend using it as one of several verification steps." },
-                    { question: "Is my image uploaded to a server?", answer: "The analysis happens via a secure API, but images are not permanently stored or used to train our models." },
-                    { question: "Can it detect edited photos?", answer: "This tool focuses on detecting fully AI-generated images. Heavily photoshopped real images might sometimes trigger false positives depending on the extent of manipulation." }
-                ]}
             />
         </div>
     );

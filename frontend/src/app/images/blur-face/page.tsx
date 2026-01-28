@@ -128,11 +128,6 @@ export default function BlurFacePage() {
                         { step: "Process", description: "Click 'Process' to apply the effect." },
                         { step: "Download", description: "Save the blurred image to your device." }
                     ]}
-                    faqs={[
-                        { question: "Does this look for faces automatically?", answer: "This version allows you to apply a uniform blur to the image. Selective blurring is part of our future roadmap." },
-                        { question: "Is the original file modified?", answer: "No, your original file stays on your device unedited. We generate a new blurred copy for you to download." },
-                        { question: "Can I unblur an image?", answer: "Once an image is blurred and saved, the detail is definitively lost. It cannot be reversed to the original quality." }
-                    ]}
                 />
             }
             processingStage={stage}

@@ -29,12 +29,6 @@ export default function ImageEditorPage() {
                         { step: "Create Collage (Optional)", description: "Switch to 'Collage Mode' to combine multiple photos." },
                         { step: "Export", description: "Click 'Download' to save your masterpiece in high quality (JPG/PNG)." }
                     ]}
-                    faqs={[
-                        { question: "Is this photo editor really free?", answer: "Yes, all features including the collage maker and advanced filters are completely free." },
-                        { question: "Do you store my photos?", answer: "No. Our technology runs entirely in your browser using WebGL. Your images are never uploaded to a server." },
-                        { question: "Can I edit RAW files?", answer: "We support standard formats like JPG, PNG, and WebP. For RAW files, we recommend converting them first." },
-                        { question: "Does it work on mobile?", answer: "Yes, the interface is fully responsive and touch-friendly for editing on phones and tablets." }
-                    ]}
                 />
             </div>
         </div>

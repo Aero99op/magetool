@@ -252,7 +252,7 @@ export default function HomePage() {
             <section style={{ padding: '60px 0', borderTop: '1px solid var(--glass-border)' }}>
                 <div style={{ maxWidth: '800px', margin: '0 auto', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
                     <div style={{ marginBottom: '40px' }}>
-                        <h2 style={{ color: '#fff', fontSize: '1.75rem', marginBottom: '16px' }}>Your All-in-One Digital Swiss Army Knife</h2>
+                        <h2 style={{ color: '#fff', fontSize: '1.75rem', marginBottom: '16px' }}>Your All-in-One Digital Toolkit</h2>
                         <p style={{ marginBottom: '20px' }}>
                             Magetool is a comprehensive suite of free online tools designed to simplify your digital workflow.
                             Whether you're a photographer looking to edit images, a student needing to convert documents, or a content creator working with audio and video,

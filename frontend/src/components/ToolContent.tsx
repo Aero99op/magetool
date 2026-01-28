@@ -1,134 +1,128 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { HelpCircle, Star, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
-
-interface FAQ {
-    question: string;
-    answer: string;
-}
+import { Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export interface ToolContentProps {
     overview: string;
     features: string[];
     howTo: { step: string; description: string }[];
-    faqs: FAQ[];
 }
 
-export default function ToolContent({ overview, features, howTo, faqs }: ToolContentProps) {
+export default function ToolContent({ overview, features, howTo }: ToolContentProps) {
     return (
-        <section className="tool-content-section" style={{ marginTop: '60px', borderTop: '1px solid var(--glass-border)', paddingTop: '40px' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Content (Overview + How To) */}
-                <div className="lg:col-span-2 space-y-12">
+        <section className="tool-content-section" style={{ marginTop: '80px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '60px' }}>
 
-                    {/* Overview */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                            <BookOpen className="text-neon-blue" size={24} />
-                            Overview
-                        </h2>
-                        <div className="glass-card p-6 text-text-secondary leading-relaxed">
-                            {overview}
-                        </div>
-                    </motion.div>
+            {/* 1. Overview Section - Hero Style */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto 80px' }}
+            >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'rgba(0, 217, 255, 0.1)', borderRadius: '20px', border: '1px solid rgba(0, 217, 255, 0.2)', marginBottom: '24px' }}>
+                    <Sparkles size={14} className="text-neon-blue" />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--neon-blue)', letterSpacing: '0.5px' }}>PREMIUM TOOLKIT</span>
+                </div>
+                <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: 700, marginBottom: '20px', background: 'linear-gradient(to right, #fff, #aaa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Why Use This Tool?
+                </h2>
+                <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                    {overview}
+                </p>
+            </motion.div>
 
-                    {/* How To Steps */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                            <Star className="text-neon-blue" size={24} />
-                            How to Use
-                        </h2>
-                        <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+
+                {/* 2. How To Use - Vertical Timeline */}
+                <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ width: '4px', height: '24px', background: 'var(--neon-blue)', borderRadius: '2px', display: 'block' }} />
+                        How It Works
+                    </h3>
+
+                    <div style={{ position: 'relative', paddingLeft: '20px' }}>
+                        {/* Connecting Line */}
+                        <div style={{ position: 'absolute', left: '27px', top: '20px', bottom: '40px', width: '2px', background: 'linear-gradient(to bottom, var(--neon-blue), transparent)' }} />
+
+                        <div className="space-y-12">
                             {howTo.map((item, index) => (
-                                <div key={index} className="glass-card p-6 flex gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-neon-blue/10 flex items-center justify-center text-neon-blue font-bold">
+                                <div key={index} style={{ position: 'relative', display: 'grid', gridTemplateColumns: '40px 1fr', gap: '24px' }}>
+                                    {/* Number Circle */}
+                                    <div style={{
+                                        width: '40px', height: '40px',
+                                        borderRadius: '50%',
+                                        background: '#0a0a0a',
+                                        border: '2px solid var(--neon-blue)',
+                                        color: 'var(--neon-blue)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontWeight: 700, fontSize: '1.1rem',
+                                        zIndex: 10,
+                                        boxShadow: '0 0 15px rgba(0, 217, 255, 0.3)'
+                                    }}>
                                         {index + 1}
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg mb-2">{item.step}</h3>
-                                        <p className="text-text-secondary text-sm">{item.description}</p>
+
+                                    {/* Content Card */}
+                                    <div className="glass-card glass-card-hover" style={{ padding: '24px', background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)' }}>
+                                        <h4 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>{item.step}</h4>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6 }}>{item.description}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </motion.div>
-                </div>
+                    </div>
+                </motion.div>
 
-                {/* Sidebar (Features + FAQs) */}
-                <div className="space-y-12">
+                {/* 3. Features - Modern Grid */}
+                <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ width: '4px', height: '24px', background: 'var(--neon-purple)', borderRadius: '2px', display: 'block' }} />
+                        Key Features
+                    </h3>
 
-                    {/* Features List */}
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <h3 className="text-xl font-bold mb-4">Features</h3>
-                        <div className="glass-card p-6">
-                            <ul className="space-y-3">
-                                {features.map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-3 text-sm text-text-secondary">
-                                        <span className="text-neon-green mt-1">✓</span>
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                        {features.map((feature, index) => (
+                            <div key={index}
+                                className="glass-card feature-card"
+                                style={{
+                                    padding: '20px',
+                                    display: 'flex',
+                                    gap: '16px',
+                                    alignItems: 'flex-start',
+                                    transition: 'transform 0.2s',
+                                    borderLeft: '3px solid transparent'
+                                }}
+                            >
+                                <CheckCircle2 size={24} className="text-neon-purple flex-shrink-0" style={{ marginTop: '2px' }} />
+                                <div>
+                                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5, fontSize: '1rem' }}>
                                         {feature}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </motion.div>
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
 
-                    {/* FAQs */}
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <HelpCircle className="text-neon-blue" size={20} />
-                            FAQ
-                        </h3>
-                        <div className="space-y-3">
-                            {faqs.map((faq, index) => (
-                                <FAQItem key={index} question={faq.question} answer={faq.answer} />
-                            ))}
-                        </div>
-                    </motion.div>
-                </div>
+                    {/* Pro Tip Box */}
+                    <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(var(--neon-blue-rgb), 0.05)', borderRadius: '16px', border: '1px dashed rgba(var(--neon-blue-rgb), 0.2)' }}>
+                        <h4 style={{ color: 'var(--neon-blue)', fontSize: '0.9rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Did you know?
+                        </h4>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            All processing happens locally in your browser for maximum privacy. Your files never leave your device.
+                        </p>
+                    </div>
+                </motion.div>
             </div>
 
-            {/* JSON-LD Schema for SEO */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'FAQPage',
-                        mainEntity: faqs.map(faq => ({
-                            '@type': 'Question',
-                            name: faq.question,
-                            acceptedAnswer: {
-                                '@type': 'Answer',
-                                text: faq.answer
-                            }
-                        }))
-                    })
-                }}
-            />
+            <style jsx>{`
+                .feature-card:hover {
+                    transform: translateX(5px);
+                    background: rgba(255,255,255,0.03);
+                    border-left-color: var(--neon-purple);
+                }
+            `}</style>
         </section>
-    );
-}
-
-function FAQItem({ question, answer }: { question: string; answer: string }) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <div className="glass-card overflow-hidden transition-all duration-200">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 text-left font-medium hover:text-neon-blue transition-colors"
-                style={{ background: 'transparent', border: 'none', color: 'inherit' }}
-            >
-                {question}
-                {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            {isOpen && (
-                <div className="p-4 pt-0 text-sm text-text-secondary border-t border-glass-border">
-                    {answer}
-                </div>
-            )}
-        </div>
     );
 }
