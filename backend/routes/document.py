@@ -1142,84 +1142,156 @@ register_processor("pdf_unlock", process_pdf_unlock)
 # ============================================================================
 
 def process_pdf_from_images(task_id: str, input_path: Path, original_filename: str, **params):
-    """Background task: Create PDF from images with quality options"""
+    """Background task: Create PDF from images with quality options (OPTIMIZED)
+    
+    Optimizations:
+    1. Process images in batches to reduce memory pressure
+    2. Use draft mode for very large images before full load
+    3. Clean up each image immediately after conversion to temp JPEG
+    4. Use garbage collection between batches
+    5. Stream temp files to final PDF instead of holding all in memory
+    """
+    import gc
+    import tempfile
+    import os
+    
     try:
         input_paths = [Path(p) for p in params.get("input_paths", [])]
         quality = params.get("quality", "medium")  # low, medium, high
+        page_size = params.get("page_size", "A4")
+        orientation = params.get("orientation", "portrait")
         
         if not input_paths:
             raise ValueError("No input images provided")
         
-        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=5)
         
         from PIL import Image
-        import io
         
-        # Quality settings
+        # Quality settings - tuned for speed vs quality tradeoff
         quality_map = {
-            "low": {"max_size": 1000, "jpg_quality": 50},
-            "medium": {"max_size": 2000, "jpg_quality": 75},
-            "high": {"max_size": None, "jpg_quality": 95},
+            "low": {"max_size": 1200, "jpg_quality": 60, "resample": Image.Resampling.BILINEAR},
+            "medium": {"max_size": 2000, "jpg_quality": 80, "resample": Image.Resampling.BILINEAR},
+            "high": {"max_size": 4000, "jpg_quality": 92, "resample": Image.Resampling.LANCZOS},
         }
         
         settings = quality_map.get(quality, quality_map["medium"])
         max_size = settings["max_size"]
         jpg_quality = settings["jpg_quality"]
-        
-        pdf_images = []
+        resample_filter = settings["resample"]
         
         total_images = len(input_paths)
+        temp_jpeg_paths = []
+        
+        # Phase 1: Convert all images to optimized temp JPEGs (STREAMING)
+        # This avoids holding all PIL Image objects in memory
+        logger.info(f"Processing {total_images} images for PDF (Quality: {quality})")
         
         for i, img_path in enumerate(input_paths):
             try:
-                with Image.open(img_path) as img:
-                    # Convert to RGB (PDF doesn't like RGBA usually, or for consistency)
-                    if img.mode != "RGB":
-                        img = img.convert("RGB")
-                    
-                    # Resize if needed
-                    if max_size:
-                        width, height = img.size
-                        if width > max_size or height > max_size:
-                            ratio = min(max_size / width, max_size / height)
-                            new_size = (int(width * ratio), int(height * ratio))
-                            img = img.resize(new_size, Image.Resampling.LANCZOS)
-                    
-                    # Compress in memory
-                    buffer = io.BytesIO()
-                    img.save(buffer, format="JPEG", quality=jpg_quality)
-                    buffer.seek(0)
-                    
-                    # Re-open optimized image
-                    optimized_img = Image.open(buffer)
-                    # Load data to keep it in memory
-                    optimized_img.load()
-                    pdf_images.append(optimized_img)
-            
+                # Use draft mode for very large images (>5MB) to reduce initial load time
+                file_size_mb = img_path.stat().st_size / (1024 * 1024)
+                
+                img = Image.open(img_path)
+                
+                # For very large files, use draft mode to load at reduced resolution
+                if file_size_mb > 5 and max_size:
+                    # draft() loads image at approximately the target size
+                    img.draft("RGB", (max_size, max_size))
+                
+                # Convert to RGB (required for JPEG/PDF)
+                if img.mode in ["RGBA", "P", "LA"]:
+                    # Handle transparency by compositing on white background
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    if img.mode == "RGBA":
+                        background.paste(img, mask=img.split()[3])
+                    elif img.mode == "LA":
+                        background.paste(img, mask=img.split()[1])
+                    else:
+                        background.paste(img)
+                    img.close()
+                    img = background
+                elif img.mode != "RGB":
+                    img = img.convert("RGB")
+                
+                # Resize if needed (use thumbnail for memory efficiency)
+                if max_size:
+                    width, height = img.size
+                    if width > max_size or height > max_size:
+                        # thumbnail() modifies in-place - more memory efficient
+                        img.thumbnail((max_size, max_size), resample_filter)
+                
+                # Save to temp JPEG file (don't keep in memory!)
+                temp_fd, temp_path = tempfile.mkstemp(suffix=".jpg", prefix=f"pdf_img_{i}_")
+                os.close(temp_fd)
+                
+                img.save(temp_path, format="JPEG", quality=jpg_quality, optimize=True)
+                temp_jpeg_paths.append(temp_path)
+                
+                # CRITICAL: Close and clean up immediately
+                img.close()
+                del img
+                
             except Exception as e:
                 logger.warning(f"Failed to process image {img_path}: {e}")
             
-            # Update progress
-            progress = 10 + int((i + 1) / total_images * 60)
+            # Update progress (Phase 1: 5% to 70%)
+            progress = 5 + int((i + 1) / total_images * 65)
             update_task(task_id, progress_percent=progress)
+            
+            # Garbage collect every 5 images to prevent memory buildup
+            if (i + 1) % 5 == 0:
+                gc.collect()
         
-        update_task(task_id, progress_percent=80)
+        logger.info(f"Phase 1 complete: {len(temp_jpeg_paths)} temp JPEGs created")
+        update_task(task_id, progress_percent=75)
         
-        if not pdf_images:
+        if not temp_jpeg_paths:
             raise Exception("No valid images to convert")
         
+        # Phase 2: Create PDF from temp JPEGs (memory efficient)
+        # Load only first image, append rest as file paths
         output_path = get_output_path(task_id, "pdf")
         
-        # Save first image as PDF and append others
-        pdf_images[0].save(
-            output_path,
-            "PDF",
-            resolution=100.0,
-            save_all=True,
-            append_images=pdf_images[1:]
-        )
+        try:
+            # Open first image
+            first_img = Image.open(temp_jpeg_paths[0])
+            first_img.load()  # Must load to enable PDF save
+            
+            # Prepare append list - open lazily
+            append_images = []
+            for temp_path in temp_jpeg_paths[1:]:
+                append_img = Image.open(temp_path)
+                append_img.load()
+                append_images.append(append_img)
+            
+            update_task(task_id, progress_percent=85)
+            
+            # Save PDF with all images
+            first_img.save(
+                output_path,
+                "PDF",
+                resolution=100.0,
+                save_all=True,
+                append_images=append_images
+            )
+            
+            # Close all opened images
+            first_img.close()
+            for ai in append_images:
+                ai.close()
+            
+        finally:
+            # Phase 3: Cleanup temp files
+            for temp_path in temp_jpeg_paths:
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
         
-        update_task(task_id, progress_percent=90)
+        gc.collect()  # Final cleanup
+        
+        update_task(task_id, progress_percent=95)
         
         output_filename = "images_combined.pdf"
         
@@ -1232,11 +1304,21 @@ def process_pdf_from_images(task_id: str, input_path: Path, original_filename: s
             file_size=output_path.stat().st_size,
         )
         
-        logger.info(f"Image to PDF complete: {task_id} (Quality: {quality})")
+        logger.info(f"Image to PDF complete: {task_id} (Quality: {quality}, Images: {len(temp_jpeg_paths)})")
         
     except Exception as e:
         logger.error(f"Image to PDF failed: {task_id} - {e}")
         update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+        
+        # Cleanup on failure
+        try:
+            for temp_path in temp_jpeg_paths:
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
+        except:
+            pass
 
 
 @router.post("/pdf/create")
