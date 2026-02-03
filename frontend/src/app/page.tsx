@@ -227,21 +227,21 @@ export default function HomePage() {
                     <div>
                         <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔒</div>
                         <h4 style={{ marginBottom: '8px' }}>Secure & Private</h4>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             Files are deleted automatically after processing
                         </p>
                     </div>
                     <div>
                         <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💎</div>
                         <h4 style={{ marginBottom: '8px' }}>Premium Quality</h4>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             Enterprise-grade output with no compromises
                         </p>
                     </div>
                     <div>
                         <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🆓</div>
                         <h4 style={{ marginBottom: '8px' }}>Completely Free</h4>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             No signup, no watermarks, no limits
                         </p>
                     </div>
@@ -256,8 +256,8 @@ export default function HomePage() {
                 style={{ padding: '80px 0' }}
             >
                 <div style={{
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,217,255,0.05) 100%)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--glass-bg)',
+                    border: '1px solid var(--glass-border)',
                     borderRadius: '32px',
                     padding: 'clamp(30px, 5vw, 60px)',
                     position: 'relative',
@@ -296,11 +296,11 @@ export default function HomePage() {
                                 fontWeight: 800,
                                 marginBottom: '24px',
                                 lineHeight: 1.1,
-                                background: 'linear-gradient(to right, #ffffff 30%, rgba(255,255,255,0.5))',
+                                background: 'var(--gradient-title)',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent'
                             }}>
-                                Your Digital<br />Swiss Army Knife
+                                Your Complete<br />Media Toolkit
                             </h2>
                             <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, maxWidth: '500px' }}>
                                 Magetool isn't just a website; it's your creative companion.
@@ -323,7 +323,7 @@ export default function HomePage() {
                                     <Image size={24} />
                                 </div>
                                 <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Pixel Perfect</h4>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Pixel Perfect</h4>
                                     <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>AI background removal, forensic analysis, and granular photo editing.</p>
                                 </div>
                             </motion.div>
@@ -337,7 +337,7 @@ export default function HomePage() {
                                     <FileText size={24} />
                                 </div>
                                 <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Document Mastery</h4>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Document Mastery</h4>
                                     <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Convert, merge, and split PDFs securely. Zero server uploads for max privacy.</p>
                                 </div>
                             </motion.div>
@@ -351,7 +351,7 @@ export default function HomePage() {
                                     <Video size={24} />
                                 </div>
                                 <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>Media Studio</h4>
+                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Media Studio</h4>
                                     <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Compress 4K videos, trim audio clips, and optimize content for social.</p>
                                 </div>
                             </motion.div>
@@ -374,10 +374,10 @@ export default function HomePage() {
                     }
 
                     .feature-card {
-                        background: rgba(0,0,0,0.3);
+                        background: var(--glass-bg);
                         padding: 24px;
                         border-radius: 24px;
-                        border: 1px solid rgba(255,255,255,0.05);
+                        border: 1px solid var(--glass-border);
                         display: flex;
                         gap: 24px;
                         align-items: center; /* Centered alignment looks cleaner */
