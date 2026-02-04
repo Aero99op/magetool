@@ -12,9 +12,9 @@ const FORMAT_OPTIONS = [
 ];
 
 const FRAME_RATE_OPTIONS = [
-    { value: '', label: 'All Frames (Original FPS)' },
-    { value: '1', label: '1 FPS (1 frame per second)' },
-    { value: '2', label: '2 FPS (2 frames per second)' },
+    { value: '', label: 'All Frames (Heavy - Max Detail)' },
+    { value: '1', label: '1 FPS (Best for Screenshots)' },
+    { value: '2', label: '2 FPS (Balance)' },
     { value: '5', label: '5 FPS' },
     { value: '10', label: '10 FPS' },
     { value: '24', label: '24 FPS' },
@@ -220,6 +220,44 @@ export default function VideoToFramesPage() {
                         </div>
                     )}
 
+                    {/* Visual FPS Comparison Guide */}
+                    <div style={{
+                        marginTop: '30px',
+                        padding: '20px',
+                        background: 'rgba(0, 153, 255, 0.05)',
+                        border: '1px solid rgba(0, 153, 255, 0.2)',
+                        borderRadius: '12px'
+                    }}>
+                        <h3 style={{
+                            fontSize: '1rem',
+                            color: 'var(--text-primary)',
+                            marginBottom: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            📊 Visual Frame Rate Guide
+                        </h3>
+                        <img
+                            src="/fps_comparison_guide.png"
+                            alt="FPS Comparison Guide"
+                            style={{
+                                width: '100%',
+                                borderRadius: '8px',
+                                marginBottom: '12px'
+                            }}
+                        />
+                        <p style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--text-muted)',
+                            lineHeight: '1.5'
+                        }}>
+                            💡 <strong>Quick Guide:</strong> Use 1 FPS for har second ka screenshot (60 images/min).
+                            Use 10 FPS for smooth sequences (600 images/min).
+                            Use All Frames only when you need every single detail (1800+ images/min).
+                        </p>
+                    </div>
+
                     {stage !== 'idle' && (
                         <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '16px' }}>
                             Extract Another
@@ -240,18 +278,19 @@ export default function VideoToFramesPage() {
             downloadFileSize={downloadFileSize}
             toolContent={
                 <ToolContent
-                    overview="Extract every frame from your video as individual images. Perfect for creating thumbnails, analyzing footage, or converting video to image sequences. Download all frames in a convenient ZIP file."
+                    overview="Extract every frame from your video as individual images. Perfect for creating thumbnails, analyzing footage, frame-by-frame animation study, or getting screenshots at specific intervals. All frames are packaged in a convenient ZIP file."
                     features={[
-                        "JPG or PNG: Choose between smaller JPG files or lossless PNG quality.",
-                        "Frame Rate Control: Extract all frames or specify FPS (1-30 fps).",
-                        "Quality Slider: Adjust JPG compression for size vs quality trade-off.",
-                        "ZIP Download: All frames neatly packaged in a single downloadable archive."
+                        "🎯 1 FPS (Recommended): Get 1 screenshot every second - perfect for quick video preview or timeline thumbnails. 1 minute video = 60 images.",
+                        "⚡ 2-10 FPS: Balance between detail and file size. Good for motion analysis or creating image sequences.",
+                        "🔬 All Frames (30 FPS): Extract every single frame for micro-moment capture. Warning: 1 minute video = 1800+ images, large ZIP file!",
+                        "📦 Format Choice: JPG (smaller files, 50-100% quality) or PNG (lossless, larger size).",
+                        "💾 Smart ZIP: All frames automatically named (frame_00001, frame_00002...) and compressed into one download."
                     ]}
                     howTo={[
-                        { step: "Upload Video", description: "Select your video file (MP4, MKV, AVI, etc.)." },
-                        { step: "Configure", description: "Choose format (JPG/PNG), frame rate, and quality." },
-                        { step: "Extract", description: "Click to start frame extraction." },
-                        { step: "Download", description: "Get your ZIP file with all extracted frames." }
+                        { step: "Upload Video", description: "Select MP4, MKV, AVI, MOV, or any common video format (max 200MB)." },
+                        { step: "Choose Frame Rate", description: "1 FPS = 1 photo/second (best for screenshots). All Frames = every frame (heavy, for detailed analysis)." },
+                        { step: "Select Format & Quality", description: "JPG for smaller size, PNG for perfect quality. Adjust quality slider for JPG." },
+                        { step: "Extract & Download", description: "Processing takes 10-60 seconds. Download ZIP with all your frames!" },
                     ]}
                 />
             }
