@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
 import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 import ToolContent from '@/components/ToolContent';
+import LeafNinjaGame from '@/components/LeafNinjaGame';
 
 const FORMAT_OPTIONS = [
     { value: 'jpg', label: 'JPG (Smaller size)' },
@@ -42,6 +43,29 @@ export default function VideoToFramesPage() {
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
     const [taskId, setTaskId] = useState<string | null>(null);
     const [originalFileName, setOriginalFileName] = useState<string>('');
+    const [showGame, setShowGame] = useState(false);
+    const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if ('Notification' in window) {
+            setNotificationPermission(Notification.permission);
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(setNotificationPermission);
+            }
+        }
+    }, []);
+
+    // Send browser notification
+    const sendNotification = useCallback((title: string, body: string) => {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, {
+                body,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+            });
+        }
+    }, []);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
@@ -114,12 +138,16 @@ export default function VideoToFramesPage() {
 
             setStage('complete');
             setDownloadReady(true);
+            setShowGame(false); // Hide game when done
             setDownloadUrl(getDownloadUrl(taskId));
             const baseName = originalFileName.replace(/\.[^.]+$/, '');
             setDownloadFileName(completedTask.output_filename || `${baseName}_frames.zip`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
+
+            // Send browser notification
+            sendNotification('🎉 Frames Ready!', `${originalFileName} - Download your ZIP now!`);
 
         } catch (error: any) {
             console.error('Processing error:', error);
@@ -257,6 +285,44 @@ export default function VideoToFramesPage() {
                             Use All Frames only when you need every single detail (1800+ images/min).
                         </p>
                     </div>
+
+                    {/* Mini Game Section - Show during processing */}
+                    {stage === 'processing' && (
+                        <div style={{ marginTop: '20px' }}>
+                            {!showGame ? (
+                                <button
+                                    onClick={() => setShowGame(true)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        background: 'linear-gradient(135deg, #00ff88 0%, #00cc66 100%)',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        color: '#000',
+                                        fontWeight: 'bold',
+                                        fontSize: '1rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                    }}
+                                >
+                                    🎮 Play Leaf Ninja while waiting!
+                                </button>
+                            ) : (
+                                <LeafNinjaGame onClose={() => setShowGame(false)} />
+                            )}
+                            <p style={{
+                                textAlign: 'center',
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                                marginTop: '8px'
+                            }}>
+                                🔔 You'll get a notification when frames are ready!
+                            </p>
+                        </div>
+                    )}
 
                     {stage !== 'idle' && (
                         <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '16px' }}>

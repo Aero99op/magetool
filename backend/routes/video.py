@@ -1263,22 +1263,32 @@ def process_video_to_frames(task_id: str, input_path: Path, original_filename: s
         frames_folder = settings.TEMP_DIR / f"{task_id}_frames"
         frames_folder.mkdir(exist_ok=True)
         
-        # Build FFmpeg command
-        ffmpeg_args = ["-i", str(input_path)]
+        # Build FFmpeg command - OPTIMIZED FOR SPEED
+        ffmpeg_args = [
+            "-threads", "0",           # Use all CPU cores
+            "-i", str(input_path),
+        ]
         
-        # Add frame rate filter if specified
+        # Add frame rate filter if specified (with fast scaling)
         if frame_rate and frame_rate > 0:
             ffmpeg_args.extend(["-vf", f"fps={frame_rate}"])
         
-        # Output settings based on format
+        # Output settings based on format - SPEED OPTIMIZED
         if output_format == "png":
             frame_pattern = str(frames_folder / "frame_%05d.png")
-            ffmpeg_args.append(frame_pattern)
+            ffmpeg_args.extend([
+                "-compression_level", "1",  # Fastest PNG compression
+                frame_pattern
+            ])
         else:
-            # JPG with quality setting
+            # JPG with quality setting - TURBO MODE
             frame_pattern = str(frames_folder / "frame_%05d.jpg")
-            ffmpeg_args.extend(["-q:v", str(max(1, min(31, (100 - quality) // 3)))])  # Convert 1-100 to 1-31 scale
-            ffmpeg_args.append(frame_pattern)
+            ffmpeg_args.extend([
+                "-q:v", str(max(2, min(10, (100 - quality) // 10))),  # Faster quality calc
+                "-qmin", "1",
+                "-qmax", "10",
+                frame_pattern
+            ])
         
         update_task(task_id, progress_percent=20)
         
