@@ -162,7 +162,7 @@ export default function DocumentConverterPage() {
                             style={{
                                 width: '100%',
                                 padding: '12px 16px',
-                                background: 'rgba(255, 255, 255, 0.05)',
+                                background: 'var(--glass-bg-hover)',
                                 border: '1px solid var(--glass-border)',
                                 borderRadius: '8px',
                                 color: 'var(--text-primary)',

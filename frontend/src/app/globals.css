@@ -134,6 +134,31 @@
   --header-bg: rgba(255, 255, 255, 0.95);
   --gradient-title: linear-gradient(135deg, #18181B, #3F3F46);
   --gradient-logo-text: linear-gradient(135deg, #18181B, #3F3F46);
+
+  /* Light mode specific - input/form backgrounds */
+  --input-bg: rgba(0, 0, 0, 0.03);
+  --input-bg-hover: rgba(0, 0, 0, 0.05);
+}
+
+/* Light mode form control overrides */
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--glass-border) !important;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  background: var(--input-bg-hover) !important;
+  border-color: var(--neon-blue) !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: var(--text-muted) !important;
 }
 
 

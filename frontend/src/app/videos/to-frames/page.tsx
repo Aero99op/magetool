@@ -3,32 +3,32 @@
 import { useState, useCallback } from 'react';
 import ToolLayout from '@/components/ToolLayout';
 import { ProcessingStage } from '@/components/ProgressDisplay';
-import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
 import ToolContent from '@/components/ToolContent';
 
-const OUTPUT_FORMATS = [
-    { value: 'mp3', label: 'MP3 (.mp3)' },
-    { value: 'wav', label: 'WAV (.wav)' },
-    { value: 'aac', label: 'AAC (.aac)' },
-    { value: 'flac', label: 'FLAC (.flac)' },
-    { value: 'ogg', label: 'OGG (.ogg)' },
-    { value: 'm4a', label: 'M4A (.m4a)' },
+const FORMAT_OPTIONS = [
+    { value: 'jpg', label: 'JPG (Smaller size)' },
+    { value: 'png', label: 'PNG (Lossless)' },
 ];
 
-const BITRATES = [
-    { value: '128k', label: '128 kbps' },
-    { value: '192k', label: '192 kbps' },
-    { value: '256k', label: '256 kbps' },
-    { value: '320k', label: '320 kbps (Best)' },
+const FRAME_RATE_OPTIONS = [
+    { value: '', label: 'All Frames (Original FPS)' },
+    { value: '1', label: '1 FPS (1 frame per second)' },
+    { value: '2', label: '2 FPS (2 frames per second)' },
+    { value: '5', label: '5 FPS' },
+    { value: '10', label: '10 FPS' },
+    { value: '24', label: '24 FPS' },
+    { value: '30', label: '30 FPS' },
 ];
 
 const ACCEPT_FORMATS = {
-    'audio/*': ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a', '.wma', '.opus'],
+    'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
 };
 
-export default function AudioConverterPage() {
-    const [outputFormat, setOutputFormat] = useState('mp3');
-    const [bitrate, setBitrate] = useState('192k');
+export default function VideoToFramesPage() {
+    const [outputFormat, setOutputFormat] = useState('jpg');
+    const [frameRate, setFrameRate] = useState('');
+    const [quality, setQuality] = useState(95);
     const [stage, setStage] = useState<ProcessingStage>('idle');
     const [progress, setProgress] = useState(0);
     const [uploadSpeed, setUploadSpeed] = useState<string>();
@@ -41,11 +41,13 @@ export default function AudioConverterPage() {
     const [downloadFileName, setDownloadFileName] = useState<string>();
     const [downloadFileSize, setDownloadFileSize] = useState<string>();
     const [taskId, setTaskId] = useState<string | null>(null);
+    const [originalFileName, setOriginalFileName] = useState<string>('');
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const file = files[0];
+        setOriginalFileName(file.name);
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
         setStage('uploading');
@@ -57,10 +59,11 @@ export default function AudioConverterPage() {
             let lastLoaded = 0;
             let lastTime = Date.now();
 
-            const response = await audioApi.convert(
+            const response = await videoApi.toFrames(
                 file,
                 outputFormat,
-                bitrate,
+                frameRate ? parseFloat(frameRate) : undefined,
+                outputFormat === 'jpg' ? quality : undefined,
                 (progressEvent) => {
                     if (progressEvent.total) {
                         const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
@@ -88,13 +91,14 @@ export default function AudioConverterPage() {
             setStage('error');
             setErrorMessage(error.message || 'Upload failed. Please try again.');
         }
-    }, [outputFormat, bitrate]);
+    }, [outputFormat, frameRate, quality]);
 
     const handleProcess = useCallback(async () => {
         if (!taskId) return;
 
         setStage('processing');
         setProgress(0);
+        setEstimatedTime('Extracting frames...');
 
         try {
             await startProcessing(taskId);
@@ -102,13 +106,17 @@ export default function AudioConverterPage() {
                 taskId,
                 (task) => {
                     setProgress(task.progress_percent || 0);
+                    if (task.estimated_time_remaining_seconds) {
+                        setEstimatedTime(`${task.estimated_time_remaining_seconds} seconds`);
+                    }
                 }
             );
 
             setStage('complete');
             setDownloadReady(true);
             setDownloadUrl(getDownloadUrl(taskId));
-            setDownloadFileName(completedTask.output_filename || `converted.${outputFormat}`);
+            const baseName = originalFileName.replace(/\.[^.]+$/, '');
+            setDownloadFileName(completedTask.output_filename || `${baseName}_frames.zip`);
             if (completedTask.file_size) {
                 setDownloadFileSize(formatFileSize(completedTask.file_size));
             }
@@ -116,9 +124,9 @@ export default function AudioConverterPage() {
         } catch (error: any) {
             console.error('Processing error:', error);
             setStage('error');
-            setErrorMessage(error.message || 'Processing failed. Please try again.');
+            setErrorMessage(error.message || 'Frame extraction failed. Please try again.');
         }
-    }, [taskId, outputFormat]);
+    }, [taskId, originalFileName]);
 
     const resetState = () => {
         setStage('idle');
@@ -130,12 +138,12 @@ export default function AudioConverterPage() {
 
     return (
         <ToolLayout
-            title="Audio Format Converter"
-            subtitle="Convert audio between MP3, WAV, AAC, FLAC, OGG, and M4A formats"
+            title="Video to Frames"
+            subtitle="Extract all frames from video as a ZIP of images"
             acceptFormats={ACCEPT_FORMATS}
-            maxFileSize={100}
+            maxFileSize={200}
             maxFiles={1}
-            supportedFormatsText="Supported: MP3, WAV, AAC, FLAC, OGG, M4A, WMA | Max: 100MB"
+            supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 200MB"
             onFilesSelected={handleFilesSelected}
             onProcessClick={handleProcess}
             configPanel={
@@ -150,45 +158,71 @@ export default function AudioConverterPage() {
                             style={{
                                 width: '100%',
                                 padding: '12px 16px',
-                                background: 'var(--glass-bg-hover)',
+                                background: 'rgba(255, 255, 255, 0.05)',
                                 border: '1px solid var(--glass-border)',
                                 borderRadius: '8px',
                                 color: 'var(--text-primary)',
                                 fontSize: '1rem',
                             }}
                         >
-                            {OUTPUT_FORMATS.map((format) => (
-                                <option key={format.value} value={format.value}>{format.label}</option>
+                            {FORMAT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Bitrate
+                            Frame Rate
                         </label>
                         <select
-                            value={bitrate}
-                            onChange={(e) => setBitrate(e.target.value)}
+                            value={frameRate}
+                            onChange={(e) => setFrameRate(e.target.value)}
                             style={{
                                 width: '100%',
                                 padding: '12px 16px',
-                                background: 'var(--glass-bg-hover)',
+                                background: 'rgba(255, 255, 255, 0.05)',
                                 border: '1px solid var(--glass-border)',
                                 borderRadius: '8px',
                                 color: 'var(--text-primary)',
                                 fontSize: '1rem',
                             }}
                         >
-                            {BITRATES.map((rate) => (
-                                <option key={rate.value} value={rate.value}>{rate.label}</option>
+                            {FRAME_RATE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                            Lower FPS = fewer frames, smaller ZIP
+                        </p>
                     </div>
+
+                    {outputFormat === 'jpg' && (
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                JPG Quality: {quality}%
+                            </label>
+                            <input
+                                type="range"
+                                min="50"
+                                max="100"
+                                value={quality}
+                                onChange={(e) => setQuality(parseInt(e.target.value))}
+                                style={{
+                                    width: '100%',
+                                    accentColor: '#0099FF',
+                                }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                <span>Smaller</span>
+                                <span>Better</span>
+                            </div>
+                        </div>
+                    )}
 
                     {stage !== 'idle' && (
                         <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '16px' }}>
-                            Convert Another
+                            Extract Another
                         </button>
                     )}
                 </div>
@@ -206,19 +240,18 @@ export default function AudioConverterPage() {
             downloadFileSize={downloadFileSize}
             toolContent={
                 <ToolContent
-                    overview="Convert your audio files freely between all major formats with our universal Audio Converter. Whether you need an MP3 for your phone, a high-quality FLAC for archiving, or an OGG file for a game project, this tool handles it all. We offer full control over audio quality, allowing you to choose bitrates from 128kbps up to 320kbps for crystal clear sound."
+                    overview="Extract every frame from your video as individual images. Perfect for creating thumbnails, analyzing footage, or converting video to image sequences. Download all frames in a convenient ZIP file."
                     features={[
-                        "Multi-Format Support: Convert between MP3, WAV, AAC, FLAC, OGG, M4A, and more.",
-                        "Quality Control: selectable bitrates (128k, 192k, 256k, 320k) to balance size and quality.",
-                        "Lossless Conversion: Support for FLAC and WAV ensures no quality loss for audiophiles.",
-                        "Fast Processing: Optimized backend ensures your files are converted in seconds.",
-                        "Secure: Your files are auto-deleted after 1 hour."
+                        "JPG or PNG: Choose between smaller JPG files or lossless PNG quality.",
+                        "Frame Rate Control: Extract all frames or specify FPS (1-30 fps).",
+                        "Quality Slider: Adjust JPG compression for size vs quality trade-off.",
+                        "ZIP Download: All frames neatly packaged in a single downloadable archive."
                     ]}
                     howTo={[
-                        { step: "Upload Audio", description: "Choose the audio file you wish to convert." },
-                        { step: "Configure Output", description: "Select your desired file format and bitrate quality." },
-                        { step: "Convert", description: "Click 'Convert' to start the transformation." },
-                        { step: "Download", description: "Save your new audio file instantly." }
+                        { step: "Upload Video", description: "Select your video file (MP4, MKV, AVI, etc.)." },
+                        { step: "Configure", description: "Choose format (JPG/PNG), frame rate, and quality." },
+                        { step: "Extract", description: "Click to start frame extraction." },
+                        { step: "Download", description: "Get your ZIP file with all extracted frames." }
                     ]}
                 />
             }

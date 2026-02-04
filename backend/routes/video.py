@@ -1244,7 +1244,133 @@ async def find_video_source(
 
 
 # ============================================================================
-# PROCESSOR REGISTRATION
+# VIDEO TO FRAMES - Extract all frames as ZIP of images
+# ============================================================================
+
+def process_video_to_frames(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Extract frames from video and create ZIP"""
+    import zipfile
+    import shutil
+    
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        output_format = params.get("output_format", "jpg").lower()
+        frame_rate = params.get("frame_rate")  # None = all frames, else fps value
+        quality = params.get("quality", 95)  # For JPG
+        
+        # Create temp folder for frames
+        frames_folder = settings.TEMP_DIR / f"{task_id}_frames"
+        frames_folder.mkdir(exist_ok=True)
+        
+        # Build FFmpeg command
+        ffmpeg_args = ["-i", str(input_path)]
+        
+        # Add frame rate filter if specified
+        if frame_rate and frame_rate > 0:
+            ffmpeg_args.extend(["-vf", f"fps={frame_rate}"])
+        
+        # Output settings based on format
+        if output_format == "png":
+            frame_pattern = str(frames_folder / "frame_%05d.png")
+            ffmpeg_args.append(frame_pattern)
+        else:
+            # JPG with quality setting
+            frame_pattern = str(frames_folder / "frame_%05d.jpg")
+            ffmpeg_args.extend(["-q:v", str(max(1, min(31, (100 - quality) // 3)))])  # Convert 1-100 to 1-31 scale
+            ffmpeg_args.append(frame_pattern)
+        
+        update_task(task_id, progress_percent=20)
+        
+        success, error = run_ffmpeg(ffmpeg_args, timeout=600)
+        
+        if not success:
+            shutil.rmtree(frames_folder, ignore_errors=True)
+            raise Exception(f"FFmpeg error: {error}")
+        
+        update_task(task_id, progress_percent=60)
+        
+        # Count extracted frames
+        frame_files = sorted(frames_folder.glob(f"*.{output_format}"))
+        frame_count = len(frame_files)
+        
+        if frame_count == 0:
+            shutil.rmtree(frames_folder, ignore_errors=True)
+            raise Exception("No frames extracted from video")
+        
+        logger.info(f"Extracted {frame_count} frames for task {task_id}")
+        
+        # Create ZIP archive
+        output_path = get_output_path(task_id, "zip")
+        
+        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for frame_file in frame_files:
+                zf.write(frame_file, frame_file.name)
+        
+        update_task(task_id, progress_percent=90)
+        
+        # Clean up frames folder
+        shutil.rmtree(frames_folder, ignore_errors=True)
+        
+        original_stem = Path(original_filename).stem
+        output_filename = f"{original_stem}_frames_{frame_count}.zip"
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"Video to frames complete: {task_id} - {frame_count} frames")
+        
+    except Exception as e:
+        logger.error(f"Video to frames failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+@router.post("/to-frames")
+async def video_to_frames(
+    file: UploadFile = File(...),
+    output_format: str = Form(default="jpg"),
+    frame_rate: float = Form(default=None),
+    quality: int = Form(default=95),
+):
+    """Extract all frames from video as ZIP of images"""
+    output_format = output_format.lower()
+    if output_format not in ["jpg", "png"]:
+        raise HTTPException(status_code=400, detail="Output format must be 'jpg' or 'png'")
+    
+    if quality < 1 or quality > 100:
+        raise HTTPException(status_code=400, detail="Quality must be between 1 and 100")
+    
+    if frame_rate is not None and (frame_rate < 0.1 or frame_rate > 60):
+        raise HTTPException(status_code=400, detail="Frame rate must be between 0.1 and 60")
+    
+    task_id = create_task(file.filename, "video_to_frames")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "mp4"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    update_task(
+        task_id,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={
+            "output_format": output_format,
+            "frame_rate": frame_rate,
+            "quality": quality,
+        }
+    )
+    
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+
 # Register handlers for deferred processing via /start endpoint
 # ============================================================================
 register_processor("video_convert", process_video_convert)
@@ -1257,6 +1383,7 @@ register_processor("video_rotate", process_video_rotate)
 register_processor("video_to_gif", process_video_to_gif)
 register_processor("video_speed", process_video_speed)
 register_processor("video_mute", process_video_mute)
+register_processor("video_to_frames", process_video_to_frames)
 # Note: video_merge and video_add_music use multi-file upload and retain old flow
 
 

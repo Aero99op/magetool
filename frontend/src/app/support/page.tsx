@@ -372,7 +372,7 @@ export default function SupportPage() {
                         fontSize: 'clamp(2rem, 4vw, 3rem)',
                         fontWeight: 800,
                         marginBottom: '16px',
-                        background: 'linear-gradient(135deg, #FFFFFF, #00D9FF)',
+                        background: 'var(--gradient-title)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
@@ -383,7 +383,7 @@ export default function SupportPage() {
                 <p
                     style={{
                         fontSize: '1.1rem',
-                        color: 'rgba(255, 255, 255, 0.7)',
+                        color: 'var(--text-secondary)',
                         maxWidth: '600px',
                         margin: '0 auto',
                     }}
@@ -415,7 +415,7 @@ export default function SupportPage() {
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>
                         99.9%
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                         Uptime Target
                     </div>
                 </div>
@@ -504,12 +504,12 @@ export default function SupportPage() {
                                         padding: '8px 16px',
                                         background: isActive
                                             ? 'linear-gradient(135deg, rgba(0, 217, 255, 0.3), rgba(0, 153, 255, 0.3))'
-                                            : 'rgba(255, 255, 255, 0.05)',
+                                            : 'var(--glass-bg)',
                                         border: isActive
                                             ? '1px solid rgba(0, 217, 255, 0.5)'
-                                            : '1px solid rgba(255, 255, 255, 0.1)',
+                                            : '1px solid var(--glass-border)',
                                         borderRadius: '20px',
-                                        color: isActive ? '#00D9FF' : 'rgba(255, 255, 255, 0.7)',
+                                        color: isActive ? '#00D9FF' : 'var(--text-secondary)',
                                         fontSize: '0.85rem',
                                         fontWeight: 500,
                                         cursor: 'pointer',
@@ -539,7 +539,7 @@ export default function SupportPage() {
                                         overflow: 'hidden',
                                         border: isOpen
                                             ? '1px solid rgba(0, 217, 255, 0.3)'
-                                            : '1px solid rgba(255, 255, 255, 0.1)',
+                                            : '1px solid var(--glass-border)',
                                     }}
                                 >
                                     <button
@@ -586,7 +586,7 @@ export default function SupportPage() {
                                                 style={{
                                                     fontSize: '1rem',
                                                     fontWeight: 600,
-                                                    color: '#FFFFFF',
+                                                    color: 'var(--text-primary)',
                                                 }}
                                             >
                                                 {faq.question}
@@ -594,7 +594,7 @@ export default function SupportPage() {
                                         </div>
                                         <ChevronDown
                                             size={20}
-                                            color="rgba(255, 255, 255, 0.5)"
+                                            color="var(--text-muted)"
                                             style={{
                                                 transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
                                                 transition: 'transform 0.3s ease',
@@ -614,7 +614,7 @@ export default function SupportPage() {
                                                 <div
                                                     style={{
                                                         padding: '0 20px 20px 76px',
-                                                        color: 'rgba(255, 255, 255, 0.75)',
+                                                        color: 'var(--text-secondary)',
                                                         fontSize: '0.95rem',
                                                         lineHeight: '1.7',
                                                         whiteSpace: 'pre-line',
@@ -675,7 +675,7 @@ export default function SupportPage() {
                         <p
                             style={{
                                 textAlign: 'center',
-                                color: 'rgba(255, 255, 255, 0.7)',
+                                color: 'var(--text-secondary)',
                                 fontSize: '0.9rem',
                                 marginBottom: '24px',
                             }}
@@ -703,7 +703,7 @@ export default function SupportPage() {
                                 borderRadius: '8px',
                                 textAlign: 'center',
                                 fontSize: '0.85rem',
-                                color: 'rgba(255, 255, 255, 0.6)',
+                                color: 'var(--text-muted)',
                                 wordBreak: 'break-all',
                             }}
                         >
@@ -723,7 +723,7 @@ export default function SupportPage() {
                             <Bug size={24} color="#FF6B6B" />
                             <h4 style={{ fontWeight: 600 }}>Report a Bug</h4>
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem', marginBottom: '16px' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
                             Please include in your email:
                         </p>
                         <ul
@@ -750,7 +750,7 @@ export default function SupportPage() {
                                         alignItems: 'center',
                                         gap: '8px',
                                         fontSize: '0.85rem',
-                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        color: 'var(--text-secondary)',
                                     }}
                                 >
                                     <span style={{ color: '#00D9FF' }}>•</span>
@@ -771,7 +771,7 @@ export default function SupportPage() {
                             <Lightbulb size={24} color="#FFD700" />
                             <h4 style={{ fontWeight: 600 }}>Suggest a Feature</h4>
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                             Want a new tool or improvement to an existing one? Let us know - we're actively developing new features! 🚀
                         </p>
                     </div>

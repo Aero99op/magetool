@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
     Video, RotateCw, Merge, Film, Gauge,
-    VolumeX, Music, Scissors, Archive, FileSearch, Sparkles
+    VolumeX, Music, Scissors, Archive, FileSearch, Sparkles, Images
 } from 'lucide-react';
 
 const tools = [
@@ -12,6 +12,7 @@ const tools = [
     { name: 'Video Rotator', href: '/videos/rotate', icon: RotateCw, description: 'Rotate or flip your videos' },
     { name: 'Video Merger', href: '/videos/merger', icon: Merge, description: 'Combine multiple videos into one' },
     { name: 'Video to GIF', href: '/videos/to-gif', icon: Film, description: 'Convert videos to animated GIFs' },
+    { name: 'Video to Frames', href: '/videos/to-frames', icon: Images, description: 'Extract all frames as images (ZIP)' },
     { name: 'Speed Changer', href: '/videos/speed', icon: Gauge, description: 'Speed up or slow down videos' },
     { name: 'Mute Video', href: '/videos/mute', icon: VolumeX, description: 'Remove audio from videos' },
     { name: 'Add Music', href: '/videos/add-music', icon: Music, description: 'Add background music to videos' },

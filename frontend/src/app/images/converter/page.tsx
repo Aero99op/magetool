@@ -164,7 +164,7 @@ export default function ImageConverterPage() {
                         style={{
                             width: '100%',
                             padding: '12px 16px',
-                            background: 'rgba(255, 255, 255, 0.05)',
+                            background: 'var(--glass-bg-hover)',
                             border: '1px solid var(--glass-border)',
                             borderRadius: '8px',
                             color: 'var(--text-primary)',
@@ -205,7 +205,7 @@ export default function ImageConverterPage() {
                                 width: '100%',
                                 padding: '10px',
                                 background: 'transparent',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                border: '1px solid var(--glass-border)',
                                 borderRadius: '8px',
                                 color: 'var(--text-secondary)',
                                 cursor: 'pointer',
