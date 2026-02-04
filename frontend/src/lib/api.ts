@@ -911,8 +911,12 @@ export const videoApi = {
     mute: (file: File, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/video/mute', file, {}, onProgress, 'video'),
 
-    toFrames: (file: File, outputFormat: string, frameRate?: number, quality?: number, onProgress?: (e: AxiosProgressEvent) => void) =>
-        uploadFile('/api/video/to-frames', file, { output_format: outputFormat, frame_rate: frameRate, quality }, onProgress, 'video'),
+    toFrames: (file: File, outputFormat: string, frameRate?: number, quality?: number, onProgress?: (e: AxiosProgressEvent) => void) => {
+        const params: Record<string, any> = { output_format: outputFormat };
+        if (frameRate !== undefined && !isNaN(frameRate)) params.frame_rate = frameRate;
+        if (quality !== undefined && !isNaN(quality)) params.quality = quality;
+        return uploadFile('/api/video/to-frames', file, params, onProgress, 'video');
+    },
 
     addMusic: async (videoFile: File, audioFile: File, replaceAudio: boolean, audioVolume: number, onProgress?: (e: AxiosProgressEvent) => void) => {
         // Validate both files
