@@ -14,6 +14,16 @@ const ALWAYS_AWAKE_SERVERS = [
     process.env.NEXT_PUBLIC_API_URL_3 || 'https://p01--magetool--c6b4tq5mg4jv.code.run',      // Northflank (Backup 24/7)
 ].filter(url => url && url !== 'undefined' && !url.includes('example.com')).map(url => url.replace(/\/$/, ''));
 
+// DISTRIBUTED WORKERS: For parallel video processing (chunks)
+// These are NEW HF Spaces specifically for distributed chunk processing
+const DISTRIBUTED_WORKERS = [
+    'https://spandan1234-magetool-backend-2.hf.space',
+    'https://spandan1234-magetool-backend-3.hf.space',
+    'https://spandan1234-magetool-backend-4.hf.space',
+];
+const DISTRIBUTED_WORKER_HEALTH: Record<string, boolean> = {};
+DISTRIBUTED_WORKERS.forEach(url => { DISTRIBUTED_WORKER_HEALTH[url] = false; }); // Assume unknown until checked
+
 // TIER 2: Sleeping Servers (may need cold start - 30-60 seconds)
 // These are woken up in background, used once healthy
 const SLEEPING_SERVERS = [
@@ -610,6 +620,78 @@ export const pollTaskStatus = async (
     });
 };
 
+// Track which tasks are using distributed processing
+const DISTRIBUTED_TASK_MAP: Record<string, {
+    file: File;
+    endpoint: string;
+    options: Record<string, any>;
+    onProgress?: (e: AxiosProgressEvent) => void;
+}> = {};
+
+/**
+ * Mark a task as using distributed processing (for fallback)
+ */
+export function markTaskAsDistributed(
+    taskId: string,
+    file: File,
+    normalEndpoint: string,
+    options: Record<string, any>,
+    onProgress?: (e: AxiosProgressEvent) => void
+): void {
+    DISTRIBUTED_TASK_MAP[taskId] = { file, endpoint: normalEndpoint, options, onProgress };
+}
+
+/**
+ * Poll for task completion with automatic fallback for distributed tasks
+ * If a distributed task fails, automatically retry on normal servers
+ */
+export const pollTaskStatusWithFallback = async (
+    taskId: string,
+    onProgress?: (task: TaskResponse) => void,
+    intervalMs = 2000,
+    maxAttempts = 300
+): Promise<TaskResponse> => {
+    try {
+        return await pollTaskStatus(taskId, onProgress, intervalMs, maxAttempts);
+    } catch (error) {
+        // Check if this was a distributed task that failed
+        const distributedInfo = DISTRIBUTED_TASK_MAP[taskId];
+
+        if (distributedInfo) {
+            console.warn(`[Distributed] Task ${taskId} FAILED! Automatically retrying on normal servers...`);
+
+            // Remove from distributed map
+            delete DISTRIBUTED_TASK_MAP[taskId];
+
+            try {
+                // Retry with normal endpoint
+                const retryResponse = await uploadFile(
+                    distributedInfo.endpoint,
+                    distributedInfo.file,
+                    distributedInfo.options,
+                    distributedInfo.onProgress,
+                    'video'
+                );
+
+                console.log(`[Distributed] Retry successful! New task: ${retryResponse.task_id}`);
+
+                // Start processing the new task
+                await startProcessing(retryResponse.task_id);
+
+                // Poll the new task
+                return await pollTaskStatus(retryResponse.task_id, onProgress, intervalMs, maxAttempts);
+            } catch (retryError) {
+                console.error(`[Distributed] Retry also failed:`, retryError);
+                throw retryError;
+            }
+        }
+
+        // Not a distributed task, just throw the original error
+        throw error;
+    }
+};
+
+
 // Get download URL (uses server affinity)
 export const getDownloadUrl = (taskId: string): string => {
     const serverUrl = getServerForTask(taskId);
@@ -692,11 +774,111 @@ export const imageApi = {
 };
 
 // ==========================================
+// DISTRIBUTED VIDEO PROCESSING (with silent fallback)
+// ==========================================
+
+/**
+ * Check if distributed workers are healthy
+ * Fire-and-forget health check for workers
+ */
+async function checkDistributedWorkersHealth(): Promise<string[]> {
+    const healthyWorkers: string[] = [];
+
+    await Promise.allSettled(
+        DISTRIBUTED_WORKERS.map(async (url) => {
+            try {
+                const response = await axios.get(`${url}/health`, { timeout: 5000 });
+                if (response.status === 200) {
+                    DISTRIBUTED_WORKER_HEALTH[url] = true;
+                    healthyWorkers.push(url);
+                }
+            } catch {
+                DISTRIBUTED_WORKER_HEALTH[url] = false;
+            }
+        })
+    );
+
+    return healthyWorkers;
+}
+
+/**
+ * Try distributed processing first, silently fallback to normal if it fails
+ * User never sees the error - completely transparent!
+ */
+async function uploadWithDistributedFallback(
+    endpoint: string,
+    distributedEndpoint: string,
+    file: File,
+    options: Record<string, any> = {},
+    onProgress?: (e: AxiosProgressEvent) => void,
+    category?: string
+): Promise<UploadResponse> {
+    // First, try distributed processing (for large files)
+    // Skip distributed for small files < 10MB
+    const TEN_MB = 10 * 1024 * 1024;
+
+    if (file.size >= TEN_MB) {
+        console.log(`[Distributed] File ${formatFileSize(file.size)} >= 10MB, trying distributed workers...`);
+
+        try {
+            // Check if any distributed workers are healthy
+            const healthyWorkers = await checkDistributedWorkersHealth();
+
+            if (healthyWorkers.length > 0) {
+                console.log(`[Distributed] ${healthyWorkers.length} workers healthy, using distributed processing`);
+
+                // Use the first healthy worker's main backend endpoint (distributed routes)
+                const serverUrl = getNextServer(category);
+
+                const formData = new FormData();
+                formData.append('file', file);
+                Object.entries(options).forEach(([key, value]) => {
+                    formData.append(key, String(value));
+                });
+
+                const response = await axios.post(`${serverUrl}${distributedEndpoint}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    timeout: 600000,
+                    onUploadProgress: onProgress,
+                });
+
+                if (response.data.task_id) {
+                    setServerForTask(response.data.task_id, serverUrl);
+                    // Mark this task for potential fallback if it fails mid-processing
+                    markTaskAsDistributed(response.data.task_id, file, endpoint, options, onProgress);
+                    console.log(`[Distributed] ✅ SUCCESS! Task ${response.data.task_id} queued for distributed processing`);
+                }
+
+                return response.data;
+            } else {
+                console.log(`[Distributed] No healthy workers, falling back to normal...`);
+            }
+        } catch (error) {
+            // Silent fail - log but don't throw
+            console.warn(`[Distributed] ⚠️ Distributed processing failed, falling back silently...`, error);
+        }
+    } else {
+        console.log(`[Distributed] File ${formatFileSize(file.size)} < 10MB, using normal processing`);
+    }
+
+    // Fallback: Use normal processing (existing HF/Northflank)
+    console.log(`[Distributed] Using normal servers for processing`);
+    return uploadFile(endpoint, file, options, onProgress, category);
+}
+
+// ==========================================
 // VIDEO API
 // ==========================================
 export const videoApi = {
     convert: (file: File, outputFormat: string, options: Record<string, any> = {}, onProgress?: (e: AxiosProgressEvent) => void) =>
-        uploadFile('/api/video/convert', file, { output_format: outputFormat, ...options }, onProgress, 'video'),
+        uploadWithDistributedFallback(
+            '/api/video/convert',
+            '/api/video/convert-distributed',
+            file,
+            { output_format: outputFormat, ...options },
+            onProgress,
+            'video'
+        ),
 
     extractAudio: (file: File, outputFormat: string, bitrate: string, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/video/extract-audio', file, { output_format: outputFormat, bitrate }, onProgress, 'video'),
@@ -705,7 +887,14 @@ export const videoApi = {
         uploadFile('/api/video/trim', file, { start_time: startTime, end_time: endTime }, onProgress, 'video'),
 
     compress: (file: File, quality: string, onProgress?: (e: AxiosProgressEvent) => void) =>
-        uploadFile('/api/video/compress', file, { quality }, onProgress, 'video'),
+        uploadWithDistributedFallback(
+            '/api/video/compress',
+            '/api/video/compress-distributed',
+            file,
+            { quality },
+            onProgress,
+            'video'
+        ),
 
     rotate: (file: File, rotation: string, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/video/rotate', file, { rotation }, onProgress, 'video'),

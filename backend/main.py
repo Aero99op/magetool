@@ -24,7 +24,7 @@ from slowapi.errors import RateLimitExceeded
 from config import get_settings, Settings
 
 # Import routers
-from routes import health, image, image_editor, video, audio, document, core, tools
+from routes import health, image, image_editor, video, audio, document, core, tools, distributed
 
 # Configure logging
 settings = get_settings()
@@ -284,6 +284,7 @@ app.include_router(video.router, prefix="/api/video", tags=["Video"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(document.router, prefix="/api", tags=["Document"])
 app.include_router(tools.router, prefix="/api/tools", tags=["Tools"])
+app.include_router(distributed.router, prefix="/api/video", tags=["Distributed"])
 
 
 # ==========================================
