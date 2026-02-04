@@ -1,3 +1,12 @@
+---
+title: Magetool Worker
+emoji: ⚡
+colorFrom: purple
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # Magetool Worker - Distributed Chunk Processor
 
 Deploy this folder to **3 separate HF Spaces** to create a processing cluster.
