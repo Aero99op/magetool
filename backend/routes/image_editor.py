@@ -196,3 +196,24 @@ async def create_collage(
         return {"task_id": task_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/ai-remove-bg")
+async def ai_remove_bg(file: UploadFile = File(...)):
+    """Remove background using Rembg"""
+    try:
+        from rembg import remove
+        input_data = await file.read()
+        output_data = remove(input_data)
+        
+        # Save output to temp folder for retrieval (Subject to 30 min cleanup)
+        filename = f"nobg-{uuid.uuid4()}.png"
+        path = os.path.join(TEMP_DIR, filename)
+        
+        with open(path, "wb") as f:
+            f.write(output_data)
+            
+        return {"url": f"/temp/{filename}"}
+    except ImportError:
+         raise HTTPException(status_code=500, detail="Rembg library not installed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
