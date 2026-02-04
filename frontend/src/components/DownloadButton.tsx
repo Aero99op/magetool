@@ -20,56 +20,26 @@ export default function DownloadButton({
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloaded, setDownloaded] = useState(false);
 
-    const handleDownload = async () => {
+    const handleDownload = () => {
         if (disabled || isDownloading) return;
 
         setIsDownloading(true);
 
         try {
-            const response = await fetch(downloadUrl);
-
-            if (!response.ok) {
-                throw new Error('Download failed');
-            }
-
-            // Try to get filename from Content-Disposition header (most reliable for cross-origin)
-            let downloadFileName = fileName;
-            const contentDisposition = response.headers.get('Content-Disposition');
-            if (contentDisposition) {
-                // Parse filename from header: attachment; filename="example.png"
-                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=(?:"([^"]*)"|([^;\n]*))/i);
-                if (filenameMatch) {
-                    downloadFileName = filenameMatch[1] || filenameMatch[2] || fileName;
-                    // Decode if URL-encoded
-                    try {
-                        downloadFileName = decodeURIComponent(downloadFileName);
-                    } catch {
-                        // Use as-is if decoding fails
-                    }
-                }
-            }
-
-            // Ensure we have a valid filename with extension
-            if (!downloadFileName || downloadFileName === 'undefined' || !downloadFileName.includes('.')) {
-                // Fallback: try to get extension from content-type
-                const contentType = response.headers.get('Content-Type');
-                if (contentType) {
-                    const ext = contentType.split('/').pop()?.replace('jpeg', 'jpg') || 'bin';
-                    downloadFileName = fileName.includes('.') ? fileName : `${fileName || 'download'}.${ext}`;
-                } else {
-                    downloadFileName = fileName || 'download.bin';
-                }
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            // Use direct link download - this triggers browser's native download manager
+            // which shows proper download progress in the browser's download popup
             const link = document.createElement('a');
-            link.href = url;
-            link.download = downloadFileName;
+            link.href = downloadUrl;
+            link.download = fileName || 'download';
+
+            // Setting target to _blank helps with cross-origin downloads
+            // The server should send Content-Disposition: attachment header
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
 
             setDownloaded(true);
             setTimeout(() => setDownloaded(false), 3000);
