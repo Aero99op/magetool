@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "Preparing backend files for Hugging Face..."
           
-          # Create a clean deployment directory
+          # Create a clean deployment directory for main backend
           mkdir hf_deploy
           
           # Copy only backend contents to the root of deployment dir
@@ -38,8 +38,27 @@ jobs:
           git add .
           git commit -m "Deploying backend update from GitHub: ${{ github.sha }}"
           git branch -M main
+
+      - name: Prepare Worker Deployment
+        run: |
+          echo "Preparing worker files for distributed HF Spaces..."
           
-      - name: Push to Hugging Face Space
+          # Create a clean deployment directory for workers
+          mkdir worker_deploy
+          
+          # Copy only worker contents
+          cp -r backend/worker/* worker_deploy/
+          
+          cd worker_deploy
+          git init
+          git config user.email "bot@magetool.com"
+          git config user.name "Magetool Bot"
+          
+          git add .
+          git commit -m "Deploying worker update from GitHub: ${{ github.sha }}"
+          git branch -M main
+          
+      - name: Push to Hugging Face Space (Main Backend)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_NAME: Spandan1234/magetool-backend-api
@@ -52,11 +71,32 @@ jobs:
           
           echo "Pushing to Hugging Face Space 1: $HF_SPACE_NAME"
           cd hf_deploy
-          # Add hf remote and force push
           git remote add hf https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME
           git push hf main --force
           
           echo "Pushing to Hugging Face Space 2: $HF_SPACE_NAME_2"
-          # Add hf2 remote and force push
           git remote add hf2 https://oauth2:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME_2
           git push hf2 main --force
+
+      - name: Push to Hugging Face Worker Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          WORKER_SPACE_2: Spandan1234/Magetool-backend-2
+          WORKER_SPACE_3: Spandan1234/Magetool-backend-3
+          WORKER_SPACE_4: Spandan1234/Magetool-backend-4
+        run: |
+          echo "Pushing to Worker Space 2: $WORKER_SPACE_2"
+          cd worker_deploy
+          git remote add worker2 https://oauth2:$HF_TOKEN@huggingface.co/spaces/$WORKER_SPACE_2
+          git push worker2 main --force
+          
+          echo "Pushing to Worker Space 3: $WORKER_SPACE_3"
+          git remote add worker3 https://oauth2:$HF_TOKEN@huggingface.co/spaces/$WORKER_SPACE_3
+          git push worker3 main --force
+          
+          echo "Pushing to Worker Space 4: $WORKER_SPACE_4"
+          git remote add worker4 https://oauth2:$HF_TOKEN@huggingface.co/spaces/$WORKER_SPACE_4
+          git push worker4 main --force
+          
+          echo "✅ All worker spaces deployed!"
+
