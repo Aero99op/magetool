@@ -35,6 +35,8 @@ class Settings(BaseSettings):
         "https://magetool.pages.dev",               # Cloudflare Pages (main)
         "https://magetool.site",                    # Custom Domain
         "https://www.magetool.site",                # Custom Domain WWW
+        "https://magetool.in",                      # New Custom Domain
+        "https://www.magetool.in",                  # New Custom Domain WWW
         "https://*.hf.space",                       # Hugging Face Spaces (Wildcard)
         "https://spandan1234-magetool-backend-api.hf.space", # Specific HF Space
     ]
