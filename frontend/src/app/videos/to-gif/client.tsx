@@ -1,0 +1,280 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import ToolLayout from '@/components/ToolLayout';
+import { ProcessingStage } from '@/components/ProgressDisplay';
+import { videoApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
+import ToolContent from '@/components/ToolContent';
+
+const FPS_OPTIONS = [
+    { value: '10', label: '10 FPS (Smaller file)' },
+    { value: '15', label: '15 FPS (Balanced)' },
+    { value: '20', label: '20 FPS (Smooth)' },
+    { value: '24', label: '24 FPS (High quality)' },
+    { value: '30', label: '30 FPS (Ultra smooth)' },
+];
+
+const WIDTH_OPTIONS = [
+    { value: '320', label: '320px (Small)' },
+    { value: '480', label: '480px (Medium)' },
+    { value: '640', label: '640px (Large)' },
+    { value: '800', label: '800px (HD)' },
+    { value: '0', label: 'Original Width' },
+];
+
+const ACCEPT_FORMATS = {
+    'video/*': ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v'],
+};
+
+export default function VideoToGifClient() {
+    const [fps, setFps] = useState('15');
+    const [width, setWidth] = useState('480');
+    const [startTime, setStartTime] = useState('');
+    const [duration, setDuration] = useState('');
+    const [stage, setStage] = useState<ProcessingStage>('idle');
+    const [progress, setProgress] = useState(0);
+    const [uploadSpeed, setUploadSpeed] = useState<string>();
+    const [estimatedTime, setEstimatedTime] = useState<string>();
+    const [fileName, setFileName] = useState<string>();
+    const [fileSize, setFileSize] = useState<string>();
+    const [errorMessage, setErrorMessage] = useState<string>();
+    const [downloadReady, setDownloadReady] = useState(false);
+    const [downloadUrl, setDownloadUrl] = useState<string>();
+    const [downloadFileName, setDownloadFileName] = useState<string>();
+    const [downloadFileSize, setDownloadFileSize] = useState<string>();
+    const [taskId, setTaskId] = useState<string | null>(null);
+    const [originalFileName, setOriginalFileName] = useState<string>('');
+
+    const handleFilesSelected = useCallback(async (files: File[]) => {
+        if (files.length === 0) return;
+
+        const file = files[0];
+        setOriginalFileName(file.name);
+        setFileName(file.name);
+        setFileSize(formatFileSize(file.size));
+        setStage('uploading');
+        setProgress(0);
+        setErrorMessage(undefined);
+        setDownloadReady(false);
+
+        try {
+            let lastLoaded = 0;
+            let lastTime = Date.now();
+
+            const response = await videoApi.toGif(
+                file,
+                parseInt(fps),
+                parseInt(width) || undefined,
+                startTime || undefined,
+                duration || undefined,
+                (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                        setProgress(percent);
+
+                        const now = Date.now();
+                        const timeDiff = (now - lastTime) / 1000;
+                        if (timeDiff > 0.5) {
+                            const bytesDiff = progressEvent.loaded - lastLoaded;
+                            const speed = bytesDiff / timeDiff / (1024 * 1024);
+                            setUploadSpeed(`${speed.toFixed(1)} MB/s`);
+                            lastLoaded = progressEvent.loaded;
+                            lastTime = now;
+                        }
+                    }
+                }
+            );
+
+            setTaskId(response.task_id);
+            setStage('uploaded');
+            setProgress(100);
+
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Upload failed. Please try again.');
+        }
+    }, [fps, width, startTime, duration]);
+
+    const handleProcess = useCallback(async () => {
+        if (!taskId) return;
+
+        setStage('processing');
+        setProgress(0);
+        setEstimatedTime('Converting to GIF...');
+
+        try {
+            await startProcessing(taskId);
+            const completedTask = await pollTaskStatus(
+                taskId,
+                (task) => {
+                    setProgress(task.progress_percent || 0);
+                    if (task.estimated_time_remaining_seconds) {
+                        setEstimatedTime(`${task.estimated_time_remaining_seconds} seconds`);
+                    }
+                }
+            );
+
+            setStage('complete');
+            setDownloadReady(true);
+            setDownloadUrl(getDownloadUrl(taskId));
+            const baseName = originalFileName.replace(/\.[^.]+$/, '');
+            setDownloadFileName(completedTask.output_filename || `${baseName}.gif`);
+            if (completedTask.file_size) {
+                setDownloadFileSize(formatFileSize(completedTask.file_size));
+            }
+
+        } catch (error: any) {
+            console.error('Processing error:', error);
+            setStage('error');
+            setErrorMessage(error.message || 'Conversion failed. Please try again.');
+        }
+    }, [taskId, originalFileName]);
+
+    const resetState = () => {
+        setStage('idle');
+        setProgress(0);
+        setDownloadReady(false);
+        setErrorMessage(undefined);
+        setTaskId(null);
+    };
+
+    return (
+        <ToolLayout
+            title="Video to GIF"
+            subtitle="Convert video clips to high-quality animated GIFs"
+            acceptFormats={ACCEPT_FORMATS}
+            maxFileSize={100}
+            maxFiles={1}
+            supportedFormatsText="Supported: MP4, MKV, AVI, MOV, WebM | Max: 100MB"
+            onFilesSelected={handleFilesSelected}
+            onProcessClick={handleProcess}
+            configPanel={
+                <div>
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            Frame Rate
+                        </label>
+                        <select
+                            value={fps}
+                            onChange={(e) => setFps(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary)',
+                                fontSize: '1rem',
+                            }}
+                        >
+                            {FPS_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            Width
+                        </label>
+                        <select
+                            value={width}
+                            onChange={(e) => setWidth(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary)',
+                                fontSize: '1rem',
+                            }}
+                        >
+                            {WIDTH_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                Start Time (optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                placeholder="e.g., 00:00:05"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '8px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '1rem',
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                Duration (optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={duration}
+                                onChange={(e) => setDuration(e.target.value)}
+                                placeholder="e.g., 5 (seconds)"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '8px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '1rem',
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {stage !== 'idle' && (
+                        <button onClick={resetState} className="btn btn-ghost" style={{ width: '100%', marginTop: '16px' }}>
+                            Convert Another
+                        </button>
+                    )}
+                </div>
+            }
+            processingStage={stage}
+            progress={progress}
+            uploadSpeed={uploadSpeed}
+            estimatedTime={estimatedTime}
+            fileName={fileName}
+            fileSize={fileSize}
+            errorMessage={errorMessage}
+            downloadReady={downloadReady}
+            downloadUrl={downloadUrl}
+            downloadFileName={downloadFileName}
+            downloadFileSize={downloadFileSize}
+            toolContent={
+                <ToolContent
+                    overview="Turn any video clip into a high-quality animated GIF. Perfect for memes, reactions, or sharing on platforms that support GIFs. Control frame rate and resolution to balance quality and file size."
+                    features={[
+                        "Custom FPS: Choose from 10 FPS (small size) to 30 FPS (smooth).",
+                        "Resize Options: Scale down to 320px, 480px, or keep original width.",
+                        "Trimming: Specify start time and duration to convert only a specific part.",
+                        "Optimized Output: Generates efficient GIF palettes for better colors."
+                    ]}
+                    howTo={[
+                        { step: "Upload Video", description: "Select the source video." },
+                        { step: "Configure Settings", description: "Set FPS, Width, and optional time range." },
+                        { step: "Convert", description: "Click to generate the GIF." },
+                        { step: "Download", description: "Save your new animated GIF." }
+                    ]}
+                />
+            }
+        />
+    );
+}

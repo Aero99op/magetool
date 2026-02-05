@@ -1,134 +1,41 @@
-'use client';
+import { Metadata } from 'next';
+import VolumeBoosterClient from './client';
 
-import { useState, useCallback } from 'react';
-import ToolLayout from '@/components/ToolLayout';
-import { ProcessingStage } from '@/components/ProgressDisplay';
-import { audioApi, getDownloadUrl, pollTaskStatus, formatFileSize, startProcessing } from '@/lib/api';
-import ToolContent from '@/components/ToolContent';
+export const metadata: Metadata = {
+    title: 'Volume Booster - Increase MP3 Volume Online | Magetool',
+    description: 'Boost MP3 volume online for free. Increase audio volume up to 200%. Fix low volume recordings with our online audio amplifier.',
+    keywords: ['volume booster', 'audio booster', 'increase mp3 volume', 'make audio louder', 'sound booster online', 'mp3 volume increaser', 'audio normalizer'],
+    openGraph: {
+        title: 'Free Audio Volume Booster & Normalizer | Magetool',
+        description: 'Increase audio volume and normalize sound levels online.',
+        url: 'https://magetool.in/audio/volume',
+    },
+    alternates: {
+        canonical: '/audio/volume',
+    },
+};
 
-const ACCEPT_FORMATS = { 'audio/*': ['.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a'] };
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Magetool Volume Booster',
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Web Browser',
+    offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+    },
+};
 
 export default function VolumeBoosterPage() {
-    const [gain, setGain] = useState(0);
-    const [normalize, setNormalize] = useState(false);
-    const [stage, setStage] = useState<ProcessingStage>('idle');
-    const [progress, setProgress] = useState(0);
-    const [fileName, setFileName] = useState<string>();
-    const [fileSize, setFileSize] = useState<string>();
-    const [errorMessage, setErrorMessage] = useState<string>();
-    const [downloadReady, setDownloadReady] = useState(false);
-    const [downloadUrl, setDownloadUrl] = useState<string>();
-    const [downloadFileName, setDownloadFileName] = useState<string>();
-    const [downloadFileSize, setDownloadFileSize] = useState<string>();
-    const [taskId, setTaskId] = useState<string | null>(null);
-
-    const handleFilesSelected = useCallback(async (files: File[]) => {
-        if (files.length === 0) return;
-        const file = files[0];
-        setFileName(file.name);
-        setFileSize(formatFileSize(file.size));
-        setStage('uploading');
-        setProgress(0);
-        setDownloadReady(false);
-
-        try {
-            const response = await audioApi.volume(file, gain, normalize, (e) => {
-                if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
-            });
-
-            setTaskId(response.task_id);
-            setStage('uploaded');
-            setProgress(100);
-        } catch (error: any) {
-            setStage('error');
-            setErrorMessage(error.message || 'Upload failed');
-        }
-    }, [gain, normalize]);
-
-    const handleProcess = useCallback(async () => {
-        if (!taskId) return;
-        setStage('processing');
-        setProgress(0);
-
-        try {
-            await startProcessing(taskId);
-            const completedTask = await pollTaskStatus(taskId, (task) => {
-                setProgress(task.progress_percent || 0);
-            });
-
-            setStage('complete');
-            setDownloadReady(true);
-            setDownloadUrl(getDownloadUrl(taskId));
-            setDownloadFileName(completedTask.output_filename || 'adjusted.mp3');
-            if (completedTask.file_size) setDownloadFileSize(formatFileSize(completedTask.file_size));
-        } catch (error: any) {
-            setStage('error');
-            setErrorMessage(error.message || 'Volume adjustment failed');
-        }
-    }, [taskId]);
-
     return (
-        <ToolLayout
-            title="Volume Booster"
-            subtitle="Increase or decrease audio volume with normalization option"
-            acceptFormats={ACCEPT_FORMATS}
-            maxFileSize={100}
-            maxFiles={1}
-            supportedFormatsText="Supported: MP3, WAV, AAC, FLAC, OGG | Max: 100MB"
-            onFilesSelected={handleFilesSelected}
-            onProcessClick={handleProcess}
-            configPanel={
-                <div>
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Volume Gain: {gain > 0 ? '+' : ''}{gain} dB
-                        </label>
-                        <input type="range" min="-20" max="20" value={gain} onChange={(e) => setGain(Number(e.target.value))} style={{ width: '100%' }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            <span>-20 dB</span>
-                            <span>0</span>
-                            <span>+20 dB</span>
-                        </div>
-                    </div>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '8px', cursor: 'pointer', marginBottom: '16px' }}>
-                        <input type="checkbox" checked={normalize} onChange={(e) => setNormalize(e.target.checked)} style={{ accentColor: 'var(--neon-blue)', width: '18px', height: '18px' }} />
-                        <div>
-                            <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Normalize Audio</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automatically adjust to optimal level</div>
-                        </div>
-                    </label>
-
-                    {stage !== 'idle' && (
-                        <button onClick={() => { setStage('idle'); setDownloadReady(false); }} className="btn btn-ghost" style={{ width: '100%' }}>Adjust Another</button>
-                    )}
-                </div>
-            }
-            processingStage={stage}
-            progress={progress}
-            fileName={fileName}
-            fileSize={fileSize}
-            errorMessage={errorMessage}
-            downloadReady={downloadReady}
-            downloadUrl={downloadUrl}
-            downloadFileName={downloadFileName}
-            toolContent={
-                <ToolContent
-                    overview="Is your audio recording too quiet? Or maybe too loud and distorted? Our Volume Booster tool lets you adjust the gain of your audio files with ease. Increase volume up to +20dB to make quiet recordings audible, or reduce it to prevent clipping. It also includes an auto-normalization feature to automatically set the perfect peak volume."
-                    features={[
-                        "Gain Control: Manually increase or decrease volume from -20dB to +20dB.",
-                        "Auto Normalization: Automatically detects and maximizes volume without clipping.",
-                        "Prevent Distortion: Smart buffering helps maintain audio quality while boosting.",
-                        "Universal Support: Works with all common audio formats like MP3 and WAV."
-                    ]}
-                    howTo={[
-                        { step: "Upload File", description: "Select the audio file you want to adjust." },
-                        { step: "Adjust Gain", description: "Use the slider to boost (+) or lower (-) the volume." },
-                        { step: "Normalize (Optional)", description: "Check 'Normalize' for automatic optimal volume." },
-                        { step: "Apply & Download", description: "Process the file and download the louder/quieter version." }
-                    ]}
-                />
-            }
-        />
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <VolumeBoosterClient />
+        </>
     );
 }
