@@ -75,170 +75,150 @@ export default function QRExtreme() {
 
     // 2026 CONFIG PANEL
     const configPanel = (
-        <div className="space-y-8 font-sans">
-            {/* Cyberpunk Tab Switcher */}
-            <div className="relative p-1 bg-[#111] rounded-xl border border-white/5 shadow-inner">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-xl pointer-events-none" />
-                <div className="flex relative z-10">
-                    {[
-                        { id: "text", icon: FiType, label: "Text/Link" },
-                        { id: "wifi", icon: FiWifi, label: "WiFi" },
-                        { id: "vcard", icon: FiUser, label: "ID Card" },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
-                                ? "bg-gradient-to-br from-[#222] to-[#111] text-[#00d9ff] shadow-[0_4px_12px_rgba(0,217,255,0.1)] border border-[#00d9ff]/20"
-                                : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
-                                }`}
-                        >
-                            <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? "drop-shadow-[0_0_8px_rgba(0,217,255,0.5)]" : ""}`} />
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
+        <div className="space-y-6 font-sans">
+            <div className="bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none" />
 
-            {/* Inputs Container */}
-            <div className="bg-[#111]/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 blur-2xl rounded-full -mr-10 -mt-10 pointer-events-none" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 border-b border-white/10 pb-3 flex items-center gap-2">
+                    <FiCode className="text-[#00d9ff]" /> Generator Settings
+                </h3>
 
-                <AnimatePresence mode="wait">
-                    {activeTab === "text" && (
-                        <motion.div
-                            key="text"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-4"
-                        >
-                            <div className="relative group/input">
-                                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mb-2 block ml-1">Payload Data</label>
-                                <textarea
-                                    value={textData}
-                                    onChange={(e) => setTextData(e.target.value)}
-                                    placeholder="Enter your link or message here..."
-                                    className="w-full bg-[#080808] border border-[#222] rounded-xl p-4 min-h-[120px] text-sm text-gray-200 focus:border-[#00d9ff] focus:ring-1 focus:ring-[#00d9ff]/50 outline-none transition-all resize-none placeholder:text-gray-700 font-mono shadow-inner"
-                                />
-                                <div className="absolute bottom-3 right-3 text-[10px] text-gray-700 font-mono">{textData.length} chars</div>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {activeTab === "wifi" && (
-                        <motion.div
-                            key="wifi"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-5"
-                        >
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] ml-1">Network SSID</label>
-                                <input
-                                    type="text"
-                                    value={wifiData.ssid}
-                                    onChange={(e) => setWifiData({ ...wifiData, ssid: e.target.value })}
-                                    className="w-full bg-[#080808] border border-[#222] rounded-xl px-4 py-3 text-sm focus:border-[#00d9ff] focus:ring-1 focus:ring-[#00d9ff]/50 outline-none transition-all"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] ml-1">Password</label>
-                                <input
-                                    type="text"
-                                    value={wifiData.password}
-                                    onChange={(e) => setWifiData({ ...wifiData, password: e.target.value })}
-                                    className="w-full bg-[#080808] border border-[#222] rounded-xl px-4 py-3 text-sm focus:border-[#00d9ff] focus:ring-1 focus:ring-[#00d9ff]/50 outline-none transition-all"
-                                />
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {activeTab === "vcard" && (
-                        <motion.div
-                            key="vcard"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-4"
-                        >
-                            <input type="text" placeholder="Full Name" value={vcardData.fn} onChange={(e) => setVcardData({ ...vcardData, fn: e.target.value })} className="w-full bg-[#080808] border border-[#222] rounded-xl px-4 py-3 text-sm focus:border-[#00d9ff] outline-none" />
-                            <input type="text" placeholder="Phone Number" value={vcardData.tel} onChange={(e) => setVcardData({ ...vcardData, tel: e.target.value })} className="w-full bg-[#080808] border border-[#222] rounded-xl px-4 py-3 text-sm focus:border-[#00d9ff] outline-none" />
-                            <input type="text" placeholder="Email" value={vcardData.email} onChange={(e) => setVcardData({ ...vcardData, email: e.target.value })} className="w-full bg-[#080808] border border-[#222] rounded-xl px-4 py-3 text-sm focus:border-[#00d9ff] outline-none" />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* Aesthetics Engine */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <FiCpu className="text-[#00d9ff]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-widest">Aesthetics Engine</span>
+                {/* Cyberpunk Tab Switcher */}
+                <div className="relative p-1 bg-black/40 rounded-xl border border-white/5 mb-6">
+                    <div className="flex relative z-10">
+                        {[
+                            { id: "text", icon: FiType, label: "Text" },
+                            { id: "wifi", icon: FiWifi, label: "WiFi" },
+                            { id: "vcard", icon: FiUser, label: "ID" },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
+                                    ? "bg-[#222] text-[#00d9ff] border border-[#00d9ff]/30 shadow-lg"
+                                    : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                                    }`}
+                            >
+                                <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "drop-shadow-[0_0_5px_rgba(0,217,255,0.5)]" : ""}`} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#111] p-3 rounded-xl border border-white/5 hover:border-[#00d9ff]/30 transition-colors">
-                        <label className="text-[10px] text-gray-500 font-bold block mb-2">DATA COLOR</label>
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 shadow-lg">
-                                    <input type="color" value={fillColor} onChange={(e) => setFillColor(e.target.value)} className="w-[150%] h-[150%] -m-[25%] cursor-pointer p-0 border-0" />
+                {/* Inputs Container */}
+                <div className="space-y-4 mb-6 relative z-10">
+                    <AnimatePresence mode="wait">
+                        {activeTab === "text" && (
+                            <motion.div
+                                key="text"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                            >
+                                <div className="group">
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2 block">Payload Content</label>
+                                    <textarea
+                                        value={textData}
+                                        onChange={(e) => setTextData(e.target.value)}
+                                        placeholder="Paste URL or text..."
+                                        className="w-full bg-black/50 border border-white/10 rounded-xl p-3 min-h-[100px] text-sm text-gray-200 focus:border-[#00d9ff] focus:ring-1 focus:ring-[#00d9ff]/30 outline-none transition-all resize-none placeholder:text-gray-700 font-mono"
+                                    />
                                 </div>
-                            </div>
-                            <span className="text-[10px] font-mono text-gray-400 bg-black px-2 py-1 rounded">{fillColor}</span>
+                            </motion.div>
+                        )}
+
+                        {activeTab === "wifi" && (
+                            <motion.div
+                                key="wifi"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="space-y-3"
+                            >
+                                <div>
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Network SSID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Network Name"
+                                        value={wifiData.ssid}
+                                        onChange={(e) => setWifiData({ ...wifiData, ssid: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Password</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Required for WPA/WPA2"
+                                        value={wifiData.password}
+                                        onChange={(e) => setWifiData({ ...wifiData, password: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === "vcard" && (
+                            <motion.div
+                                key="vcard"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="space-y-3"
+                            >
+                                <input type="text" placeholder="Full Name" value={vcardData.fn} onChange={(e) => setVcardData({ ...vcardData, fn: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
+                                <input type="text" placeholder="Phone" value={vcardData.tel} onChange={(e) => setVcardData({ ...vcardData, tel: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
+                                <input type="text" placeholder="Email" value={vcardData.email} onChange={(e) => setVcardData({ ...vcardData, email: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Visual Settings */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-black/30 p-2.5 rounded-lg border border-white/5">
+                        <label className="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Core Color</label>
+                        <div className="flex items-center gap-2">
+                            <input type="color" value={fillColor} onChange={(e) => setFillColor(e.target.value)} className="w-6 h-6 rounded overflow-hidden cursor-pointer" />
+                            <span className="text-[10px] font-mono text-gray-400">{fillColor}</span>
                         </div>
                     </div>
-
-                    <div className="bg-[#111] p-3 rounded-xl border border-white/5 hover:border-[#00d9ff]/30 transition-colors">
-                        <label className="text-[10px] text-gray-500 font-bold block mb-2">BG COLOR</label>
+                    <div className="bg-black/30 p-2.5 rounded-lg border border-white/5">
+                        <label className="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Background</label>
                         <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 shadow-lg">
-                                    <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-[150%] h-[150%] -m-[25%] cursor-pointer p-0 border-0" />
-                                </div>
-                            </div>
-                            <span className="text-[10px] font-mono text-gray-400 bg-black px-2 py-1 rounded">{bgHex}</span>
+                            <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-6 h-6 rounded overflow-hidden cursor-pointer" />
+                            <span className="text-[10px] font-mono text-gray-400">{bgHex}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#111] p-4 rounded-xl border border-white/5">
-                    <label className="text-[10px] text-gray-500 font-bold block mb-3">MODULE SHAPE</label>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setStyle('square')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${style === 'square' ? 'bg-[#222] text-white border border-white/20 shadow-lg' : 'text-gray-600 border border-transparent hover:border-white/10'
-                                }`}
-                        >
-                            <FiGrid /> Sharp
-                        </button>
-                        <button
-                            onClick={() => setStyle('rounded')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${style === 'rounded' ? 'bg-[#222] text-white border border-white/20 shadow-lg' : 'text-gray-600 border border-transparent hover:border-white/10'
-                                }`}
-                        >
-                            <FiLayers /> Fluid
-                        </button>
-                    </div>
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => setStyle('square')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border ${style === 'square' ? 'bg-[#222] text-white border-white/20' : 'text-gray-600 border-transparent hover:bg-white/5'
+                            }`}
+                    >
+                        <FiGrid className="w-3 h-3" /> Sharp
+                    </button>
+                    <button
+                        onClick={() => setStyle('rounded')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border ${style === 'rounded' ? 'bg-[#222] text-white border-white/20' : 'text-gray-600 border-transparent hover:bg-white/5'
+                            }`}
+                    >
+                        <FiLayers className="w-3 h-3" /> Fluid
+                    </button>
                 </div>
-            </div>
 
-            <button
-                onClick={generateQR}
-                disabled={loading}
-                className="w-full relative group overflow-hidden rounded-xl bg-gradient-to-r from-[#00d9ff] to-[#0066ff] p-[1px] shadow-[0_0_40px_rgba(0,217,255,0.3)] hover:shadow-[0_0_60px_rgba(0,217,255,0.5)] transition-shadow"
-            >
-                <div className="relative bg-[#050505] rounded-xl px-6 py-4 flex items-center justify-center gap-3 transition-all group-hover:bg-opacity-90">
-                    {loading ? (
-                        <div className="w-5 h-5 border-2 border-[#00d9ff] border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                        <FiZap className="w-5 h-5 text-[#00d9ff] group-hover:text-white transition-colors" />
-                    )}
-                    <span className="font-bold text-white tracking-widest text-sm uppercase">Initialize Gen</span>
-                </div>
-            </button>
+                <button
+                    onClick={generateQR}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-[#00d9ff] to-[#0066ff] hover:from-[#00b8d4] hover:to-[#0052cc] text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(0,217,255,0.3)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiZap />}
+                    <span className="tracking-wider uppercase text-xs">Generate Matrix</span>
+                </button>
+            </div>
         </div>
     );
 
@@ -263,7 +243,7 @@ export default function QRExtreme() {
                         {/* Glowing Frame */}
                         <div className="absolute -inset-1 bg-gradient-to-br from-[#00d9ff] to-[#ff00ff] rounded-2xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
 
-                        <div className="relative bg-white p-4 md:p-6 rounded-xl shadow-2xl transform transition-transform group-hover:bg-gray-50 w-full max-w-[280px] aspect-square flex items-center justify-center">
+                        <div className="relative bg-white p-3 md:p-5 rounded-xl shadow-2xl transform transition-transform group-hover:bg-gray-50 w-full max-w-[220px] aspect-square flex items-center justify-center">
                             <img src={qrUrl} alt="QR Code" className="w-full h-full object-contain" />
 
                             {/* Scan Line Animation */}
