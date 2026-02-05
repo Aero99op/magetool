@@ -28,10 +28,14 @@ export const metadata: Metadata = {
         address: false,
         telephone: false,
     },
+    metadataBase: new URL('https://magetool.in'),
+    alternates: {
+        canonical: '/',
+    },
     openGraph: {
         title: 'Magetool - Ultimate File Utility Platform',
         description: 'Convert, edit, and compress files online for free. Support for PDF, Images, Video, and Audio.',
-        url: 'https://magetool.site',
+        url: 'https://magetool.in',
         siteName: 'Magetool',
         locale: 'en_US',
         type: 'website',

@@ -244,27 +244,27 @@ export default function QRExtreme() {
 
     // 2026 PREVIEW CONTENT
     const previewContent = (
-        <div className="h-full min-h-[500px] flex flex-col items-center justify-center relative overflow-hidden bg-[#050505] rounded-[32px] border border-[#222] shadow-2xl">
+        <div className="h-full min-h-[350px] md:min-h-[500px] flex flex-col items-center justify-center relative overflow-hidden bg-[#050505] rounded-[32px] border border-[#222] shadow-2xl p-4 transition-all duration-500">
             {/* Holographic Grid Background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,217,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,217,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,217,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,217,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] md:bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
 
             {/* Animated Glow Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px] animate-pulse delay-700" />
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 md:w-64 md:h-64 bg-purple-600/20 rounded-full blur-[60px] md:blur-[100px] animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-32 h-32 md:w-64 md:h-64 bg-blue-600/20 rounded-full blur-[60px] md:blur-[100px] animate-pulse delay-700" />
 
             {qrUrl ? (
-                <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm mx-auto p-6">
+                <div className="relative z-10 flex flex-col items-center gap-6 md:gap-8 w-full max-w-sm mx-auto">
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0, rotateX: 20 }}
                         animate={{ scale: 1, opacity: 1, rotateX: 0 }}
                         transition={{ type: "spring", stiffness: 100 }}
-                        className="relative group perspective-1000"
+                        className="relative group perspective-1000 w-full flex justify-center"
                     >
                         {/* Glowing Frame */}
                         <div className="absolute -inset-1 bg-gradient-to-br from-[#00d9ff] to-[#ff00ff] rounded-2xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
 
-                        <div className="relative bg-white p-6 rounded-xl shadow-2xl transform transition-transform group-hover:bg-gray-50">
-                            <img src={qrUrl} alt="QR Code" className="w-64 h-64 object-contain" />
+                        <div className="relative bg-white p-4 md:p-6 rounded-xl shadow-2xl transform transition-transform group-hover:bg-gray-50 w-full max-w-[280px] aspect-square flex items-center justify-center">
+                            <img src={qrUrl} alt="QR Code" className="w-full h-full object-contain" />
 
                             {/* Scan Line Animation */}
                             <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
@@ -273,24 +273,24 @@ export default function QRExtreme() {
                         </div>
                     </motion.div>
 
-                    <div className="flex flex-col gap-3 w-full">
+                    <div className="flex flex-col gap-3 w-full max-w-[280px]">
                         <button
                             onClick={downloadQR}
-                            className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95"
+                            className="flex items-center justify-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 w-full"
                         >
                             <FiDownload className="w-5 h-5" />
-                            <span className="tracking-widest uppercase text-sm">Download Asset</span>
+                            <span className="tracking-widest uppercase text-xs md:text-sm">Download Asset</span>
                         </button>
                     </div>
                 </div>
             ) : (
-                <div className="relative z-10 flex flex-col items-center justify-center text-center opacity-30">
-                    <div className="w-32 h-32 border border-[#333] border-dashed rounded-3xl flex items-center justify-center mb-6 relative">
+                <div className="relative z-10 flex flex-col items-center justify-center text-center opacity-30 px-4">
+                    <div className="w-24 h-24 md:w-32 md:h-32 border border-[#333] border-dashed rounded-3xl flex items-center justify-center mb-6 relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#00d9ff]/10 to-transparent rounded-3xl" />
-                        <FiCode className="w-10 h-10 text-[#00d9ff]" />
+                        <FiCode className="w-8 h-8 md:w-10 md:h-10 text-[#00d9ff]" />
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">System Idle</h3>
-                    <p className="text-gray-500 font-mono text-xs uppercase tracking-widest max-w-[200px]">Awaiting Data Input sequence...</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2 tracking-tight">System Idle</h3>
+                    <p className="text-gray-500 font-mono text-[10px] md:text-xs uppercase tracking-widest max-w-[200px]">Awaiting Data Input sequence...</p>
                 </div>
             )}
         </div>

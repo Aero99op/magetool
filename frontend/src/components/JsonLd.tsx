@@ -8,7 +8,7 @@ export default function JsonLd() {
                     '@type': 'SoftwareApplication',
                     name: 'Magetool',
                     alternateName: ['Magetool Online', 'Magetool Converter', 'Magetool Editor'],
-                    url: 'https://magetool.site',
+                    url: 'https://magetool.in',
                     applicationCategory: 'MultimediaApplication',
                     operatingSystem: 'Any',
                     offers: {

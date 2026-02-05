@@ -1,22 +1,25 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://magetool.site'; // Replace with actual domain
+    const baseUrl = 'https://magetool.in';
 
+    // Routes hierarchy
     const routes = [
         '',
+        '/image/editor',
+        '/image/compressor',
+        '/image/converter',
+        '/image/passport-photo',
+        '/image/collage',
+        '/image/remove-background',
+        '/video/converter',
+        '/video/compressor',
+        '/pdf/merger',
+        '/pdf/splitter',
+        '/pdf/converter',
+        '/audio/converter',
+        '/tools/qr-generator',
         '/support',
-        '/documents',
-        '/images',
-        '/videos',
-        '/audio',
-        '/images/size-adjuster',
-        '/images/converter',
-        '/images/compressor',
-        '/documents/converter',
-        '/documents/pdf-merge',
-        '/videos/converter',
-        '/videos/compressor',
     ].map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date(),
