@@ -74,6 +74,9 @@ export const metadata: Metadata = {
         maximumScale: 1,
         userScalable: false, // Prevents zooming for native feel
     },
+    verification: {
+        google: 'pHa0sLjbGcsWDSIVmIzmx8FMKYCYudi27qzVrMqTzIk',
+    },
 };
 
 export default function RootLayout({
