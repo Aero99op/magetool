@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ToolLayout from "@/components/ToolLayout";
 import ToolContent from '@/components/ToolContent';
-import { FiWifi, FiType, FiUser, FiDownload, FiShare2, FiZap, FiCode, FiCpu, FiLayers, FiGrid } from "react-icons/fi";
+import { FiWifi, FiType, FiUser, FiDownload, FiZap, FiCode, FiLayers, FiGrid, FiCheck, FiCopy } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
 
@@ -11,11 +11,11 @@ export default function QRExtreme() {
     const [activeTab, setActiveTab] = useState("text");
     const [loading, setLoading] = useState(false);
     const [qrUrl, setQrUrl] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     // Customization
-    const [fillColor, setFillColor] = useState("#00d9ff"); // Neon Blue default
-    const [bgColor, setBgColor] = useState("#00000000");  // Transparent default
-    const [bgHex, setBgHex] = useState("#0a0a0a"); // For UI input
+    const [fillColor, setFillColor] = useState("#000000");
+    const [bgHex, setBgHex] = useState("#ffffff");
     const [style, setStyle] = useState("rounded");
 
     // Data States
@@ -23,39 +23,28 @@ export default function QRExtreme() {
     const [wifiData, setWifiData] = useState({ ssid: "", password: "", encryption: "WPA" });
     const [vcardData, setVcardData] = useState({ fn: "", tel: "", email: "", url: "" });
 
-    // Auto-generate on mount
-    useEffect(() => {
-        // Optional: Generate default
-    }, []);
-
     const generateQR = async () => {
         setLoading(true);
-        // Add artificial delay for "processing" feel + allow UI to update
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 400));
 
         try {
             let finalData = "";
             if (activeTab === "text") {
-                finalData = textData || "https://magetool.site";
+                finalData = textData || "https://magetool.in";
             } else if (activeTab === "wifi") {
                 finalData = `WIFI:S:${wifiData.ssid};T:${wifiData.encryption};P:${wifiData.password};;`;
             } else if (activeTab === "vcard") {
                 finalData = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.fn}\nTEL:${vcardData.tel}\nEMAIL:${vcardData.email}\nURL:${vcardData.url}\nEND:VCARD`;
             }
 
-            // Client-Side Generation
             const url = await QRCode.toDataURL(finalData, {
                 width: 1024,
                 margin: 2,
-                color: {
-                    dark: fillColor,
-                    light: bgHex // Use the hex value
-                },
+                color: { dark: fillColor, light: bgHex },
                 errorCorrectionLevel: 'H'
             });
 
             setQrUrl(url);
-
         } catch (e) {
             console.error(e);
         } finally {
@@ -73,213 +62,269 @@ export default function QRExtreme() {
         document.body.removeChild(a);
     };
 
-    // 2026 CONFIG PANEL
+    const copyToClipboard = async () => {
+        if (!qrUrl) return;
+        try {
+            const response = await fetch(qrUrl);
+            const blob = await response.blob();
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (e) {
+            console.error('Failed to copy:', e);
+        }
+    };
+
+    // Premium Config Panel - Apple/Google/Microsoft Level
     const configPanel = (
-        <div className="space-y-6 font-sans">
-            <div className="bg-[#111] border border-white/10 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none" />
+        <div className="space-y-6">
+            {/* Section 1: Content Type */}
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-white">Content Type</h4>
+                    <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded-full">Step 1</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {[
+                        { id: "text", icon: FiType, label: "Link", desc: "URL or text" },
+                        { id: "wifi", icon: FiWifi, label: "WiFi", desc: "Network" },
+                        { id: "vcard", icon: FiUser, label: "Contact", desc: "vCard" },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`relative flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-200 group ${activeTab === tab.id
+                                ? "bg-gradient-to-b from-white to-gray-100 text-gray-900 shadow-lg shadow-white/10"
+                                : "bg-white/[0.03] hover:bg-white/[0.06] text-gray-400 hover:text-white border border-white/[0.05]"
+                                }`}
+                        >
+                            <tab.icon className={`w-5 h-5 mb-2 transition-transform group-hover:scale-110 ${activeTab === tab.id ? "text-gray-900" : ""}`} />
+                            <span className="text-xs font-semibold">{tab.label}</span>
+                            <span className={`text-[9px] mt-0.5 ${activeTab === tab.id ? "text-gray-600" : "text-gray-600"}`}>{tab.desc}</span>
+                        </button>
+                    ))}
+                </div>
+            </section>
 
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 border-b border-white/10 pb-3 flex items-center gap-2">
-                    <FiCode className="text-[#00d9ff]" /> Generator Settings
-                </h3>
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-                {/* Cyberpunk Tab Switcher */}
-                <div className="relative p-1 bg-black/40 rounded-xl border border-white/5 mb-6">
-                    <div className="flex relative z-10">
-                        {[
-                            { id: "text", icon: FiType, label: "Text" },
-                            { id: "wifi", icon: FiWifi, label: "WiFi" },
-                            { id: "vcard", icon: FiUser, label: "ID" },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
-                                    ? "bg-[#222] text-[#00d9ff] border border-[#00d9ff]/30 shadow-lg"
-                                    : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
-                                    }`}
-                            >
-                                <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "drop-shadow-[0_0_5px_rgba(0,217,255,0.5)]" : ""}`} />
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
+            {/* Section 2: Content Input */}
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-white">Content</h4>
+                    <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded-full">Step 2</span>
+                </div>
+                <AnimatePresence mode="wait">
+                    {activeTab === "text" && (
+                        <motion.div key="text" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                            <div className="relative">
+                                <textarea
+                                    value={textData}
+                                    onChange={(e) => setTextData(e.target.value)}
+                                    placeholder="Enter URL or text content..."
+                                    className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.12] focus:border-white/20 focus:bg-white/[0.05] rounded-2xl p-4 min-h-[120px] text-sm text-white outline-none transition-all duration-200 resize-none placeholder:text-gray-600"
+                                />
+                                <div className="absolute bottom-3 right-3 text-[10px] text-gray-600 font-mono">
+                                    {textData.length} characters
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === "wifi" && (
+                        <motion.div key="wifi" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-3">
+                            <div className="relative">
+                                <label className="absolute -top-2 left-3 bg-[#111] px-2 text-[10px] text-gray-500 font-medium">Network Name</label>
+                                <input type="text" value={wifiData.ssid} onChange={(e) => setWifiData({ ...wifiData, ssid: e.target.value })} placeholder="MyWiFi" className="w-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.12] focus:border-white/20 rounded-xl px-4 py-3.5 text-sm text-white outline-none transition-all" />
+                            </div>
+                            <div className="relative">
+                                <label className="absolute -top-2 left-3 bg-[#111] px-2 text-[10px] text-gray-500 font-medium">Password</label>
+                                <input type="password" value={wifiData.password} onChange={(e) => setWifiData({ ...wifiData, password: e.target.value })} placeholder="••••••••" className="w-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.12] focus:border-white/20 rounded-xl px-4 py-3.5 text-sm text-white outline-none transition-all" />
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === "vcard" && (
+                        <motion.div key="vcard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-3">
+                            {[
+                                { key: 'fn', label: 'Full Name', type: 'text', placeholder: 'John Doe' },
+                                { key: 'tel', label: 'Phone', type: 'tel', placeholder: '+1 234 567 8900' },
+                                { key: 'email', label: 'Email', type: 'email', placeholder: 'john@example.com' },
+                            ].map((field) => (
+                                <div key={field.key} className="relative">
+                                    <label className="absolute -top-2 left-3 bg-[#111] px-2 text-[10px] text-gray-500 font-medium">{field.label}</label>
+                                    <input
+                                        type={field.type}
+                                        value={vcardData[field.key as keyof typeof vcardData]}
+                                        onChange={(e) => setVcardData({ ...vcardData, [field.key]: e.target.value })}
+                                        placeholder={field.placeholder}
+                                        className="w-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.12] focus:border-white/20 rounded-xl px-4 py-3.5 text-sm text-white outline-none transition-all"
+                                    />
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </section>
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            {/* Section 3: Appearance */}
+            <section>
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-white">Appearance</h4>
+                    <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded-full">Step 3</span>
                 </div>
 
-                {/* Inputs Container */}
-                <div className="space-y-4 mb-6 relative z-10">
-                    <AnimatePresence mode="wait">
-                        {activeTab === "text" && (
-                            <motion.div
-                                key="text"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                            >
-                                <div className="group">
-                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2 block">Payload Content</label>
-                                    <textarea
-                                        value={textData}
-                                        onChange={(e) => setTextData(e.target.value)}
-                                        placeholder="Paste URL or text..."
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl p-3 min-h-[100px] text-sm text-gray-200 focus:border-[#00d9ff] focus:ring-1 focus:ring-[#00d9ff]/30 outline-none transition-all resize-none placeholder:text-gray-700 font-mono"
-                                    />
+                {/* Color Pickers */}
+                <div className="flex gap-3 mb-4">
+                    <div className="flex-1 bg-white/[0.03] rounded-2xl p-3 border border-white/[0.05] hover:border-white/[0.1] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white/10 ring-offset-2 ring-offset-[#111]" style={{ backgroundColor: fillColor }}>
+                                    <input type="color" value={fillColor} onChange={(e) => setFillColor(e.target.value)} className="w-full h-full cursor-pointer opacity-0" />
                                 </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === "wifi" && (
-                            <motion.div
-                                key="wifi"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                className="space-y-3"
-                            >
-                                <div>
-                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Network SSID</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Network Name"
-                                        value={wifiData.ssid}
-                                        onChange={(e) => setWifiData({ ...wifiData, ssid: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block">Password</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Required for WPA/WPA2"
-                                        value={wifiData.password}
-                                        onChange={(e) => setWifiData({ ...wifiData, password: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none"
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === "vcard" && (
-                            <motion.div
-                                key="vcard"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                className="space-y-3"
-                            >
-                                <input type="text" placeholder="Full Name" value={vcardData.fn} onChange={(e) => setVcardData({ ...vcardData, fn: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
-                                <input type="text" placeholder="Phone" value={vcardData.tel} onChange={(e) => setVcardData({ ...vcardData, tel: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
-                                <input type="text" placeholder="Email" value={vcardData.email} onChange={(e) => setVcardData({ ...vcardData, email: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#00d9ff] outline-none" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* Visual Settings */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-black/30 p-2.5 rounded-lg border border-white/5">
-                        <label className="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Core Color</label>
-                        <div className="flex items-center gap-2">
-                            <input type="color" value={fillColor} onChange={(e) => setFillColor(e.target.value)} className="w-6 h-6 rounded overflow-hidden cursor-pointer" />
-                            <span className="text-[10px] font-mono text-gray-400">{fillColor}</span>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Foreground</p>
+                                <p className="text-xs font-mono text-white">{fillColor.toUpperCase()}</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="bg-black/30 p-2.5 rounded-lg border border-white/5">
-                        <label className="text-[9px] text-gray-500 font-bold block mb-2 uppercase">Background</label>
-                        <div className="flex items-center gap-2">
-                            <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-6 h-6 rounded overflow-hidden cursor-pointer" />
-                            <span className="text-[10px] font-mono text-gray-400">{bgHex}</span>
+                    <div className="flex-1 bg-white/[0.03] rounded-2xl p-3 border border-white/[0.05] hover:border-white/[0.1] transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white/10 ring-offset-2 ring-offset-[#111]" style={{ backgroundColor: bgHex }}>
+                                    <input type="color" value={bgHex} onChange={(e) => setBgHex(e.target.value)} className="w-full h-full cursor-pointer opacity-0" />
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Background</p>
+                                <p className="text-xs font-mono text-white">{bgHex.toUpperCase()}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex gap-2 mb-6">
+                {/* Style Toggle */}
+                <div className="flex bg-white/[0.03] rounded-2xl p-1.5 border border-white/[0.05]">
                     <button
                         onClick={() => setStyle('square')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border ${style === 'square' ? 'bg-[#222] text-white border-white/20' : 'text-gray-600 border-transparent hover:bg-white/5'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${style === 'square'
+                            ? 'bg-white text-gray-900 shadow-md'
+                            : 'text-gray-400 hover:text-white'
                             }`}
                     >
-                        <FiGrid className="w-3 h-3" /> Sharp
+                        <FiGrid className="w-4 h-4" /> Sharp Edges
                     </button>
                     <button
                         onClick={() => setStyle('rounded')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border ${style === 'rounded' ? 'bg-[#222] text-white border-white/20' : 'text-gray-600 border-transparent hover:bg-white/5'
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${style === 'rounded'
+                            ? 'bg-white text-gray-900 shadow-md'
+                            : 'text-gray-400 hover:text-white'
                             }`}
                     >
-                        <FiLayers className="w-3 h-3" /> Fluid
+                        <FiLayers className="w-4 h-4" /> Rounded
                     </button>
                 </div>
+            </section>
 
-                <button
-                    onClick={generateQR}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-[#00d9ff] to-[#0066ff] hover:from-[#00b8d4] hover:to-[#0052cc] text-white font-bold py-3 rounded-xl shadow-[0_0_20px_rgba(0,217,255,0.3)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiZap />}
-                    <span className="tracking-wider uppercase text-xs">Generate Matrix</span>
-                </button>
-            </div>
+            {/* Generate Button */}
+            <button
+                onClick={generateQR}
+                disabled={loading}
+                className="w-full relative overflow-hidden bg-white hover:bg-gray-50 text-gray-900 font-semibold py-4 rounded-2xl shadow-lg shadow-white/10 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {loading ? (
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                ) : (
+                    <FiZap className="w-5 h-5" />
+                )}
+                <span className="text-sm">{loading ? 'Generating...' : 'Generate QR Code'}</span>
+            </button>
         </div>
     );
 
-    // 2026 PREVIEW CONTENT
+
+
+    // Premium Preview Content
     const previewContent = (
-        <div className="h-full min-h-[350px] md:min-h-[500px] flex flex-col items-center justify-center relative overflow-hidden bg-[#050505] rounded-[32px] border border-[#222] shadow-2xl p-4 transition-all duration-500">
-            {/* Holographic Grid Background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,217,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,217,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] md:bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-            {/* Animated Glow Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-32 h-32 md:w-64 md:h-64 bg-purple-600/20 rounded-full blur-[60px] md:blur-[100px] animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-32 h-32 md:w-64 md:h-64 bg-blue-600/20 rounded-full blur-[60px] md:blur-[100px] animate-pulse delay-700" />
-
-            {qrUrl ? (
-                <div className="relative z-10 flex flex-col items-center gap-6 md:gap-8 w-full max-w-sm mx-auto">
+        <div className="flex flex-col items-center justify-center py-8 md:py-12">
+            <AnimatePresence mode="wait">
+                {qrUrl ? (
                     <motion.div
-                        initial={{ scale: 0.8, opacity: 0, rotateX: 20 }}
-                        animate={{ scale: 1, opacity: 1, rotateX: 0 }}
-                        transition={{ type: "spring", stiffness: 100 }}
-                        className="relative group perspective-1000 w-full flex justify-center"
+                        key="qr"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="flex flex-col items-center gap-6 w-full max-w-[320px]"
                     >
-                        {/* Glowing Frame */}
-                        <div className="absolute -inset-1 bg-gradient-to-br from-[#00d9ff] to-[#ff00ff] rounded-2xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+                        {/* QR Code Card */}
+                        <div className="relative group">
+                            {/* Subtle Glow */}
+                            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                        <div className="relative bg-white p-3 md:p-5 rounded-xl shadow-2xl transform transition-transform group-hover:bg-gray-50 w-full max-w-[220px] aspect-square flex items-center justify-center">
-                            <img src={qrUrl} alt="QR Code" className="w-full h-full object-contain" />
-
-                            {/* Scan Line Animation */}
-                            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
-                                <div className="w-full h-[2px] bg-[#00d9ff] shadow-[0_0_20px_#00d9ff] absolute top-0 left-0 animate-[scan_3s_linear_infinite]" />
+                            {/* QR Container */}
+                            <div className="relative bg-white rounded-2xl p-4 shadow-2xl shadow-black/50">
+                                <img
+                                    src={qrUrl}
+                                    alt="QR Code"
+                                    className="w-48 h-48 md:w-56 md:h-56 object-contain"
+                                />
                             </div>
                         </div>
-                    </motion.div>
 
-                    <div className="flex flex-col gap-3 w-full max-w-[280px]">
-                        <button
-                            onClick={downloadQR}
-                            className="flex items-center justify-center gap-3 px-6 py-3 md:px-8 md:py-4 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 w-full"
-                        >
-                            <FiDownload className="w-5 h-5" />
-                            <span className="tracking-widest uppercase text-xs md:text-sm">Download Asset</span>
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <div className="relative z-10 flex flex-col items-center justify-center text-center opacity-30 px-4">
-                    <div className="w-24 h-24 md:w-32 md:h-32 border border-[#333] border-dashed rounded-3xl flex items-center justify-center mb-6 relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#00d9ff]/10 to-transparent rounded-3xl" />
-                        <FiCode className="w-8 h-8 md:w-10 md:h-10 text-[#00d9ff]" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2 tracking-tight">System Idle</h3>
-                    <p className="text-gray-500 font-mono text-[10px] md:text-xs uppercase tracking-widest max-w-[200px]">Awaiting Data Input sequence...</p>
-                </div>
-            )}
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 w-full">
+                            <button
+                                onClick={downloadQR}
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-black hover:bg-gray-100 rounded-xl font-semibold text-sm transition-all shadow-lg"
+                            >
+                                <FiDownload className="w-4 h-4" />
+                                Download
+                            </button>
+                            <button
+                                onClick={copyToClipboard}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-medium text-sm transition-all"
+                            >
+                                {copied ? <FiCheck className="w-4 h-4 text-green-400" /> : <FiCopy className="w-4 h-4" />}
+                                {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                        </div>
+
+                        {/* Regenerate hint */}
+                        <p className="text-xs text-gray-500 text-center">
+                            Tip: Change settings and regenerate anytime
+                        </p>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center text-center py-12 px-4"
+                    >
+                        <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+                            <FiCode className="w-8 h-8 text-gray-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-300 mb-2">Your QR Code</h3>
+                        <p className="text-sm text-gray-500 max-w-[200px]">
+                            Enter content and click Generate to create your QR code
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 
     return (
         <ToolLayout
-            title="QR Code Factory"
-            subtitle="Next-Gen Matrix Code Generator"
+            title="QR Code Generator"
+            subtitle="Create beautiful, scannable QR codes instantly"
             onFilesSelected={() => { }}
             processingStage="complete"
             downloadReady={false}
@@ -287,18 +332,18 @@ export default function QRExtreme() {
             customContent={previewContent}
             toolContent={
                 <ToolContent
-                    overview="Generate futuristic, high-tech QR codes for any purpose. Create codes for URLs, WiFi networks, or contact cards (vCards) with customizable colors and designs."
+                    overview="Generate professional QR codes for URLs, WiFi networks, or contact cards. Customize colors and download in high resolution."
                     features={[
-                        "Multiple Types: Text, WiFi, vCard.",
-                        "Custom Design: Choose colors and dot styles (Square/Fluid).",
-                        "High Contrast: Ensures scannability by all devices.",
-                        "Instant Preview: See your QR code update in real-time."
+                        "Multiple formats: URL, WiFi, Contact Card (vCard)",
+                        "Custom colors for foreground and background",
+                        "High-resolution 1024px output",
+                        "Instant generation, no upload needed"
                     ]}
                     howTo={[
-                        { step: "Select Type", description: "Choose Text, WiFi, or ID Card." },
-                        { step: "Enter Data", description: "Fill in the required information." },
-                        { step: "Customize", description: "Pick your colors and style." },
-                        { step: "Download", description: "Get your QR code image." }
+                        { step: "Choose Type", description: "Select URL, WiFi, or Contact" },
+                        { step: "Enter Content", description: "Add your link, network info, or contact details" },
+                        { step: "Customize", description: "Pick colors and style" },
+                        { step: "Download", description: "Get your QR code as a PNG image" }
                     ]}
                 />
             }
