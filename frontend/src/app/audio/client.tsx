@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Music, Scissors, Volume2, Activity, Search } from 'lucide-react';
+import SectionWrapper from '@/components/ui/SectionWrapper';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const tools = [
     { name: 'Audio Converter', href: '/audio/converter', icon: Music, description: 'Convert between MP3, WAV, AAC, etc.' },
@@ -14,68 +15,68 @@ const tools = [
 
 export default function AudioPageClient() {
     return (
-        <div className="container" style={{ paddingTop: '40px', paddingBottom: '60px' }}>
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ textAlign: 'center', marginBottom: '48px' }}
-            >
-                <h1 style={{ background: 'linear-gradient(135deg, #FFFFFF, #00FFFF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontSize: '2rem', fontWeight: 700 }}>Audio Tools</h1>
-                <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-                    Convert, trim, and enhance your audio files
+        <SectionWrapper className="container" style={{ paddingTop: '100px', paddingBottom: '80px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                <h1 className="tool-title" style={{
+                    backgroundImage: 'linear-gradient(135deg, #FFF, var(--neon-cyan))'
+                }}>
+                    Audio Foundry
+                </h1>
+                <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+                    Process audio with crystal clear precision.
+                    Convert, boost, and analyze your tracks.
                 </p>
-            </motion.div>
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
                 {tools.map((tool, index) => {
                     const Icon = tool.icon;
                     return (
-                        <motion.div
-                            key={tool.name}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                        >
-                            <Link
-                                href={tool.href}
-                                className="glass-card glass-card-hover"
-                                style={{ display: 'block', padding: '20px', height: '100%' }}
+                        <Link key={tool.href} href={tool.href} style={{ textDecoration: 'none' }}>
+                            <PremiumCard
+                                delay={index * 0.05}
+                                style={{ height: '100%' }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                                     <div style={{
-                                        width: '44px',
-                                        height: '44px',
-                                        borderRadius: '10px',
+                                        width: '56px',
+                                        height: '56px',
+                                        borderRadius: '16px',
                                         background: 'rgba(0, 255, 255, 0.1)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
+                                        border: '1px solid rgba(0, 255, 255, 0.2)',
+                                        color: 'var(--neon-cyan)'
                                     }}>
-                                        <Icon size={22} color="#00FFFF" />
+                                        <Icon size={28} />
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{tool.name}</span>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{tool.name}</h3>
                                             {tool.isAI && (
                                                 <span style={{
-                                                    fontSize: '0.6rem',
-                                                    fontWeight: 700,
-                                                    padding: '2px 5px',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    padding: '2px 6px',
                                                     background: 'rgba(0, 255, 255, 0.2)',
-                                                    borderRadius: '3px',
+                                                    borderRadius: '4px',
                                                     color: '#00FFFF',
+                                                    border: '1px solid rgba(0, 255, 255, 0.3)'
                                                 }}>AI</span>
                                             )}
                                         </div>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{tool.description}</p>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            {tool.description}
+                                        </p>
                                     </div>
                                 </div>
-                            </Link>
-                        </motion.div>
+                            </PremiumCard>
+                        </Link>
                     );
                 })}
             </div>
-        </div>
+        </SectionWrapper>
     );
 }

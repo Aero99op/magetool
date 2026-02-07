@@ -18,6 +18,7 @@ import {
     Sun,
     Moon,
     Smartphone,
+    Activity,
 } from 'lucide-react';
 import InstallAppModal from './InstallAppModal';
 import { useAppMode } from '@/hooks/useAppMode';
@@ -41,6 +42,8 @@ const navItems: NavItem[] = [
         icon: Image,
         color: 'var(--neon-blue)',
         tools: [
+            { name: 'Design Studio', href: '/images/design-studio' },
+            { name: 'Advanced Photo Editor', href: '/images/advanced-editor' },
             { name: 'Format Converter', href: '/images/converter' },
             { name: 'Cropper', href: '/images/cropper' },
             { name: 'Resizer', href: '/images/resizer' },
@@ -125,17 +128,38 @@ export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showInstallModal, setShowInstallModal] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const [animationsEnabled, setAnimationsEnabled] = useState(true);
+    const [scrolled, setScrolled] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
     const { isMobileApp } = useAppMode();
 
-    // Initialize Theme
+    // Initialize Theme & Animations
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
         if (savedTheme) {
             setTheme(savedTheme);
             document.documentElement.setAttribute('data-theme', savedTheme);
         }
+
+        const savedAnim = localStorage.getItem('animationsEnabled');
+        if (savedAnim !== null) {
+            const isEnabled = savedAnim === 'true';
+            setAnimationsEnabled(isEnabled);
+            document.documentElement.setAttribute('data-animate', isEnabled ? 'on' : 'off');
+        } else {
+            // Default on
+            document.documentElement.setAttribute('data-animate', 'on');
+        }
+    }, []);
+
+    // Scroll Effect
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const toggleTheme = () => {
@@ -152,7 +176,6 @@ export default function Header() {
                 setActiveDropdown(null);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -168,372 +191,431 @@ export default function Header() {
     };
 
     return (
-        <header
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '60px',
-                zIndex: 1000,
-                background: 'var(--header-bg)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: '1px solid var(--glass-border)',
-            }}
-        >
-            <div
-                className="container"
+        <>
+            <motion.header
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 style={{
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 'var(--header-height)',
+                    zIndex: 1000,
+                    background: scrolled ? 'var(--header-bg)' : 'transparent',
+                    backdropFilter: scrolled ? 'blur(20px)' : 'none',
+                    WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+                    borderBottom: scrolled ? '1px solid var(--glass-border)' : '1px solid transparent',
+                    transition: 'all 0.3s ease',
                 }}
             >
-                {/* Logo */}
-                <Link
-                    href="/"
+                <div
+                    className="container"
                     style={{
+                        height: '100%',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
-                        fontWeight: 700,
-                        fontSize: '1.25rem',
+                        justifyContent: 'space-between',
                     }}
                 >
-                    <div
+                    {/* Logo */}
+                    <Link
+                        href="/"
                         style={{
-                            width: '36px',
-                            height: '36px',
-                            background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-blue-dark))',
-                            borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            gap: '12px',
+                            fontWeight: 800,
+                            fontSize: '1.5rem',
+                            letterSpacing: '-0.03em',
                         }}
                     >
-                        <Sparkles size={20} color="#0F0F0F" />
-                    </div>
-                    <span
+                        <motion.div
+                            whileHover={{ rotate: 180 }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-purple))',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 0 20px rgba(var(--neon-blue-rgb), 0.3)',
+                            }}
+                        >
+                            <Sparkles size={22} color="#ffffff" strokeWidth={2.5} />
+                        </motion.div>
+                        <span className="text-gradient">
+                            Magetool
+                        </span>
+                    </Link>
+
+                    {/* Desktop Navigation */}
+                    <nav
+                        ref={dropdownRef}
                         style={{
-                            background: 'var(--gradient-logo-text)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
                         }}
+                        className="desktop-nav"
                     >
-                        Magetool
-                    </span>
-                </Link>
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname?.startsWith(item.href);
+                            const isOpen = activeDropdown === item.label;
 
-                {/* Desktop Navigation */}
-                <nav
-                    ref={dropdownRef}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                    }}
-                    className="desktop-nav"
-                >
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname?.startsWith(item.href);
-                        const isOpen = activeDropdown === item.label;
-
-                        return (
-                            <div key={item.label} className="dropdown" style={{ position: 'relative' }}>
-                                <button
-                                    onClick={() => toggleDropdown(item.label)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '8px 16px',
-                                        background: isActive ? 'rgba(var(--accent-rgb), 0.1)' : 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        color: isActive ? item.color : 'var(--text-secondary)',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 500,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)';
-                                        e.currentTarget.style.color = item.color;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!isActive && !isOpen) {
-                                            e.currentTarget.style.background = 'transparent';
-                                            e.currentTarget.style.color = 'var(--text-secondary)';
-                                        }
-                                    }}
-                                >
-                                    <Icon size={18} />
-                                    {item.label}
-                                    <ChevronDown
-                                        size={14}
+                            return (
+                                <div key={item.label} className="dropdown" style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => toggleDropdown(item.label)}
                                         style={{
-                                            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                            transition: 'transform 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '8px 16px',
+                                            background: isActive || isOpen ? 'rgba(var(--accent-rgb), 0.08)' : 'transparent',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: isActive || isOpen ? item.color : 'var(--text-secondary)',
+                                            fontSize: '0.95rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
                                         }}
-                                    />
-                                </button>
-
-                                {/* Dropdown Menu */}
-                                <AnimatePresence>
-                                    {isOpen && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 10 }}
-                                            transition={{ duration: 0.2 }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.08)';
+                                            e.currentTarget.style.color = item.color;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isActive && !isOpen) {
+                                                e.currentTarget.style.background = 'transparent';
+                                                e.currentTarget.style.color = 'var(--text-secondary)';
+                                            }
+                                        }}
+                                    >
+                                        <Icon size={18} strokeWidth={2.5} />
+                                        {item.label}
+                                        <ChevronDown
+                                            size={14}
                                             style={{
-                                                position: 'absolute',
-                                                top: '100%',
-                                                left: '0',
-                                                marginTop: '8px',
-                                                minWidth: '260px',
-                                                maxHeight: '70vh',
-                                                overflowY: 'auto',
-                                                background: 'var(--bg-surface)',
-                                                backdropFilter: 'blur(20px)',
-                                                WebkitBackdropFilter: 'blur(20px)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '12px',
-                                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-                                                padding: '8px 0',
-                                                zIndex: 1001,
+                                                transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                transition: 'transform 0.2s ease',
+                                                strokeWidth: 3,
+                                                opacity: 0.6,
+                                            }}
+                                        />
+                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    <AnimatePresence>
+                                        {isOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 'calc(100% + 12px)',
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    minWidth: '280px',
+                                                    maxHeight: '70vh',
+                                                    overflowY: 'auto',
+                                                    background: 'var(--bg-card)',
+                                                    backdropFilter: 'blur(30px)',
+                                                    WebkitBackdropFilter: 'blur(30px)',
+                                                    border: '1px solid var(--glass-border-light)',
+                                                    borderRadius: '16px',
+                                                    boxShadow: 'var(--shadow-elevated)',
+                                                    padding: '8px',
+                                                    zIndex: 1001,
+                                                }}
+                                            >
+                                                {item.tools.map((tool) => (
+                                                    <Link
+                                                        key={tool.href}
+                                                        href={tool.href}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            padding: '12px 16px',
+                                                            color: tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                                                            fontSize: '0.9rem',
+                                                            fontWeight: 500,
+                                                            transition: 'all 0.15s ease',
+                                                            borderRadius: '8px',
+                                                            marginBottom: '2px',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.08)';
+                                                            e.currentTarget.style.color = item.color;
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.color = tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)';
+                                                        }}
+                                                    >
+                                                        {tool.name}
+                                                        {tool.isAI && (
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 800,
+                                                                    padding: '2px 6px',
+                                                                    background: 'rgba(var(--neon-cyan-rgb), 0.15)',
+                                                                    color: 'var(--neon-cyan)',
+                                                                    borderRadius: '4px',
+                                                                    border: '1px solid rgba(var(--neon-cyan-rgb), 0.2)',
+                                                                }}
+                                                            >
+                                                                AI
+                                                            </span>
+                                                        )}
+                                                    </Link>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Right Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="btn btn-ghost"
+                            style={{
+                                padding: '10px',
+                                color: theme === 'light' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                borderRadius: '50%'
+                            }}
+                            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        >
+                            <AnimatePresence mode="wait">
+                                {theme === 'dark' ? (
+                                    <motion.div
+                                        key="moon"
+                                        initial={{ rotate: -90, opacity: 0 }}
+                                        animate={{ rotate: 0, opacity: 1 }}
+                                        exit={{ rotate: 90, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Moon size={20} />
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="sun"
+                                        initial={{ rotate: -90, opacity: 0 }}
+                                        animate={{ rotate: 0, opacity: 1 }}
+                                        exit={{ rotate: 90, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Sun size={20} className="text-orange-500" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </button>
+
+                        {/* Animation Toggle */}
+                        <button
+                            onClick={() => {
+                                const newValue = !animationsEnabled;
+                                setAnimationsEnabled(newValue);
+                                localStorage.setItem('animationsEnabled', String(newValue));
+                                document.documentElement.setAttribute('data-animate', newValue ? 'on' : 'off');
+                            }}
+                            className="btn btn-ghost"
+                            style={{
+                                padding: '10px',
+                                color: animationsEnabled ? 'var(--neon-green)' : 'var(--text-muted)',
+                                borderRadius: '50%'
+                            }}
+                            title={animationsEnabled ? 'Disable Animations' : 'Enable Animations'}
+                        >
+                            {animationsEnabled ? <Activity size={20} /> : <Activity size={20} style={{ opacity: 0.5 }} />}
+                        </button>
+
+                        <Link
+                            href="/support"
+                            className="btn btn-ghost"
+                            style={{ padding: '10px', borderRadius: '50%' }}
+                            title="Help & Support"
+                        >
+                            <HelpCircle size={20} />
+                        </Link>
+
+                        {/* Desktop: Get App */}
+                        {!isMobileApp && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="btn btn-primary desktop-nav"
+                                style={{
+                                    padding: '10px 20px',
+                                    fontSize: '0.9rem',
+                                    borderRadius: '99px',
+                                }}
+                                onClick={() => setShowInstallModal(true)}
+                            >
+                                <Smartphone size={16} />
+                                <span>Get App</span>
+                            </motion.button>
+                        )}
+
+                        {/* Mobile Menu Toggle */}
+                        {!isMobileApp && (
+                            <button
+                                className="btn btn-ghost mobile-menu-toggle"
+                                style={{ padding: '10px' }}
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
+
+                {/* Mobile Menu Overlay */}
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, x: '100%' }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            style={{
+                                position: 'fixed',
+                                top: 'var(--header-height)',
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'var(--bg-deep)',
+                                backdropFilter: 'blur(40px)',
+                                WebkitBackdropFilter: 'blur(40px)',
+                                overflowY: 'auto',
+                                padding: '24px',
+                                paddingBottom: '100px',
+                                zIndex: 10000,
+                            }}
+                            className="mobile-menu"
+                        >
+                            {/* Get App Button (Mobile Only) */}
+                            <motion.button
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                className="btn btn-primary"
+                                style={{
+                                    width: '100%',
+                                    marginBottom: '32px',
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                }}
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    setShowInstallModal(true);
+                                }}
+                            >
+                                <Smartphone size={20} />
+                                Get App
+                            </motion.button>
+
+                            {navItems.map((item, index) => {
+                                const Icon = item.icon;
+                                return (
+                                    <motion.div
+                                        key={item.label}
+                                        initial={{ x: 50, opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        style={{ marginBottom: '32px' }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                color: item.color,
+                                                fontWeight: 700,
+                                                marginBottom: '16px',
+                                                fontSize: '1.25rem',
+                                                letterSpacing: '-0.02em',
                                             }}
                                         >
+                                            <Icon size={24} />
+                                            {item.label}
+                                        </div>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                            gap: '8px'
+                                        }}>
                                             {item.tools.map((tool) => (
                                                 <Link
                                                     key={tool.href}
                                                     href={tool.href}
+                                                    onClick={() => setMobileMenuOpen(false)}
                                                     style={{
                                                         display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        padding: '10px 16px',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'center',
+                                                        padding: '12px',
+                                                        background: 'var(--bg-surface)',
+                                                        border: '1px solid var(--glass-border)',
+                                                        borderRadius: '12px',
                                                         color: tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)',
-                                                        fontSize: '0.875rem',
-                                                        transition: 'all 0.15s ease',
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(var(--accent-rgb), 0.1)';
-                                                        e.currentTarget.style.color = 'var(--neon-blue)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'transparent';
-                                                        e.currentTarget.style.color = tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)';
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 500,
+                                                        textAlign: 'center',
                                                     }}
                                                 >
                                                     {tool.name}
                                                     {tool.isAI && (
                                                         <span
                                                             style={{
-                                                                fontSize: '0.65rem',
-                                                                fontWeight: 700,
-                                                                padding: '2px 6px',
-                                                                background: 'rgba(var(--neon-cyan-rgb), 0.2)',
-                                                                borderRadius: '3px',
+                                                                fontSize: '0.6rem',
+                                                                fontWeight: 800,
+                                                                marginTop: '4px',
+                                                                color: 'var(--neon-cyan)',
+                                                                textTransform: 'uppercase',
                                                             }}
                                                         >
-                                                            AI
+                                                            AI Powered
                                                         </span>
                                                     )}
                                                 </Link>
                                             ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    })}
-                </nav>
-
-
-                {/* Right Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* Theme Toggle */}
-                    <button
-                        onClick={toggleTheme}
-                        className="btn btn-ghost"
-                        style={{ padding: '8px', color: theme === 'light' ? '#0F0F0F' : 'inherit' }}
-                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                    >
-                        {theme === 'dark' ? (
-                            <Moon size={20} className="text-gray-400 hover:text-white transition-colors" />
-                        ) : (
-                            <Sun size={20} className="text-orange-500 hover:text-orange-600 transition-colors" />
-                        )}
-                    </button>
-
-                    <Link
-                        href="/support"
-                        className="btn btn-ghost"
-                        style={{ padding: '8px', color: theme === 'light' ? '#0F0F0F' : 'inherit' }}
-                        title="Help & Support"
-                    >
-                        <HelpCircle size={20} />
-                    </Link>
-
-
-                    {/* Mobile Menu Toggle - HIDE on Mobile App (since we have bottom nav) */}
-                    {!isMobileApp && (
-                        <button
-                            className="btn btn-ghost mobile-menu-toggle"
-                            style={{ padding: '8px' }}
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        >
-                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
                     )}
+                </AnimatePresence>
 
-                    {/* Get App Button - HIDE on Mobile App */}
-                    {!isMobileApp && (
-                        <button
-                            id="get-app-btn"
-                            className="btn btn-primary"
-                            style={{
-                                padding: '8px 16px',
-                                fontSize: '0.9rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
-                                border: 'none',
-                            }}
-                            onClick={() => setShowInstallModal(true)}
-                        >
-                            <Smartphone size={16} />
-                            <span className="desktop-nav">Get App</span>
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
-
-            {/* Mobile Menu Overlay */}
-            <AnimatePresence>
-                {mobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, x: '100%' }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: '100%' }}
-                        transition={{ duration: 0.3 }}
-                        style={{
-                            position: 'fixed',
-                            top: '60px',
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'var(--bg-deep)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            overflowY: 'auto',
-                            padding: '20px',
-                            paddingBottom: '100px',
-                            zIndex: 10000,
-                        }}
-                        className="mobile-menu"
-                    >
-                        {/* Get App Button (Mobile Only) */}
-                        <button
-                            className="btn btn-primary"
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '10px',
-                                marginBottom: '24px',
-                                padding: '16px',
-                                background: 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))',
-                            }}
-                            onClick={() => {
-                                setMobileMenuOpen(false);
-                                setShowInstallModal(true);
-                            }}
-                        >
-                            <Smartphone size={20} />
-                            Get App
-                        </button>
-
-                        {navItems.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <div key={item.label} style={{ marginBottom: '24px' }}>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '10px',
-                                            color: item.color,
-                                            fontWeight: 600,
-                                            marginBottom: '12px',
-                                            fontSize: '1.1rem',
-                                        }}
-                                    >
-                                        <Icon size={22} />
-                                        {item.label}
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '32px' }}>
-                                        {item.tools.map((tool) => (
-                                            <Link
-                                                key={tool.href}
-                                                href={tool.href}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    padding: '10px 12px',
-                                                    color: tool.isAI ? 'var(--neon-cyan)' : 'var(--text-secondary)',
-                                                    fontSize: '0.9rem',
-                                                    borderRadius: '8px',
-                                                }}
-                                            >
-                                                {tool.name}
-                                                {tool.isAI && (
-                                                    <span
-                                                        style={{
-                                                            fontSize: '0.65rem',
-                                                            fontWeight: 700,
-                                                            padding: '2px 6px',
-                                                            background: 'rgba(var(--neon-cyan-rgb), 0.2)',
-                                                            borderRadius: '3px',
-                                                        }}
-                                                    >
-                                                        AI
-                                                    </span>
-                                                )}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Responsive Styles */}
-            <style jsx global>{`
-        .mobile-menu-toggle {
-          display: none;
-        }
-        @media (max-width: 768px) {
-          .desktop-nav {
-            display: none !important;
-          }
-          .mobile-menu-toggle {
-            display: flex !important;
-          }
-        }
-      `}</style>
-        </header>
+                <style jsx global>{`
+                    .mobile-menu-toggle {
+                        display: none;
+                    }
+                    @media (max-width: 1024px) {
+                        .desktop-nav {
+                            display: none !important;
+                        }
+                        .mobile-menu-toggle {
+                            display: flex !important;
+                        }
+                    }
+                `}</style>
+            </motion.header>
+        </>
     );
 }

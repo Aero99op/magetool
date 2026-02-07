@@ -1,0 +1,208 @@
+/* Design Studio Mobile Responsive Styles */
+
+/* Mobile-first breakpoints */
+@media (max-width: 768px) {
+    .canva-editor {
+        height: 100dvh !important;
+        /* Use dynamic viewport height for mobile browsers */
+    }
+
+    /* Hide sidebar nav on mobile - use bottom nav instead */
+    .canva-editor .sidebar-nav {
+        display: none !important;
+    }
+
+    /* Mobile bottom navigation */
+    .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(15, 15, 15, 0.98);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 16px;
+        z-index: 1000;
+        justify-content: space-around;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .mobile-bottom-nav button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.6rem;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .mobile-bottom-nav button.active {
+        color: #00D9FF;
+        background: rgba(0, 217, 255, 0.1);
+    }
+
+    .mobile-bottom-nav button svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Left panel as full-width drawer on mobile */
+    .left-panel-mobile {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 60px !important;
+        /* Space for bottom nav */
+        width: 100% !important;
+        max-width: 100% !important;
+        z-index: 900 !important;
+        border-right: none !important;
+    }
+
+    .left-panel-mobile .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .left-panel-mobile .panel-close {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* Right properties panel as bottom sheet on mobile */
+    .right-panel-mobile {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 60px !important;
+        /* Space for bottom nav */
+        width: 100% !important;
+        max-height: 50vh !important;
+        z-index: 850 !important;
+        border-radius: 20px 20px 0 0 !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .right-panel-mobile .drag-handle {
+        width: 40px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin: 12px auto;
+    }
+
+    /* Toolbar adjustments for mobile */
+    .editor-toolbar {
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .editor-toolbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide text labels on mobile toolbar buttons */
+    .editor-toolbar .action-btn-text {
+        display: none !important;
+    }
+
+    .editor-toolbar button {
+        padding: 8px !important;
+        min-width: 36px !important;
+        height: 36px !important;
+    }
+
+    .editor-toolbar .btn-group {
+        flex-shrink: 0;
+    }
+
+    /* Canvas area adjustments */
+    .canvas-area-mobile {
+        padding: 16px !important;
+        padding-bottom: 80px !important;
+        /* Space for bottom nav */
+    }
+
+    /* Export dropdown for mobile */
+    .export-menu-mobile {
+        position: fixed !important;
+        left: 16px !important;
+        right: 16px !important;
+        bottom: 80px !important;
+        width: auto !important;
+        top: auto !important;
+    }
+}
+
+/* Tablet adjustments (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .canva-editor .sidebar-nav {
+        width: 60px !important;
+    }
+
+    .canva-editor .left-panel {
+        width: 280px !important;
+    }
+
+    .canva-editor .right-panel {
+        width: 240px !important;
+    }
+}
+
+/* Desktop: Hide mobile nav */
+@media (min-width: 769px) {
+    .mobile-bottom-nav {
+        display: none !important;
+    }
+}
+
+/* Touch-friendly canvas interactions */
+@media (pointer: coarse) {
+
+    /* Larger touch targets */
+    .fabric-canvas-container {
+        touch-action: none;
+        /* Prevent browser handling */
+    }
+
+    /* Larger resize handles for touch */
+    .canvas-object-controls {
+        transform: scale(1.5);
+    }
+}
+
+/* Safe area handling for notched phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-bottom-nav {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .left-panel-mobile,
+    .right-panel-mobile {
+        bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+    }
+}

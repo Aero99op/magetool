@@ -1,418 +1,389 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Image, Video, Music, FileText, ArrowRight, Smartphone } from 'lucide-react';
+import {
+    Image as ImageIcon,
+    Video,
+    Music,
+    FileText,
+    ArrowRight,
+    Smartphone,
+    Zap,
+    Shield,
+    Cpu,
+    Sparkles,
+    CheckCircle2
+} from 'lucide-react';
+
 import AdSlot from '@/components/AdSlot';
 import { wakeUpServers } from '@/lib/api';
 import InstallAppModal from '@/components/InstallAppModal';
-import { useState } from 'react';
+import SectionWrapper from '@/components/ui/SectionWrapper';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const categories = [
     {
         title: 'Image Tools',
-        description: 'Convert, resize, crop, remove backgrounds, and more',
-        icon: Image,
+        description: 'Edit, convert, and enhance photos with AI precision.',
+        icon: ImageIcon,
         href: '/images',
         color: 'var(--neon-blue)',
-        rgbVar: '--neon-blue-rgb',
-        tools: ['Converter', 'Cropper', 'Resizer', 'Background Remover', 'Upscaler', 'QR Code Factory'],
+        gradient: 'linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 217, 255, 0.02))',
+        tools: ['Background Remover', 'AI Upscaler', 'Converter', 'Cropper']
     },
     {
-        title: 'Video Tools',
-        description: 'Convert, trim, compress, and download videos',
+        title: 'Video Studio',
+        description: 'Compress, trim, and transform videos in seconds.',
         icon: Video,
         href: '/videos',
-        color: 'var(--neon-blue-dark)',
-        rgbVar: '--neon-blue-dark-rgb',
-        tools: ['Converter', 'YouTube Downloader', 'Trimmer', 'Compressor'],
+        color: 'var(--neon-purple)',
+        gradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.02))',
+        tools: ['Compressor', 'Converter', 'Trimmer', 'To GIF']
     },
     {
-        title: 'Audio Tools',
-        description: 'Convert, trim, boost volume, detect BPM',
+        title: 'Audio Lab',
+        description: 'Crystal clear audio conversion and manipulation.',
         icon: Music,
         href: '/audio',
         color: 'var(--neon-cyan)',
-        rgbVar: '--neon-cyan-rgb',
-        tools: ['Converter', 'Trimmer', 'Volume Booster', 'BPM Detector'],
+        gradient: 'linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0.02))',
+        tools: ['Volume Booster', 'Converter', 'BPM Detector']
     },
     {
-        title: 'Document Tools',
-        description: 'Convert documents, merge PDFs, extract text',
+        title: 'Documents',
+        description: 'Secure PDF tools for professional workflows.',
         icon: FileText,
         href: '/documents',
         color: 'var(--text-primary)',
-        rgbVar: '--accent-rgb', // Use accent (black/neon) for documents background
-        tools: ['Converter', 'PDF Merge', 'PDF Split', 'Text Editor', 'Hash Verifier'],
+        gradient: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02))',
+        tools: ['PDF Merge', 'PDF Split', 'Converter']
     },
+];
+
+const features = [
+    { icon: Zap, title: "Lightning Fast", desc: "Local-first processing speed." },
+    { icon: Shield, title: "100% Secure", desc: "Files never leave your device." },
+    { icon: Cpu, title: "AI Powered", desc: "Next-gen algorithms." },
+    { icon: Sparkles, title: "Free Forever", desc: "No hidden costs." },
 ];
 
 export default function HomePage() {
     const [showInstallModal, setShowInstallModal] = useState(false);
 
-    // Lazy Wake Strategy: Wake up servers when user lands on home page
+    // Lazy Wake Strategy
     useEffect(() => {
         wakeUpServers();
     }, []);
 
     return (
-        <div className="container">
+        <>
             {/* Hero Section */}
-            <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                style={{
-                    textAlign: 'center',
-                    padding: '60px 0 80px',
-                }}
-            >
-                <h1
-                    style={{
-                        fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-                        fontWeight: 800,
-                        marginBottom: '16px',
-                        background: 'var(--gradient-title)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                    }}
-                >
-                    Magetool
-                </h1>
-                <p
-                    style={{
-                        fontSize: '1.25rem',
-                        color: 'var(--text-secondary)',
-                        maxWidth: '600px',
-                        margin: '0 auto 32px',
-                    }}
-                >
-                    Enterprise-grade file conversion and manipulation. Fast, reliable, and completely free.
-                </p>
-                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <Link href="/images/converter" className="btn btn-primary">
-                        Start Converting
-                        <ArrowRight size={18} />
-                    </Link>
-                    <button
-                        onClick={() => setShowInstallModal(true)}
-                        className="btn btn-secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <Smartphone size={18} />
-                        Download App
-                    </button>
-                </div>
-            </motion.section>
+            <section style={{
+                position: 'relative',
+                minHeight: '90vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                paddingTop: '60px'
+            }}>
+                {/* Hero Background Glow */}
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '100%',
+                    maxWidth: '800px',
+                    height: '800px',
+                    background: 'radial-gradient(circle, rgba(var(--neon-blue-rgb), 0.15) 0%, transparent 70%)',
+                    filter: 'blur(80px)',
+                    zIndex: -1,
+                }} />
 
-            {/* Categories Grid */}
-            <section id="tools" style={{ paddingBottom: '80px' }}>
-                <h2
-                    style={{
-                        textAlign: 'center',
-                        marginBottom: '40px',
-                        fontSize: '1.75rem',
-                    }}
-                >
-                    Choose Your Category
-                </h2>
-                <div className="grid grid-cols-2" style={{ gap: '24px' }}>
-                    {categories.map((category, index) => {
-                        const Icon = category.icon;
-                        return (
-                            <motion.div
-                                key={category.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                            >
-                                <Link
-                                    href={category.href}
-                                    className="glass-card glass-card-hover"
-                                    style={{
-                                        display: 'block',
-                                        padding: '32px',
-                                        height: '100%',
-                                    }}
+                <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 16px',
+                            borderRadius: '99px',
+                            background: 'rgba(var(--neon-blue-rgb), 0.1)',
+                            border: '1px solid rgba(var(--neon-blue-rgb), 0.2)',
+                            color: 'var(--neon-blue)',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            marginBottom: '24px',
+                            boxShadow: '0 0 20px rgba(var(--neon-blue-rgb), 0.2)',
+                        }}>
+                            <Sparkles size={14} />
+                            <span>The Future of Online Tools is Here</span>
+                        </div>
+
+                        <h1 style={{
+                            fontSize: 'clamp(3rem, 8vw, 5rem)',
+                            lineHeight: 1.1,
+                            marginBottom: '24px',
+                            letterSpacing: '-0.02em',
+                        }}>
+                            <span className="text-gradient">Ultimate</span> <br />
+                            <span style={{ color: 'var(--text-primary)' }}>Creative Toolkit.</span>
+                        </h1>
+
+                        <p style={{
+                            fontSize: 'clamp(1.1rem, 2vw, 1.25rem)',
+                            color: 'var(--text-secondary)',
+                            maxWidth: '600px',
+                            margin: '0 auto 40px',
+                            lineHeight: 1.6
+                        }}>
+                            Magetool combines enterprise-grade power with stunning simplicity.
+                            Convert, edit, and create like a pro — completely free.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <Link href="/images/converter">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="btn btn-primary"
+                                    style={{ padding: '16px 32px', borderRadius: '16px', fontSize: '1.1rem' }}
                                 >
-                                    <div
-                                        style={{
-                                            width: '56px',
-                                            height: '56px',
-                                            borderRadius: '12px',
-                                            background: `rgba(var(${// @ts-ignore
-                                                category.rgbVar}), 0.1)`,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginBottom: '20px',
-                                        }}
-                                    >
-                                        <Icon size={28} color={category.color} />
-                                    </div>
-                                    <h3
-                                        style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 600,
-                                            marginBottom: '8px',
-                                            color: category.color,
-                                        }}
-                                    >
-                                        {category.title}
-                                    </h3>
-                                    <p
-                                        style={{
-                                            color: 'var(--text-secondary)',
-                                            marginBottom: '16px',
-                                            fontSize: '0.9rem',
-                                        }}
-                                    >
-                                        {category.description}
-                                    </p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                        {category.tools.map((tool) => (
-                                            <span
-                                                key={tool}
-                                                style={{
-                                                    fontSize: '0.75rem',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '4px',
-                                                    background: 'var(--bg-elevated)',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {tool}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        );
-                    })}
+                                    Start Creating <ArrowRight size={20} />
+                                </motion.button>
+                            </Link>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setShowInstallModal(true)}
+                                className="btn btn-secondary"
+                                style={{ padding: '16px 32px', borderRadius: '16px', fontSize: '1.1rem' }}
+                            >
+                                <Smartphone size={20} /> Get App
+                            </motion.button>
+                        </div>
+                    </motion.div>
                 </div>
+
+                {/* Floating Elements (Decorative) */}
+                <motion.div
+                    animate={{ y: [0, -20, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ position: 'absolute', top: '20%', left: '10%', opacity: 0.3, zIndex: 0 }}
+                >
+                    <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'linear-gradient(135deg, #FF0080, #7928CA)', transform: 'rotate(-15deg)' }} />
+                </motion.div>
+                <motion.div
+                    animate={{ y: [0, 25, 0] }}
+                    transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                    style={{ position: 'absolute', bottom: '20%', right: '10%', opacity: 0.3, zIndex: 0 }}
+                >
+                    <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'linear-gradient(135deg, #00D9FF, #0055FF)', transform: 'rotate(20deg)' }} />
+                </motion.div>
             </section>
 
-            {/* Ad Section - Between Categories and Features */}
-            <div style={{ padding: '40px 0' }}>
+            {/* Feature Stats / Trust Badges */}
+            <SectionWrapper>
+                <div className="container">
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '24px',
+                        background: 'var(--glass-bg)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '24px',
+                        padding: '32px',
+                        backdropFilter: 'blur(10px)',
+                    }}>
+                        {features.map((feature, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                    padding: '12px',
+                                    background: 'rgba(var(--accent-rgb), 0.05)',
+                                    borderRadius: '12px',
+                                    color: 'var(--neon-blue)'
+                                }}>
+                                    <feature.icon size={24} />
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>{feature.title}</h4>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{feature.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </SectionWrapper>
+
+            {/* Main Tools Grid */}
+            <SectionWrapper className="container" id="tools" delay={0.2}>
+                <div style={{ marginBottom: '80px', marginTop: '100px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                        <h2 className="tool-title" style={{ fontSize: '2.5rem', marginBottom: '16px' }}>
+                            Everything You Need.
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                            Four powerful suites. One magical platform.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2" style={{ gap: '32px' }}>
+                        {categories.map((cat, i) => (
+                            <Link key={cat.title} href={cat.href} style={{ textDecoration: 'none' }}>
+                                <PremiumCard
+                                    className="tool-card-hover"
+                                    hoverEffect={true}
+                                    delay={i * 0.1}
+                                >
+                                    <div style={{ padding: '40px', height: '100%', background: cat.gradient }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            marginBottom: '24px'
+                                        }}>
+                                            <div style={{
+                                                width: '64px',
+                                                height: '64px',
+                                                borderRadius: '16px',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                color: cat.color
+                                            }}>
+                                                <cat.icon size={32} />
+                                            </div>
+                                            <div style={{
+                                                padding: '8px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                color: 'var(--text-muted)'
+                                            }}>
+                                                <ArrowRight size={20} />
+                                            </div>
+                                        </div>
+
+                                        <h3 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                                            {cat.title}
+                                        </h3>
+                                        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', minHeight: '48px' }}>
+                                            {cat.description}
+                                        </p>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {cat.tools.map(tool => (
+                                                <span key={tool} style={{
+                                                    fontSize: '0.8rem',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '8px',
+                                                    background: 'rgba(0,0,0,0.2)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'var(--text-muted)'
+                                                }}>
+                                                    {tool}
+                                                </span>
+                                            ))}
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                padding: '6px 12px',
+                                                color: cat.color,
+                                                fontWeight: 600
+                                            }}>
+                                                + more
+                                            </span>
+                                        </div>
+                                    </div>
+                                </PremiumCard>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </SectionWrapper>
+
+            {/* Ad Slot */}
+            <div className="container" style={{ marginBottom: '100px' }}>
                 <AdSlot variant="horizontal" />
             </div>
 
-            {/* Features Section */}
-            <motion.section
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                style={{
-                    padding: '60px 0',
-                    borderTop: '1px solid var(--glass-border)',
-                }}
-            >
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '32px',
-                        textAlign: 'center',
-                    }}
-                >
-                    <div>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🚀</div>
-                        <h4 style={{ marginBottom: '8px' }}>Lightning Fast</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            Optimized processing for quick results
-                        </p>
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔒</div>
-                        <h4 style={{ marginBottom: '8px' }}>Secure & Private</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            Files are deleted automatically after processing
-                        </p>
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💎</div>
-                        <h4 style={{ marginBottom: '8px' }}>Premium Quality</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            Enterprise-grade output with no compromises
-                        </p>
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🆓</div>
-                        <h4 style={{ marginBottom: '8px' }}>Completely Free</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            No signup, no watermarks, no limits
-                        </p>
-                    </div>
-                </div>
-            </motion.section>
-
-            {/* Premium All-in-One Card Area */}
-            <motion.section
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                style={{ padding: '80px 0' }}
-            >
+            {/* Why Magetool? (Premium Layout) */}
+            <SectionWrapper className="container" delay={0.3}>
                 <div style={{
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '32px',
-                    padding: 'clamp(30px, 5vw, 60px)',
                     position: 'relative',
+                    borderRadius: '40px',
                     overflow: 'hidden',
-                    backdropFilter: 'blur(20px)',
+                    padding: '80px 40px',
+                    border: '1px solid var(--glass-border)',
+                    textAlign: 'center'
                 }}>
-                    {/* Background Decorative Elements */}
+                    {/* Background Mesh */}
                     <div style={{
-                        position: 'absolute', top: -100, right: -100, width: '400px', height: '400px',
-                        background: 'radial-gradient(circle, rgba(0,217,255,0.15) 0%, transparent 70%)',
-                        filter: 'blur(80px)', pointerEvents: 'none'
-                    }} />
-                    <div style={{
-                        position: 'absolute', bottom: -100, left: -100, width: '300px', height: '300px',
-                        background: 'radial-gradient(circle, rgba(255, 0, 128, 0.08) 0%, transparent 70%)',
-                        filter: 'blur(80px)', pointerEvents: 'none'
+                        position: 'absolute', inset: 0, zIndex: -1,
+                        background: 'linear-gradient(180deg, rgba(var(--neon-blue-rgb), 0.05) 0%, rgba(var(--neon-purple-rgb), 0.05) 100%)'
                     }} />
 
-                    <div className="card-grid">
-                        {/* Left Side: The Vision */}
-                        <div className="card-content">
-                            <span style={{
-                                display: 'inline-block',
-                                padding: '6px 16px',
-                                borderRadius: '20px',
-                                background: 'rgba(0, 217, 255, 0.1)',
-                                color: 'var(--neon-blue)',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                marginBottom: '24px'
-                            }}>
-                                ✨ The Magetool Promise
-                            </span>
-                            <h2 style={{
-                                fontSize: 'clamp(2rem, 4vw, 3rem)',
-                                fontWeight: 800,
-                                marginBottom: '24px',
-                                lineHeight: 1.1,
-                                background: 'var(--gradient-title)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
-                            }}>
-                                Your Complete<br />Media Toolkit
-                            </h2>
-                            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, maxWidth: '500px' }}>
-                                Magetool isn't just a website; it's your creative companion.
-                                We've packed enterprise-grade power into a beautiful, free dashboard
-                                that respects your privacy and fuels your workflow.
+                    <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '24px', color: 'var(--text-primary)' }}>
+                        Why Creators Choose <span style={{ color: 'var(--neon-blue)' }}>Magetool</span>
+                    </h2>
+                    <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 auto 60px' }}>
+                        We built Magetool because we were tired of tools that were ugly, slow, or expensive.
+                        We fixed all three.
+                    </p>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                        gap: '32px',
+                        textAlign: 'left'
+                    }}>
+                        <div className="glass-card" style={{ padding: '32px', background: 'rgba(255,255,255,0.02)' }}>
+                            <div style={{ marginBottom: '16px', color: 'var(--success)' }}><CheckCircle2 size={32} /></div>
+                            <h4 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px' }}>Privacy First</h4>
+                            <p style={{ color: 'var(--text-secondary)' }}>
+                                Most tools process files locally in your browser using WebAssembly.
+                                Server-side tasks delete files instantly after processing.
                             </p>
-                            <Link href="/images/editor" className="btn btn-primary" style={{ display: 'inline-flex', padding: '14px 32px', borderRadius: '12px' }}>
-                                Explore The Studio <ArrowRight size={20} style={{ marginLeft: 8 }} />
-                            </Link>
                         </div>
-
-                        {/* Right Side: The Features Stack */}
-                        <div className="features-stack">
-                            {/* Feature 1 */}
-                            <motion.div
-                                whileHover={{ scale: 1.02, x: 5 }}
-                                className="feature-card"
-                            >
-                                <div className="feature-icon icon-blue">
-                                    <Image size={24} />
-                                </div>
-                                <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Pixel Perfect</h4>
-                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>AI background removal, forensic analysis, and granular photo editing.</p>
-                                </div>
-                            </motion.div>
-
-                            {/* Feature 2 */}
-                            <motion.div
-                                whileHover={{ scale: 1.02, x: 5 }}
-                                className="feature-card"
-                            >
-                                <div className="feature-icon icon-gold">
-                                    <FileText size={24} />
-                                </div>
-                                <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Document Mastery</h4>
-                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Convert, merge, and split PDFs securely. Zero server uploads for max privacy.</p>
-                                </div>
-                            </motion.div>
-
-                            {/* Feature 3 */}
-                            <motion.div
-                                whileHover={{ scale: 1.02, x: 5 }}
-                                className="feature-card"
-                            >
-                                <div className="feature-icon icon-red">
-                                    <Video size={24} />
-                                </div>
-                                <div>
-                                    <h4 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>Media Studio</h4>
-                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Compress 4K videos, trim audio clips, and optimize content for social.</p>
-                                </div>
-                            </motion.div>
+                        <div className="glass-card" style={{ padding: '32px', background: 'rgba(255,255,255,0.02)' }}>
+                            <div style={{ marginBottom: '16px', color: 'var(--warning)' }}><Zap size={32} /></div>
+                            <h4 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px' }}>No Limits</h4>
+                            <p style={{ color: 'var(--text-secondary)' }}>
+                                Convert as many files as you want. No "3 FREE per day" paywalls here.
+                                We are supported by minimal, non-intrusive ads.
+                            </p>
+                        </div>
+                        <div className="glass-card" style={{ padding: '32px', background: 'rgba(255,255,255,0.02)' }}>
+                            <div style={{ marginBottom: '16px', color: 'var(--neon-blue)' }}><Cpu size={32} /></div>
+                            <h4 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px' }}>TopTier Technology</h4>
+                            <p style={{ color: 'var(--text-secondary)' }}>
+                                We use FFmpeg.wasm, TensorFlow.js, and specialized Rust microservices
+                                to deliver desktop-class performance.
+                            </p>
                         </div>
                     </div>
                 </div>
-
-                <style jsx>{`
-                    .card-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 80px;
-                        align-items: center;
-                    }
-                    
-                    .features-stack {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 24px;
-                    }
-
-                    .feature-card {
-                        background: var(--glass-bg);
-                        padding: 24px;
-                        border-radius: 24px;
-                        border: 1px solid var(--glass-border);
-                        display: flex;
-                        gap: 24px;
-                        align-items: center; /* Centered alignment looks cleaner */
-                        transition: all 0.3s ease;
-                    }
-
-                    .feature-icon {
-                        width: 56px;
-                        height: 56px;
-                        border-radius: 16px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        flex-shrink: 0;
-                    }
-
-                    .icon-blue { background: rgba(0, 217, 255, 0.1); color: var(--neon-blue); }
-                    .icon-gold { background: rgba(255, 215, 0, 0.1); color: #FFD700; }
-                    .icon-red { background: rgba(255, 107, 107, 0.1); color: #FF6B6B; }
-
-                    @media (max-width: 900px) {
-                        .card-grid {
-                            grid-template-columns: 1fr;
-                            gap: 48px;
-                        }
-                        .feature-card {
-                            padding: 20px;
-                            gap: 16px;
-                            align-items: flex-start;
-                        }
-                    }
-                `}</style>
-            </motion.section>
+            </SectionWrapper>
 
             <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
-        </div>
+
+            <style jsx global>{`
+                @media (max-width: 768px) {
+                    .grid-cols-2 {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .tool-title {
+                        font-size: 2rem !important;
+                    }
+                }
+            `}</style>
+        </>
     );
 }

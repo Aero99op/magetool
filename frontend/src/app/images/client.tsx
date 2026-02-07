@@ -1,14 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import {
     ImageIcon, Crop, Maximize, Camera, Grid, Eraser,
     Sparkles, ScanText, Droplets, FileImage, Palette,
-    LayoutGrid, Eye, Pen, Reply, Star, QrCode, Sliders
+    LayoutGrid, Eye, Pen, Reply, Star, QrCode, Sliders, PenTool
 } from 'lucide-react';
+import SectionWrapper from '@/components/ui/SectionWrapper';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const tools = [
+    { name: 'Design Studio', href: '/images/design-studio', icon: PenTool, description: 'Canva-like design editor with templates' },
     { name: 'Advanced Photo Editor', href: '/images/editor', icon: Sliders, description: 'Pro Editor: Filters, Collage, Adjustments' },
     { name: 'Format Converter', href: '/images/converter', icon: ImageIcon, description: 'Convert between JPG, PNG, WebP, etc.' },
     { name: 'Resizer', href: '/images/resizer', icon: Maximize, description: 'Resize to exact dimensions' },
@@ -32,68 +34,64 @@ const tools = [
 
 export default function ImagesPageClient() {
     return (
-        <div className="container" style={{ paddingTop: '40px', paddingBottom: '60px' }}>
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ textAlign: 'center', marginBottom: '48px' }}
-            >
-                <h1 className="tool-title">Image Tools</h1>
-                <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-                    Convert, resize, edit, and enhance your images with our powerful tools
+        <SectionWrapper className="container" style={{ paddingTop: '100px', paddingBottom: '80px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                <h1 className="tool-title">Image Lab</h1>
+                <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+                    The ultimate toolkit for your photos.
+                    AI-powered editing, conversion, and enhancement.
                 </p>
-            </motion.div>
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
                 {tools.map((tool, index) => {
                     const Icon = tool.icon;
                     return (
-                        <motion.div
-                            key={tool.name}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                        >
-                            <Link
-                                href={tool.href}
-                                className="glass-card glass-card-hover"
-                                style={{ display: 'block', padding: '20px', height: '100%' }}
+                        <Link key={tool.href} href={tool.href} style={{ textDecoration: 'none' }}>
+                            <PremiumCard
+                                delay={index * 0.05}
+                                style={{ height: '100%' }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                                     <div style={{
-                                        width: '44px',
-                                        height: '44px',
-                                        borderRadius: '10px',
+                                        width: '56px',
+                                        height: '56px',
+                                        borderRadius: '16px',
                                         background: 'rgba(0, 217, 255, 0.1)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
+                                        border: '1px solid rgba(0, 217, 255, 0.2)',
+                                        color: 'var(--neon-blue)'
                                     }}>
-                                        <Icon size={22} color="#00D9FF" />
+                                        <Icon size={28} />
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{tool.name}</span>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{tool.name}</h3>
                                             {tool.isAI && (
                                                 <span style={{
-                                                    fontSize: '0.6rem',
-                                                    fontWeight: 700,
-                                                    padding: '2px 5px',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    padding: '2px 6px',
                                                     background: 'rgba(0, 255, 255, 0.2)',
-                                                    borderRadius: '3px',
+                                                    borderRadius: '4px',
                                                     color: '#00FFFF',
+                                                    border: '1px solid rgba(0, 255, 255, 0.3)'
                                                 }}>AI</span>
                                             )}
                                         </div>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{tool.description}</p>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            {tool.description}
+                                        </p>
                                     </div>
                                 </div>
-                            </Link>
-                        </motion.div>
+                            </PremiumCard>
+                        </Link>
                     );
                 })}
             </div>
-        </div>
+        </SectionWrapper>
     );
 }

@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import {
     FileText, FilePlus, FileX, Archive, Lock,
     Unlock, Image, FileJson, Edit, Maximize, Shield
 } from 'lucide-react';
+import SectionWrapper from '@/components/ui/SectionWrapper';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const tools = [
     { name: 'Document Converter', href: '/documents/converter', icon: FileText, description: 'Convert between formats' },
@@ -23,56 +24,55 @@ const tools = [
 
 export default function DocumentsPageClient() {
     return (
-        <div className="container" style={{ paddingTop: '40px', paddingBottom: '60px' }}>
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{ textAlign: 'center', marginBottom: '48px' }}
-            >
-                <h1 className="tool-title">Document Tools</h1>
-                <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-                    Convert, merge, split, and manage your documents and PDFs
+        <SectionWrapper className="container" style={{ paddingTop: '100px', paddingBottom: '80px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+                <h1 className="tool-title" style={{
+                    backgroundImage: 'linear-gradient(135deg, #FFF, var(--text-secondary))'
+                }}>
+                    Document Center
+                </h1>
+                <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
+                    Securely manage your PDFs and documents.
+                    Merge, split, and convert without uploading to a server.
                 </p>
-            </motion.div>
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
                 {tools.map((tool, index) => {
                     const Icon = tool.icon;
                     return (
-                        <motion.div
-                            key={tool.name}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                        >
-                            <Link
-                                href={tool.href}
-                                className="glass-card glass-card-hover"
-                                style={{ display: 'block', padding: '20px', height: '100%' }}
+                        <Link key={tool.href} href={tool.href} style={{ textDecoration: 'none' }}>
+                            <PremiumCard
+                                delay={index * 0.05}
+                                style={{ height: '100%' }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                                     <div style={{
-                                        width: '44px',
-                                        height: '44px',
-                                        borderRadius: '10px',
+                                        width: '56px',
+                                        height: '56px',
+                                        borderRadius: '16px',
                                         background: 'var(--bg-elevated)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'var(--text-primary)'
                                     }}>
-                                        <Icon size={22} color="var(--text-primary)" />
+                                        <Icon size={28} />
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>{tool.name}</span>
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{tool.description}</p>
+                                    <div>
+                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>{tool.name}</h3>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            {tool.description}
+                                        </p>
                                     </div>
                                 </div>
-                            </Link>
-                        </motion.div>
+                            </PremiumCard>
+                        </Link>
                     );
                 })}
             </div>
-        </div>
+        </SectionWrapper>
     );
 }

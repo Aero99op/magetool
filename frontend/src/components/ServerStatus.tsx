@@ -146,15 +146,7 @@ export function ServerStatus() {
                 )}
             </AnimatePresence>
 
-            {/* Bottom Right Persistent Server Indicator */}
-            <div className="fixed bottom-6 right-6 z-40 pointer-events-none opacity-40 hover:opacity-100 transition-opacity">
-                <div className="bg-background/40 backdrop-blur-sm border border-border/20 rounded-lg px-3 py-1.5 flex items-center gap-2 text-[10px] font-medium tracking-wider uppercase text-foreground/50 border-white/5 shadow-sm">
-                    <div className={`w-1.5 h-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
-                    <span>Region: Global</span>
-                    <span className="opacity-20">|</span>
-                    <span>Provider: <span className="text-foreground/80">{activeServer}</span></span>
-                </div>
-            </div>
+
         </>
     );
 }

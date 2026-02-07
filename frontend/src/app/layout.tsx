@@ -6,6 +6,8 @@ import AppShell from '@/components/AppShell';
 
 import { ServerStatus } from '@/components/ServerStatus';
 import { WakeUpManager } from '@/components/WakeUpManager';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import MageBot from '@/components/MageBot';
 
 const inter = Inter({
     subsets: ['latin'],
@@ -95,9 +97,30 @@ export default function RootLayout({
                 />
             </head>
             <body>
+                {/* Theme initialization - runs before React to prevent flash */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            (function() {
+                                try {
+                                    var theme = localStorage.getItem('theme');
+                                    if (theme === 'light') {
+                                        document.documentElement.setAttribute('data-theme', 'light');
+                                    } else {
+                                        document.documentElement.setAttribute('data-theme', 'dark');
+                                    }
+                                    var anim = localStorage.getItem('animationsEnabled');
+                                    document.documentElement.setAttribute('data-animate', anim === 'false' ? 'off' : 'on');
+                                } catch (e) {}
+                            })();
+                        `,
+                    }}
+                />
                 <ServerStatus />
                 <WakeUpManager />
                 <JsonLd />
+                <AnimatedBackground />
+                <MageBot />
                 <AppShell>
                     {children}
                 </AppShell>
