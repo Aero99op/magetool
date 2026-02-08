@@ -435,6 +435,12 @@ textarea::placeholder {
   color: var(--text-muted);
 }
 
+/* Fix for dark mode dropdown options visibility */
+select option {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
