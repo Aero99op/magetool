@@ -1,12 +1,12 @@
 /**
- * Client-side Background Remover using Transformers.js
+ * Client-side Background Remover using Transformers.js (CDN version)
  * Uses RMBG-1.4 model - runs entirely in browser
  * No API key needed, FREE, works like remove.bg
  * 
- * IMPORTANT: This file uses dynamic imports to avoid SSR issues with onnxruntime
+ * Uses CDN loading to avoid Next.js static export bundling issues
  */
 
-// Type definitions for transformers.js
+// Type definitions
 interface TransformersModule {
     AutoModel: any;
     AutoProcessor: any;
@@ -15,7 +15,7 @@ interface TransformersModule {
 }
 
 // Cache for model and processor
-let transformers: TransformersModule | null = null;
+let transformersModule: TransformersModule | null = null;
 let model: any = null;
 let processor: any = null;
 let isLoading = false;
@@ -28,21 +28,22 @@ export interface BackgroundRemovalProgress {
 }
 
 /**
- * Dynamically load transformers.js (browser-only)
+ * Load Transformers.js from CDN (avoids bundling issues)
  */
-async function getTransformers(): Promise<TransformersModule> {
-    if (transformers) return transformers;
+async function loadTransformersFromCDN(): Promise<TransformersModule> {
+    if (transformersModule) return transformersModule;
 
-    // Dynamic import to avoid SSR issues with onnxruntime-node
-    const module = await import('@huggingface/transformers');
+    // Load from jsDelivr CDN
+    const cdnUrl = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.1';
+
+    // Dynamic import from CDN
+    const module = await import(/* webpackIgnore: true */ cdnUrl);
 
     // Configure for browser usage
     module.env.allowLocalModels = false;
     module.env.useBrowserCache = true;
-    // Force WASM backend (more compatible than WebGPU for now)
-    module.env.backends.onnx.wasm.numThreads = 1;
 
-    transformers = module;
+    transformersModule = module;
     return module;
 }
 
@@ -63,16 +64,16 @@ async function initializeModel(onProgress?: (p: BackgroundRemovalProgress) => vo
         try {
             onProgress?.({
                 stage: 'loading_model',
-                progress: 10,
-                message: 'Loading AI model (first time takes ~15-30s)...'
+                progress: 5,
+                message: 'Loading AI library...'
             });
 
-            const { AutoModel, AutoProcessor } = await getTransformers();
+            const { AutoModel, AutoProcessor } = await loadTransformersFromCDN();
 
             onProgress?.({
                 stage: 'loading_model',
                 progress: 15,
-                message: 'Downloading AI model...'
+                message: 'Downloading AI model (first time takes ~30s)...'
             });
 
             // Load the RMBG-1.4 model from HuggingFace
@@ -138,7 +139,7 @@ export async function removeBackground(
     const imageUrl = URL.createObjectURL(imageFile);
 
     try {
-        const { RawImage } = await getTransformers();
+        const { RawImage } = await loadTransformersFromCDN();
         const image = await RawImage.fromURL(imageUrl);
 
         onProgress?.({
@@ -234,7 +235,7 @@ export function isWebGPUAvailable(): boolean {
  */
 export function getEstimatedTime(): string {
     if (isWebGPUAvailable()) {
-        return '10-20 seconds';
+        return '15-30 seconds';
     }
-    return '20-45 seconds';
+    return '30-60 seconds';
 }
