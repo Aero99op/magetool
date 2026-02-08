@@ -22,6 +22,7 @@ import { wakeUpServers } from '@/lib/api';
 import InstallAppModal from '@/components/InstallAppModal';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 import PremiumCard from '@/components/ui/PremiumCard';
+import ToolsMarquee from '@/components/ui/ToolsMarquee';
 
 const categories = [
     {
@@ -221,6 +222,12 @@ export default function HomePage() {
                     </div>
                 </div>
             </SectionWrapper>
+
+            {/* Auto-Scrolling Tools Marquee */}
+            <ToolsMarquee
+                title="Popular Tools"
+                subtitle="Click any tool to get started instantly"
+            />
 
             {/* Main Tools Grid */}
             <SectionWrapper className="container" id="tools" delay={0.2}>
