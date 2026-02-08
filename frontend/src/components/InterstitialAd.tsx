@@ -86,14 +86,15 @@ export default function InterstitialAd({
                     padding: '20px',
                 }}
             >
-                {/* Header with Skip/Countdown */}
+                {/* Header with Skip/Countdown - Mobile-friendly positioning */}
                 <div style={{
                     position: 'absolute',
-                    top: '20px',
+                    top: 'max(80px, env(safe-area-inset-top, 20px) + 60px)', // Clear mobile browser header
                     right: '20px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px',
+                    zIndex: 10, // Above other elements in the modal
                 }}>
                     {!canSkip ? (
                         <div style={{
