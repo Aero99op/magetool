@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import OCRScannerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'OCR Scanner - Extract Text from Images | Magetool',
@@ -36,6 +38,7 @@ export default function OCRScannerPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <OCRScannerClient />
+            <ContentSection {...toolContent['image-ocr']} />
         </>
     );
 }

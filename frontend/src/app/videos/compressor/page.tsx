@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoCompressorClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video Compressor - Reduce Video Size Online | Magetool',
@@ -36,6 +38,7 @@ export default function VideoCompressorPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoCompressorClient />
+            <ContentSection {...toolContent['video-compressor']} />
         </>
     );
 }

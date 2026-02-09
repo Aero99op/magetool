@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import ImageSizeAdjusterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Reduce Image Size in KB/MB Online (Free) - Magetool',
@@ -12,5 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default function ImageSizeAdjusterPage() {
-    return <ImageSizeAdjusterClient />;
+    return (
+        <>
+            <ImageSizeAdjusterClient />
+            <ContentSection {...toolContent['image-size-adjuster']} />
+        </>
+    );
 }

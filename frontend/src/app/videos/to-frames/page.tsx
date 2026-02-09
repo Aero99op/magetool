@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoToFramesClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video to Frames - Extract Images from Video | Magetool',
@@ -36,6 +38,7 @@ export default function VideoToFramesPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoToFramesClient />
+            <ContentSection {...toolContent['video-to-frames']} />
         </>
     );
 }

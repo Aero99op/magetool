@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoTrimmerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video Trimmer - Cut Video Online | Magetool',
@@ -36,6 +38,7 @@ export default function VideoTrimmerPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoTrimmerClient />
+            <ContentSection {...toolContent['video-trimmer']} />
         </>
     );
 }

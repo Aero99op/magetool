@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import MuteVideoClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Mute Video - Remove Audio | Magetool',
@@ -36,6 +38,7 @@ export default function MuteVideoPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <MuteVideoClient />
+            <ContentSection {...toolContent['video-mute']} />
         </>
     );
 }

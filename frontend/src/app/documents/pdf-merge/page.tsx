@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import PDFMergeClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Merge PDF - Combine PDF Files Free Online | Magetool',
@@ -21,6 +23,7 @@ export const metadata: Metadata = {
         description: 'Merge multiple PDF files into one document. Arrange pages, combine PDFs instantly. No signup required.',
         url: 'https://magetool.in/documents/pdf-merge',
         type: 'website',
+        // type: 'website', // Duplicate key removed
     },
     twitter: {
         card: 'summary_large_image',
@@ -91,6 +94,7 @@ export default function PDFMergePage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
             />
             <PDFMergeClient />
+            <ContentSection {...toolContent['pdf-merge']} />
         </>
     );
 }

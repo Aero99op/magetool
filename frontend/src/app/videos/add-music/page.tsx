@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import AddMusicClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Add Music to Video - Merge Audio and Video | Magetool',
@@ -36,6 +38,7 @@ export default function AddMusicPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <AddMusicClient />
+            <ContentSection {...toolContent['video-add-music']} />
         </>
     );
 }

@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoToGifClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video to GIF Converter - Create Animated GIFs | Magetool',
@@ -36,6 +38,7 @@ export default function VideoToGifPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoToGifClient />
+            <ContentSection {...toolContent['video-to-gif']} />
         </>
     );
 }

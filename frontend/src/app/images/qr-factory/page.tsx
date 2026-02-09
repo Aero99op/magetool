@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import QRFactoryClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'QR Code Generator - Create Free Custom QR Codes | Magetool',
@@ -36,6 +38,7 @@ export default function QRFactoryPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <QRFactoryClient />
+            <ContentSection {...toolContent['qr-factory']} />
         </>
     );
 }

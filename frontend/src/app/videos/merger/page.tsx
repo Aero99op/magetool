@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoMergerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video Merger - Combine Videos Online | Magetool',
@@ -36,6 +38,7 @@ export default function VideoMergerPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoMergerClient />
+            <ContentSection {...toolContent['video-merger']} />
         </>
     );
 }

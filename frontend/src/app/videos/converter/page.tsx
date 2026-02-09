@@ -12,12 +12,15 @@ const jsonLd = { '@context': 'https://schema.org', '@type': 'SoftwareApplication
 
 // Keep original component as default export
 import VideoConverterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export default function VideoConverterPage() {
     return (
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <VideoConverterClient />
+            <ContentSection {...toolContent['video-converter']} />
         </>
     );
 }

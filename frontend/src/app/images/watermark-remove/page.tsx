@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import WatermarkRemoveClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'AI Watermark Remover - Remove Text from Images | Magetool',
@@ -36,6 +38,7 @@ export default function WatermarkRemovePage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <WatermarkRemoveClient />
+            <ContentSection {...toolContent['image-watermark-remove']} />
         </>
     );
 }

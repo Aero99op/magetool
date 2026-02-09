@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import BackgroundRemoverClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Remove Background - AI Background Remover Free Online | Magetool',
@@ -59,6 +61,7 @@ export default function BackgroundRemoverPage() {
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
             <BackgroundRemoverClient />
+            <ContentSection {...toolContent['image-background-remover']} />
         </>
     );
 }

@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import HashVerifierClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'File Hash Check - Verify File Integrity Online | Magetool',
@@ -36,6 +38,7 @@ export default function HashVerifierPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <HashVerifierClient />
+            <ContentSection {...toolContent['document-hash-verifier']} />
         </>
     );
 }

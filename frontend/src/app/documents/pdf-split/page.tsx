@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import PDFSplitClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Split PDF - Extract Pages from PDF Free Online | Magetool',
@@ -58,6 +60,7 @@ export default function PDFSplitPage() {
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
             <PDFSplitClient />
+            <ContentSection {...toolContent['pdf-split']} />
         </>
     );
 }

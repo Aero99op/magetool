@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import SongIdentifierClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Song Identifier - Identify Songs Online | Magetool',
@@ -36,6 +38,7 @@ export default function SongIdentifierPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <SongIdentifierClient />
+            <ContentSection {...toolContent['audio-identify']} />
         </>
     );
 }

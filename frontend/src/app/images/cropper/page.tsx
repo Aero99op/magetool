@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import ImageCropperClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Image Cropper - Crop Photos Free Online | Magetool',
@@ -16,6 +18,7 @@ export default function ImageCropperPage() {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <ImageCropperClient />
+            <ContentSection {...toolContent['image-cropper']} />
         </>
     );
 }

@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import ImageResizerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Image Resizer - Resize Images Free Online | Magetool',
@@ -16,6 +18,7 @@ export default function ImageResizerPage() {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <ImageResizerClient />
+            <ContentSection {...toolContent['image-resizer']} />
         </>
     );
 }

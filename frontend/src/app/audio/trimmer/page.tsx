@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import AudioTrimmerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Audio Trimmer - Cut MP3 Online | Magetool',
@@ -36,6 +38,7 @@ export default function AudioTrimmerPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <AudioTrimmerClient />
+            <ContentSection {...toolContent['audio-trimmer']} />
         </>
     );
 }

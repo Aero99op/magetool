@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import AIUpscalerClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'AI Image Upscaler - Enhance Photos Free Online | Magetool',
@@ -16,6 +18,7 @@ export default function AIUpscalerPage() {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <AIUpscalerClient />
+            <ContentSection {...toolContent['image-upscaler']} />
         </>
     );
 }

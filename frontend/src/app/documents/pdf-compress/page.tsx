@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import PDFCompressClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Compress PDF - Reduce PDF Size Online Free | Magetool',
@@ -36,6 +38,7 @@ export default function PDFCompressPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <PDFCompressClient />
+            <ContentSection {...toolContent['pdf-compress']} />
         </>
     );
 }

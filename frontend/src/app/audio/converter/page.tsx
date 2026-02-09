@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import AudioConverterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Audio Converter - MP3, WAV, AAC, FLAC | Magetool',
@@ -36,6 +38,7 @@ export default function AudioConverterPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <AudioConverterClient />
+            <ContentSection {...toolContent['audio-converter']} />
         </>
     );
 }

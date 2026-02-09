@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import DataConvertClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Data Converter - JSON to CSV, XML Converter | Magetool',
@@ -36,6 +38,7 @@ export default function DataConvertPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <DataConvertClient />
+            <ContentSection {...toolContent['document-data-converter']} />
         </>
     );
 }

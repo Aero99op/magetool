@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoRotateClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video Rotator - Rotate MP4 Video Online | Magetool',
@@ -36,6 +38,7 @@ export default function VideoRotatePage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoRotateClient />
+            <ContentSection {...toolContent['video-rotate']} />
         </>
     );
 }

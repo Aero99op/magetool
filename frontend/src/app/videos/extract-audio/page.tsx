@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import ExtractAudioClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Extract Audio from Video - Video to MP3 | Magetool',
@@ -36,6 +38,7 @@ export default function ExtractAudioPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <ExtractAudioClient />
+            <ContentSection {...toolContent['video-extract-audio']} />
         </>
     );
 }

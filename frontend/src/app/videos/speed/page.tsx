@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VideoSpeedClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Video Speed Changer - Slow Motion & Fast Forward | Magetool',
@@ -36,6 +38,7 @@ export default function VideoSpeedPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VideoSpeedClient />
+            <ContentSection {...toolContent['video-speed']} />
         </>
     );
 }

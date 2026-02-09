@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import BPMDetectorClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'BPM Detector - Song Tempo Finder | Magetool',
@@ -36,6 +38,7 @@ export default function BPMDetectorPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <BPMDetectorClient />
+            <ContentSection {...toolContent['audio-bpm']} />
         </>
     );
 }

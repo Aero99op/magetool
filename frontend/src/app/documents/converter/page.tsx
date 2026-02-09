@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import DocumentConverterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Document Converter - PDF to Word, DOCX Free Online | Magetool',
@@ -16,6 +18,7 @@ export default function DocumentConverterPage() {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <DocumentConverterClient />
+            <ContentSection {...toolContent['pdf-converter']} />
         </>
     );
 }

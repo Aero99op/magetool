@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import VolumeBoosterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Volume Booster - Increase MP3 Volume Online | Magetool',
@@ -36,6 +38,7 @@ export default function VolumeBoosterPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <VolumeBoosterClient />
+            <ContentSection {...toolContent['audio-volume']} />
         </>
     );
 }

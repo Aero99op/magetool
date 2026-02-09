@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import TextEditorClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Text Editor Online - Edit Text and Code Free | Magetool',
@@ -36,6 +38,7 @@ export default function TextEditorPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <TextEditorClient />
+            <ContentSection {...toolContent['document-text-editor']} />
         </>
     );
 }

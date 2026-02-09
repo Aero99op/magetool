@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import ToImageClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'PDF to Image Converter - Convert PDF to JPG, PNG | Magetool',
@@ -36,6 +38,7 @@ export default function ToImagePage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <ToImageClient />
+            <ContentSection {...toolContent['document-pdf-to-image']} />
         </>
     );
 }

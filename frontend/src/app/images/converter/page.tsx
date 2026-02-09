@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import ImageConverterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Image Converter - Convert PNG to JPG, WebP, GIF Free Online',
@@ -93,6 +95,7 @@ export default function ImageConverterPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
             />
             <ImageConverterClient />
+            <ContentSection {...toolContent['image-converter']} />
         </>
     );
 }

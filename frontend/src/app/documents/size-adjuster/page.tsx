@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import FileSizeAdjusterClient from './client';
+import ContentSection from '@/components/ui/ContentSection';
+import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
     title: 'Increase File Size - Change File Size in MB/KB | Magetool',
@@ -36,6 +38,7 @@ export default function FileSizeAdjusterPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
             <FileSizeAdjusterClient />
+            <ContentSection {...toolContent['document-size-adjuster']} />
         </>
     );
 }
