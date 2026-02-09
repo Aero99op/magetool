@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'magetool-cache-v2';
+const CACHE_NAME = 'magetool-cache-v4';
 const PRECACHE_URLS = [
     '/',
     '/manifest.json',

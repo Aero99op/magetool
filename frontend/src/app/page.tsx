@@ -341,7 +341,7 @@ export default function HomePage() {
                         Why Creators Choose <span style={{ color: 'var(--neon-blue)' }}>Magetool</span>
                     </h2>
                     <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 auto 60px' }}>
-                        We built Magetool because we were tired of tools that were ugly, slow, or expensive.
+                        We built Magetool because we were tired of tools that were cluttered, restrictive, or expensive.
                         We fixed all three.
                     </p>
 

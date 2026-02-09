@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import JsonLd from '@/components/JsonLd';
@@ -70,15 +70,21 @@ export const metadata: Metadata = {
         statusBarStyle: 'black-translucent',
         title: 'Magetool',
     },
-    viewport: {
-        width: 'device-width',
-        initialScale: 1,
-        maximumScale: 1,
-        userScalable: false, // Prevents zooming for native feel
-    },
     verification: {
         google: 'pHa0sLjbGcsWDSIVmIzmx8FMKYCYudi27qzVrMqTzIk',
     },
+};
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+    themeColor: [
+        { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+        { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    ],
 };
 
 export default function RootLayout({
