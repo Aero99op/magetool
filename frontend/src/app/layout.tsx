@@ -115,8 +115,15 @@ export default function RootLayout({
                                     } else {
                                         document.documentElement.setAttribute('data-theme', 'dark');
                                     }
+                                    
                                     var anim = localStorage.getItem('animationsEnabled');
                                     document.documentElement.setAttribute('data-animate', anim === 'false' ? 'off' : 'on');
+
+                                    var animLight = localStorage.getItem('animModeLight');
+                                    document.documentElement.setAttribute('data-anim-light', animLight || 'rain');
+
+                                    var animDark = localStorage.getItem('animModeDark');
+                                    document.documentElement.setAttribute('data-anim-dark', animDark || 'dataflow');
                                 } catch (e) {}
                             })();
                         `,

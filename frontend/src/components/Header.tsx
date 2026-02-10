@@ -19,8 +19,11 @@ import {
     Moon,
     Smartphone,
     Activity,
+    Settings,
+    Palette,
 } from 'lucide-react';
 import InstallAppModal from './InstallAppModal';
+import SettingsModal from '@/components/SettingsModal';
 import { useAppMode } from '@/hooks/useAppMode';
 
 interface NavItem {
@@ -127,6 +130,7 @@ export default function Header() {
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showInstallModal, setShowInstallModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [animationsEnabled, setAnimationsEnabled] = useState(true);
     const [scrolled, setScrolled] = useState(false);
@@ -423,7 +427,6 @@ export default function Header() {
                                 )}
                             </AnimatePresence>
                         </button>
-
                         {/* Animation Toggle */}
                         <button
                             onClick={() => {
@@ -432,7 +435,7 @@ export default function Header() {
                                 localStorage.setItem('animationsEnabled', String(newValue));
                                 document.documentElement.setAttribute('data-animate', newValue ? 'on' : 'off');
                             }}
-                            className="btn btn-ghost"
+                            className="btn btn-ghost desktop-only-action"
                             style={{
                                 padding: '10px',
                                 color: animationsEnabled ? 'var(--neon-green)' : 'var(--text-muted)',
@@ -443,9 +446,23 @@ export default function Header() {
                             {animationsEnabled ? <Activity size={20} /> : <Activity size={20} style={{ opacity: 0.5 }} />}
                         </button>
 
+                        {/* Visual Customization Button */}
+                        <button
+                            onClick={() => setShowSettingsModal(true)}
+                            className="btn btn-ghost desktop-only-action"
+                            style={{
+                                padding: '10px',
+                                color: 'var(--text-secondary)',
+                                borderRadius: '50%'
+                            }}
+                            title="Visual Customization"
+                        >
+                            <Palette size={20} />
+                        </button>
+
                         <Link
                             href="/support"
-                            className="btn btn-ghost"
+                            className="btn btn-ghost desktop-only-action"
                             style={{ padding: '10px', borderRadius: '50%' }}
                             title="Help & Support"
                         >
@@ -484,6 +501,7 @@ export default function Header() {
                 </div>
 
                 <InstallAppModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
+                <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
 
                 {/* Mobile Menu Overlay */}
                 <AnimatePresence>
@@ -528,6 +546,37 @@ export default function Header() {
                                 <Smartphone size={20} />
                                 Get App
                             </motion.button>
+
+                            {/* Mobile Actions Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
+                                <button
+                                    onClick={() => {
+                                        setMobileMenuOpen(false);
+                                        setShowSettingsModal(true);
+                                    }}
+                                    className="btn btn-secondary"
+                                    style={{ padding: '12px', fontSize: '0.9rem' }}
+                                >
+                                    <Palette size={18} /> Theme Settings
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const newValue = !animationsEnabled;
+                                        setAnimationsEnabled(newValue);
+                                        localStorage.setItem('animationsEnabled', String(newValue));
+                                        document.documentElement.setAttribute('data-animate', newValue ? 'on' : 'off');
+                                    }}
+                                    className="btn"
+                                    style={{
+                                        padding: '12px', fontSize: '0.9rem',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        color: animationsEnabled ? 'var(--neon-green)' : 'var(--text-muted)',
+                                        border: '1px solid var(--glass-border)'
+                                    }}
+                                >
+                                    <Activity size={18} /> {animationsEnabled ? 'Animations On' : 'Animations Off'}
+                                </button>
+                            </div>
 
                             {navItems.map((item, index) => {
                                 const Icon = item.icon;
@@ -607,7 +656,8 @@ export default function Header() {
                         display: none;
                     }
                     @media (max-width: 1024px) {
-                        .desktop-nav {
+                        .desktop-nav,
+                        .desktop-only-action {
                             display: none !important;
                         }
                         .mobile-menu-toggle {
