@@ -488,15 +488,13 @@ export default function Header() {
                         )}
 
                         {/* Mobile Menu Toggle */}
-                        {!isMobileApp && (
-                            <button
-                                className="btn btn-ghost mobile-menu-toggle"
-                                style={{ padding: '10px' }}
-                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            >
-                                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                            </button>
-                        )}
+                        <button
+                            className="btn btn-ghost mobile-menu-toggle"
+                            style={{ padding: '10px' }}
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
                     </div>
                 </div>
 

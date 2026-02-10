@@ -107,7 +107,7 @@ export default function AnimatedBackground() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isAnimating, setIsAnimating] = useState(true);
-    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains'>('dataflow');
+    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge'>('dataflow');
 
     // --- State Initialization ---
     useEffect(() => {
@@ -162,7 +162,8 @@ export default function AnimatedBackground() {
         // --- Collections ---
         // Data Flow (formerly Default Dark)
         let particlesDark: ParticleDark[] = [];
-        const particleCount = 50;
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 20 : 50;
         const connectionDistance = 150;
         const baseColorDark = 'rgba(0, 217, 255,';
 
@@ -172,7 +173,7 @@ export default function AnimatedBackground() {
         let lightnings: Lightning[] = [];
         const cloudCache: HTMLCanvasElement[] = [];
         const cloudTypeCount = 5;
-        const raindropCount = 120;
+        const raindropCount = isMobile ? 50 : 120;
         const cloudCount = 8;
         let stormDimLevel = 0;
         let nextLightningTime = Date.now() + Math.random() * 5000 + 3000;
@@ -180,12 +181,12 @@ export default function AnimatedBackground() {
         // Anime
         let speedLines: SpeedLine[] = [];
         let animeWords: FloatingWord[] = [];
-        const speedLineCount = 60;
+        const speedLineCount = isMobile ? 30 : 60;
 
         // Blackhole
         let blackholeParticles: BlackholeParticle[] = [];
         let blackholeWords: FloatingWord[] = [];
-        const blackholeParticleCount = 300;
+        const blackholeParticleCount = isMobile ? 100 : 300;
 
         // Circuit
         let circuitNodes: CircuitNode[] = [];
@@ -209,7 +210,7 @@ export default function AnimatedBackground() {
             swayOffset: number;
         }
         let jungleLeaves: JungleLeaf[] = [];
-        const jungleLeafCount = 60;
+        const jungleLeafCount = isMobile ? 30 : 60;
 
         // Mountain Types
         interface Mountain {
@@ -228,7 +229,7 @@ export default function AnimatedBackground() {
         }
         let mountains: Mountain[] = [];
         let snowParticles: SnowParticle[] = [];
-        const snowCount = 100;
+        const snowCount = isMobile ? 40 : 100;
 
         // Zen Types
         interface ZenBranch {
@@ -487,13 +488,8 @@ export default function AnimatedBackground() {
             });
         };
 
-        const init = () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
 
-            // Init Data Flow
+        const initDataFlow = () => {
             particlesDark = [];
             for (let i = 0; i < particleCount; i++) {
                 particlesDark.push({
@@ -505,8 +501,9 @@ export default function AnimatedBackground() {
                     color: `${baseColorDark} ${Math.random() * 0.3 + 0.1})`,
                 });
             }
+        };
 
-            // Init Rain
+        const initRain = () => {
             raindrops = [];
             for (let i = 0; i < raindropCount; i++) {
                 raindrops.push({
@@ -517,6 +514,7 @@ export default function AnimatedBackground() {
                     opacity: Math.random() * 0.2 + 0.1,
                 });
             }
+            // Only generate clouds if cache is empty
             if (cloudCache.length === 0) {
                 for (let i = 0; i < cloudTypeCount; i++) {
                     cloudCache.push(createCloudImage(400, 200));
@@ -533,8 +531,9 @@ export default function AnimatedBackground() {
                     typeIndex: Math.floor(Math.random() * cloudTypeCount)
                 });
             }
+        };
 
-            // Init Anime
+        const initAnime = () => {
             speedLines = [];
             for (let i = 0; i < speedLineCount; i++) {
                 speedLines.push({
@@ -547,8 +546,9 @@ export default function AnimatedBackground() {
                 });
             }
             animeWords = [];
+        };
 
-            // Init Blackhole
+        const initBlackhole = () => {
             blackholeParticles = [];
             for (let i = 0; i < blackholeParticleCount; i++) {
                 blackholeParticles.push({
@@ -561,8 +561,9 @@ export default function AnimatedBackground() {
                 });
             }
             blackholeWords = [];
+        };
 
-            // Init Circuit
+        const initCircuit = () => {
             const cols = Math.floor(width / 100);
             const rows = Math.floor(height / 100);
             circuitNodes = [];
@@ -584,7 +585,8 @@ export default function AnimatedBackground() {
 
             // Create Paths (orthogonal)
             const nodeCount = circuitNodes.length;
-            for (let i = 0; i < 40; i++) { // Create 40 paths
+            const pathCount = isMobile ? 20 : 40;
+            for (let i = 0; i < pathCount; i++) { // Create paths
                 if (nodeCount < 2) break;
                 const startNodeIdx = Math.floor(Math.random() * nodeCount);
                 const startNode = circuitNodes[startNodeIdx];
@@ -624,8 +626,9 @@ export default function AnimatedBackground() {
                     });
                 }
             });
+        };
 
-            // Init Netscape
+        const initNetscape = () => {
             netscapeLines = [];
             for (let i = 0; i < netscapeLineCount; i++) {
                 netscapeLines.push({
@@ -633,8 +636,9 @@ export default function AnimatedBackground() {
                     speed: 2
                 });
             }
+        };
 
-            // Init Jungle
+        const initJungle = () => {
             jungleLeaves = [];
             for (let i = 0; i < jungleLeafCount; i++) {
                 jungleLeaves.push({
@@ -648,12 +652,10 @@ export default function AnimatedBackground() {
                     swayOffset: Math.random() * Math.PI * 2
                 });
             }
+        };
 
-            // Init Mountains
+        const initMountains = () => {
             mountains = [];
-            // Back layer (slower, darker/lighter depending on theme, higher peaks)
-            // Front layer (faster, detailed)
-
             // Helper to create jagged mountain points
             const createMountainPoints = (yBase: number, complexity: number) => {
                 const points = [{ x: 0, y: height }]; // Start bottom left
@@ -681,7 +683,7 @@ export default function AnimatedBackground() {
 
             // Init Snow
             snowParticles = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < snowCount; i++) {
                 snowParticles.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
@@ -691,16 +693,18 @@ export default function AnimatedBackground() {
                     opacity: Math.random() * 0.5 + 0.3
                 });
             }
+        };
 
-            // Init Zen (Sakura/Spirit)
+        const initZen = () => {
             zenBranches = []; // Unused with cache
             zenPetals = [];
 
             // Generate Static Tree Cache
+            // Only regen if needed (check logic later, here we just regen)
             zenTreeCache = generateZenTree(width, height, theme === 'dark');
 
             // Generate Dynamic Petals/Spirits
-            const petalCount = 80;
+            const petalCount = isMobile ? 40 : 80;
             for (let i = 0; i < petalCount; i++) {
                 // Scatter around the "canopy" area
                 const theta = Math.random() * Math.PI * 2;
@@ -719,8 +723,9 @@ export default function AnimatedBackground() {
                     falling: Math.random() > 0.4 // 60% static leaves, 40% falling
                 });
             }
+        };
 
-            // Init Forge (Steam/Metal)
+        const initForge = () => {
             forgeGears = [];
             forgeSparks = [];
             forgeSteam = [];
@@ -762,6 +767,26 @@ export default function AnimatedBackground() {
             });
         };
 
+        const init = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            switch (activeMode) {
+                case 'dataflow': initDataFlow(); break;
+                case 'rain': initRain(); break;
+                case 'anime': initAnime(); break;
+                case 'blackhole': initBlackhole(); break;
+                case 'circuit': initCircuit(); break;
+                case 'netscape': initNetscape(); break;
+                case 'jungle': initJungle(); break;
+                case 'mountains': initMountains(); break;
+                case 'zen': initZen(); break;
+                case 'forge': initForge(); break;
+            }
+        };
+
         // --- Drawing Functions ---
 
         const drawLightning = (lightning: Lightning) => {
@@ -775,7 +800,7 @@ export default function AnimatedBackground() {
             ctx.strokeStyle = lightning.color;
             ctx.lineWidth = 4;
             ctx.shadowColor = lightning.glowColor;
-            ctx.shadowBlur = 50;
+            if (!isMobile) ctx.shadowBlur = 50;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
 
@@ -831,10 +856,12 @@ export default function AnimatedBackground() {
                         const dx = p.x - p2.x;
                         const dy = p.y - p2.y;
                         if (Math.abs(dx) > connectionDistance || Math.abs(dy) > connectionDistance) continue;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < connectionDistance) {
+                        const distSq = dx * dx + dy * dy;
+                        const connectionDistSq = connectionDistance * connectionDistance;
+                        if (distSq < connectionDistSq) {
                             ctx.beginPath();
                             const lineBase = theme === 'light' ? 'rgba(59, 130, 246,' : baseColorDark;
+                            const dist = Math.sqrt(distSq); // Need sqrt for opacity calculation, or approximate
                             ctx.strokeStyle = `${lineBase} ${0.15 - (dist / connectionDistance) * 0.15})`;
                             ctx.lineWidth = 1;
                             ctx.moveTo(p.x, p.y);
@@ -999,7 +1026,7 @@ export default function AnimatedBackground() {
 
             // Draw Blackhole Center
             // Glow
-            ctx.shadowBlur = 50;
+            if (!isMobile) ctx.shadowBlur = 50;
             ctx.shadowColor = theme === 'light' ? '#8b5cf6' : '#6d28d9'; // Slightly different purple
             ctx.fillStyle = theme === 'light' ? '#1e1b4b' : '#000000'; // Deep indigo instead of black for light mode hole
             ctx.beginPath();
@@ -1126,7 +1153,7 @@ export default function AnimatedBackground() {
                     const y = p1.y + (p2.y - p1.y) * segmentProgress;
 
                     ctx.shadowColor = signal.color;
-                    ctx.shadowBlur = 15;
+                    if (!isMobile) ctx.shadowBlur = 15;
                     ctx.fillStyle = signal.color;
                     ctx.beginPath();
                     ctx.arc(x, y, 4, 0, Math.PI * 2);
@@ -1180,7 +1207,7 @@ export default function AnimatedBackground() {
             const sunY = horizonY - 150;
 
             ctx.shadowColor = sunColor;
-            ctx.shadowBlur = 60;
+            if (!isMobile) ctx.shadowBlur = 60;
             const grad = ctx.createLinearGradient(centerX, sunY - 100, centerX, sunY + 100);
             grad.addColorStop(0, sunColor);
             grad.addColorStop(1, 'transparent');
@@ -1275,7 +1302,7 @@ export default function AnimatedBackground() {
                         const fx = (Math.sin(Date.now() * 0.001 + i) * width / 2) + width / 2;
                         const fy = (Math.cos(Date.now() * 0.002 + i) * height / 2) + height / 2;
                         ctx.shadowColor = fireflyColor;
-                        ctx.shadowBlur = 10;
+                        if (!isMobile) ctx.shadowBlur = 10;
                         ctx.fillStyle = fireflyColor;
                         ctx.beginPath();
                         ctx.arc(fx, fy, 2, 0, Math.PI * 2);
@@ -1365,7 +1392,7 @@ export default function AnimatedBackground() {
             // 2. Animate Dynamic Particles (Low Cost)
             // Batch shadow setting
             if (isDark) {
-                ctx.shadowBlur = 10;
+                if (!isMobile) ctx.shadowBlur = 10;
                 ctx.shadowColor = petalColor1;
             }
 
@@ -1526,13 +1553,27 @@ export default function AnimatedBackground() {
             animationFrameId = requestAnimationFrame(draw);
         };
 
+
+        const handleResize = () => {
+            if (!isAnimating) return;
+            init();
+            draw();
+        };
+
+        let resizeTimeout: NodeJS.Timeout;
+        const throttledResize = () => {
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(handleResize, 100);
+        };
+
         init();
-        window.addEventListener('resize', init);
+        window.addEventListener('resize', throttledResize);
         draw();
 
         return () => {
-            window.removeEventListener('resize', init);
+            window.removeEventListener('resize', throttledResize);
             cancelAnimationFrame(animationFrameId);
+            if (resizeTimeout) clearTimeout(resizeTimeout);
         };
     }, [theme, isAnimating, activeMode]);
 
