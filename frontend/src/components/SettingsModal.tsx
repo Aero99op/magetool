@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Monitor, Moon, Sun, Sparkles, Zap, Aperture, Activity, Check, Cpu, Grid } from 'lucide-react';
+import { X, Monitor, Moon, Sun, Sparkles, Zap, Aperture, Activity, Check, Cpu, Grid, Trees, Mountain, Flower2, Cog } from 'lucide-react';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type AnimationMode = 'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape';
+type AnimationMode = 'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge';
 type Theme = 'light' | 'dark';
+
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const [theme, setTheme] = useState<Theme>('dark');
@@ -206,6 +207,22 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             mode="netscape" current={animLight} onClick={handleLightAnimChange}
                                             label="Retro" desc="Horizon" icon={Grid} color="#f59e0b"
                                         />
+                                        <ModeButton
+                                            mode="jungle" current={animLight} onClick={handleLightAnimChange}
+                                            label="Jungle" desc="Nature" icon={Trees} color="#16a34a"
+                                        />
+                                        <ModeButton
+                                            mode="mountains" current={animLight} onClick={handleLightAnimChange}
+                                            label="Peaks" desc="Himalaya" icon={Mountain} color="#3b82f6"
+                                        />
+                                        <ModeButton
+                                            mode="zen" current={animLight} onClick={handleLightAnimChange}
+                                            label="Sakura" desc="Zen" icon={Flower2} color="#f472b6"
+                                        />
+                                        <ModeButton
+                                            mode="forge" current={animLight} onClick={handleLightAnimChange}
+                                            label="Steam" desc="Industry" icon={Cog} color="#d97706"
+                                        />
                                     </div>
                                 </div>
 
@@ -238,6 +255,22 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         <ModeButton
                                             mode="netscape" current={animDark} onClick={handleDarkAnimChange}
                                             label="Retro" desc="Vapor" icon={Grid} color="#d946ef"
+                                        />
+                                        <ModeButton
+                                            mode="jungle" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Forest" desc="Night" icon={Trees} color="#047857"
+                                        />
+                                        <ModeButton
+                                            mode="mountains" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Summit" desc="Aurora" icon={Mountain} color="#6366f1"
+                                        />
+                                        <ModeButton
+                                            mode="zen" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Spirit" desc="Energy" icon={Flower2} color="#e879f9"
+                                        />
+                                        <ModeButton
+                                            mode="forge" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Foundry" desc="Metal" icon={Cog} color="#94a3b8"
                                         />
                                     </div>
                                 </div>

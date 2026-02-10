@@ -107,7 +107,7 @@ export default function AnimatedBackground() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isAnimating, setIsAnimating] = useState(true);
-    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape'>('dataflow');
+    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains'>('dataflow');
 
     // --- State Initialization ---
     useEffect(() => {
@@ -197,7 +197,237 @@ export default function AnimatedBackground() {
         const netscapeLineCount = 20; // Horizontal lines
         let netscapeOffset = 0;
 
+        // Jungle Types
+        interface JungleLeaf {
+            x: number;
+            y: number;
+            size: number;
+            angle: number;
+            speed: number;
+            type: 0 | 1 | 2; // Different leaf shapes
+            color: string;
+            swayOffset: number;
+        }
+        let jungleLeaves: JungleLeaf[] = [];
+        const jungleLeafCount = 60;
+
+        // Mountain Types
+        interface Mountain {
+            points: { x: number, y: number }[];
+            color: string;
+            speed: number; // For parallax
+            z: number; // Depth 0-1
+        }
+        interface SnowParticle {
+            x: number;
+            y: number;
+            r: number;
+            speedY: number;
+            speedX: number;
+            opacity: number;
+        }
+        let mountains: Mountain[] = [];
+        let snowParticles: SnowParticle[] = [];
+        const snowCount = 100;
+
+        // Zen Types
+        interface ZenBranch {
+            startX: number;
+            startY: number;
+            endX: number;
+            endY: number;
+            thickness: number;
+            depth: number;
+            color: string;
+        }
+        interface ZenPetal {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            rotation: number;
+            size: number;
+            color: string;
+            falling: boolean;
+        }
+        let zenBranches: ZenBranch[] = [];
+        let zenPetals: ZenPetal[] = [];
+        let zenTreeCache: HTMLCanvasElement | null = null;
+
+        // Forge Types
+        interface ForgeGear {
+            x: number;
+            y: number;
+            radius: number;
+            teeth: number;
+            speed: number;
+            angle: number;
+            color: string; // Base color
+            cache: HTMLCanvasElement; // Cached sprite
+        }
+        interface ForgeSpark {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            life: number;
+            maxLife: number;
+            color: string;
+        }
+        interface ForgeSteam {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            size: number;
+            opacity: number;
+        }
+
+        let forgeGears: ForgeGear[] = [];
+        let forgeSparks: ForgeSpark[] = [];
+        let forgeSteam: ForgeSteam[] = [];
+
         // --- Helpers ---
+        const generateZenTree = (w: number, h: number, isDark: boolean): HTMLCanvasElement => {
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            const cCtx = c.getContext('2d');
+            if (!cCtx) return c;
+
+            // Gradient for trunk
+            const trunkGrad = cCtx.createLinearGradient(w / 2 - 50, h, w / 2 + 50, h);
+            if (isDark) {
+                trunkGrad.addColorStop(0, '#2e1065'); // Deep purple
+                trunkGrad.addColorStop(0.5, '#4c1d95'); // Violet
+                trunkGrad.addColorStop(1, '#0f172a'); // Black-blue
+            } else {
+                trunkGrad.addColorStop(0, '#3f2c22'); // Dark brown
+                trunkGrad.addColorStop(0.5, '#5d4037'); // Medium brown
+                trunkGrad.addColorStop(1, '#271c19'); // Darker brown
+            }
+
+            // Recursive Draw with High Detail
+            const drawBranch = (x: number, y: number, angle: number, length: number, thickness: number, depth: number) => {
+                cCtx.save();
+                cCtx.translate(x, y);
+                cCtx.rotate(angle);
+
+                // Draw segment
+                cCtx.fillStyle = depth >= 10 ? trunkGrad : (isDark ? '#4c1d95' : '#5d4037');
+                // Tapering width
+                const endThickness = thickness * 0.7;
+
+                cCtx.beginPath();
+                cCtx.moveTo(-thickness / 2, 0);
+                cCtx.lineTo(thickness / 2, 0);
+                cCtx.lineTo(endThickness / 2, -length);
+                cCtx.lineTo(-endThickness / 2, -length);
+                cCtx.fill();
+
+                // Glow for Dark Mode (only on main branches to saveperf)
+                if (isDark && depth > 8) {
+                    cCtx.shadowBlur = 20;
+                    cCtx.shadowColor = '#d8b4fe'; // Lavender glow
+                }
+
+                if (depth > 0) {
+                    // Sub-branches
+                    const num = Math.floor(Math.random() * 2) + 2; // 2-3 branches
+                    for (let i = 0; i < num; i++) {
+                        // Random spread
+                        const spread = (Math.random() - 0.5) * 1.2; // Wide spread
+                        const newLen = length * (0.7 + Math.random() * 0.2);
+                        const newThick = endThickness;
+
+                        // Limit recursion based on detail needs vs perf of generation
+                        // We are offline rendering, so we can go deep.
+                        if (newThick > 1) {
+                            drawBranch(0, -length, spread, newLen, newThick, depth - 1);
+                        }
+                    }
+                }
+                cCtx.restore();
+            };
+
+            // Start massive tree from bottom center
+            // Initial Length: height * 0.15
+            // Initial Thickness: 40
+            drawBranch(w / 2, h, 0, h * 0.18, 50, 12);
+
+            return c;
+        };
+
+        const createGearSprite = (radius: number, teeth: number, isDark: boolean): HTMLCanvasElement => {
+            const c = document.createElement('canvas');
+            const size = radius * 2 + 20; // Padding
+            c.width = size;
+            c.height = size;
+            const ctx = c.getContext('2d');
+            if (!ctx) return c;
+
+            const cx = size / 2;
+            const cy = size / 2;
+
+            // Gradient
+            const grad = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius);
+            if (isDark) {
+                // Iron/Steel
+                grad.addColorStop(0, '#94a3b8'); // Slate 400
+                grad.addColorStop(0.5, '#475569'); // Slate 600
+                grad.addColorStop(1, '#1e293b'); // Slate 800
+            } else {
+                // Brass/Gold
+                grad.addColorStop(0, '#fcd34d'); // Amber 300
+                grad.addColorStop(0.5, '#d97706'); // Amber 600
+                grad.addColorStop(1, '#78350f'); // Amber 900
+            }
+
+            ctx.translate(cx, cy);
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = isDark ? '#0f172a' : '#451a03';
+            ctx.lineWidth = 2;
+
+            // Draw Gear Shape
+            ctx.beginPath();
+            const outerRadius = radius;
+            const innerRadius = radius * 0.85;
+            const holeRadius = radius * 0.3;
+
+            for (let i = 0; i < teeth * 2; i++) {
+                const angle = (Math.PI * 2 * i) / (teeth * 2);
+                const r = (i % 2 === 0) ? outerRadius : innerRadius;
+                ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Inner Hole (Transparent? No, filled with background usually, but here we want it see-through? 
+            // Actually, gears have holes. Let's composite 'destination-out' to punch a hole.)
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(0, 0, holeRadius, 0, Math.PI * 2, false);
+            ctx.fill();
+
+            // Restore for rivets
+            ctx.globalCompositeOperation = 'source-over';
+
+            // Rivets
+            ctx.fillStyle = isDark ? '#cbd5e1' : '#fef3c7';
+            const rivetCount = 5;
+            for (let i = 0; i < rivetCount; i++) {
+                const angle = (Math.PI * 2 * i) / rivetCount;
+                const rx = Math.cos(angle) * (radius * 0.6);
+                const ry = Math.sin(angle) * (radius * 0.6);
+                ctx.beginPath();
+                ctx.arc(rx, ry, radius * 0.05, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return c;
+        };
+
         const createCloudImage = (w: number, h: number): HTMLCanvasElement => {
             const c = document.createElement('canvas');
             c.width = w + 60;
@@ -403,6 +633,133 @@ export default function AnimatedBackground() {
                     speed: 2
                 });
             }
+
+            // Init Jungle
+            jungleLeaves = [];
+            for (let i = 0; i < jungleLeafCount; i++) {
+                jungleLeaves.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 10 + 5,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 0.5 + 0.2, // Falling slow
+                    type: Math.floor(Math.random() * 3) as 0 | 1 | 2,
+                    color: '', // Set in draw
+                    swayOffset: Math.random() * Math.PI * 2
+                });
+            }
+
+            // Init Mountains
+            mountains = [];
+            // Back layer (slower, darker/lighter depending on theme, higher peaks)
+            // Front layer (faster, detailed)
+
+            // Helper to create jagged mountain points
+            const createMountainPoints = (yBase: number, complexity: number) => {
+                const points = [{ x: 0, y: height }]; // Start bottom left
+                const steps = Math.ceil(width / (50 / complexity));
+                let currX = 0;
+                let currY = yBase;
+                for (let i = 0; i < steps; i++) {
+                    currX += width / steps;
+                    currY = yBase + (Math.random() - 0.5) * (100 / complexity);
+                    points.push({ x: currX, y: currY });
+                }
+                points.push({ x: width, y: height }); // End bottom right
+                return points;
+            };
+
+            // 3 Layers
+            for (let layer = 0; layer < 3; layer++) {
+                mountains.push({
+                    points: createMountainPoints(height * (0.5 + layer * 0.15), 1.5 - layer * 0.3),
+                    color: '', // Set inside draw based on theme/layer
+                    speed: (layer + 1) * 0.2,
+                    z: layer
+                });
+            }
+
+            // Init Snow
+            snowParticles = [];
+            for (let i = 0; i < 100; i++) {
+                snowParticles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    speedY: Math.random() * 2 + 1,
+                    speedX: (Math.random() - 0.5) * 1,
+                    r: Math.random() * 2 + 1,
+                    opacity: Math.random() * 0.5 + 0.3
+                });
+            }
+
+            // Init Zen (Sakura/Spirit)
+            zenBranches = []; // Unused with cache
+            zenPetals = [];
+
+            // Generate Static Tree Cache
+            zenTreeCache = generateZenTree(width, height, theme === 'dark');
+
+            // Generate Dynamic Petals/Spirits
+            const petalCount = 80;
+            for (let i = 0; i < petalCount; i++) {
+                // Scatter around the "canopy" area
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.sqrt(Math.random()); // Uniform disk
+                const rx = width * 0.4 * r;
+                const ry = height * 0.35 * r;
+
+                zenPetals.push({
+                    x: (width / 2) + rx * Math.cos(theta),
+                    y: (height * 0.4) + ry * Math.sin(theta),
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: Math.random() * 0.5 + 0.2, // Slow fall
+                    rotation: Math.random() * Math.PI * 2,
+                    size: Math.random() * 5 + 3,
+                    color: '', // Set in draw
+                    falling: Math.random() > 0.4 // 60% static leaves, 40% falling
+                });
+            }
+
+            // Init Forge (Steam/Metal)
+            forgeGears = [];
+            forgeSparks = [];
+            forgeSteam = [];
+            const isDark = theme === 'dark';
+
+            // Gear Configurations (Static composition for stability)
+            // 1. Top Left Giant
+            forgeGears.push({
+                x: 0, y: 0,
+                radius: 180, teeth: 24, speed: 0.002, angle: 0, color: '',
+                cache: createGearSprite(180, 24, isDark)
+            });
+            // 2. Connector to Top Left
+            forgeGears.push({
+                x: 180 + 90, y: 40,
+                radius: 100, teeth: 12, speed: -0.0036, angle: 0.2, color: '',
+                cache: createGearSprite(100, 12, isDark)
+            });
+
+            // 3. Bottom Right Giant
+            forgeGears.push({
+                x: width, y: height,
+                radius: 220, teeth: 30, speed: -0.0015, angle: 0, color: '',
+                cache: createGearSprite(220, 30, isDark)
+            });
+
+            // 4. Bottom Left Medium
+            forgeGears.push({
+                x: 0, y: height,
+                radius: 140, teeth: 18, speed: 0.0025, angle: 0, color: '',
+                cache: createGearSprite(140, 18, isDark)
+            });
+
+            // 5. Floating small one (Top Right ish)
+            forgeGears.push({
+                x: width - 50, y: 100,
+                radius: 60, teeth: 8, speed: 0.01, angle: 0, color: '',
+                cache: createGearSprite(60, 8, isDark)
+            });
         };
 
         // --- Drawing Functions ---
@@ -842,6 +1199,305 @@ export default function AnimatedBackground() {
             ctx.fillStyle = bottomGrad;
             ctx.fillRect(0, horizonY, width, height - horizonY);
         };
+
+        // THIS IS DANGEROUS without seeing the file content exactly.
+        // Let's use the END of drawNetscape as a target.
+
+        // Re-reading previous file view (Step 385)... drawNetscape ends around line 800+ ? 
+        // No, step 385 was truncated before drawNetscape finished.
+        // I should read the file again to find a good insertion point.
+        // Or I can insert before 'const draw = () => {' which is safe.
+
+        // Let's Insert BEFORE Main Draw Loop.
+        const drawJungle = () => {
+            // Colors
+            const leafColorsLight = ['#4ade80', '#22c55e', '#16a34a']; // Green-400/500/600
+            const leafColorsDark = ['#064e3b', '#065f46', '#047857']; // Emerald-900/800/700
+            const fireflyColor = '#facc15'; // Yellow
+
+            // Draw "Vines" or "Trees" (Static background shapes)
+            // Just simple procedural trees for depth
+            const trunkColor = theme === 'light' ? '#78350f' : '#3f2c22'; // Brown
+
+            // Draw some static trees first
+            ctx.fillStyle = trunkColor;
+            // Left Tree
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            ctx.lineTo(100, height);
+            ctx.lineTo(50, 0);
+            ctx.lineTo(0, 0);
+            ctx.fill();
+            // Right tree (thinner)
+            ctx.beginPath();
+            ctx.moveTo(width, height);
+            ctx.lineTo(width - 60, height);
+            ctx.lineTo(width - 40, 0);
+            ctx.lineTo(width, 0);
+            ctx.fill();
+
+            // Floating Leaves/Spores
+            jungleLeaves.forEach(leaf => {
+                if (isAnimating) {
+                    leaf.y += leaf.speed;
+                    leaf.x += Math.sin(leaf.y * 0.01 + leaf.swayOffset) * 0.5;
+                    leaf.angle += 0.01;
+
+                    if (leaf.y > height) {
+                        leaf.y = -20;
+                        leaf.x = Math.random() * width;
+                    }
+                }
+
+                ctx.save();
+                ctx.translate(leaf.x, leaf.y);
+                ctx.rotate(leaf.angle);
+
+                const colors = theme === 'light' ? leafColorsLight : leafColorsDark;
+                ctx.fillStyle = colors[leaf.type];
+
+                // Draw simple leaf shape
+                ctx.beginPath();
+                ctx.ellipse(0, 0, leaf.size, leaf.size / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Fireflies (Dark mode only usually, but visible as specks in light)
+            if (theme === 'dark') {
+                if (Math.random() > 0.95) {
+                    // Flicker
+                }
+                jungleLeaves.forEach((_, i) => { // Reuse loop count for fireflies, but separate entities ideally. 
+                    // Let's just draw random fireflies based on math to save memory
+                    // Use a few dedicated indices
+                    if (i < 20) {
+                        const fx = (Math.sin(Date.now() * 0.001 + i) * width / 2) + width / 2;
+                        const fy = (Math.cos(Date.now() * 0.002 + i) * height / 2) + height / 2;
+                        ctx.shadowColor = fireflyColor;
+                        ctx.shadowBlur = 10;
+                        ctx.fillStyle = fireflyColor;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                });
+            }
+        };
+
+        const drawMountains = () => {
+            // Sky gradient handled by CSS variable
+
+            // Draw Mountains (Parallax)
+            mountains.forEach((mtn, idx) => {
+                const parallaxX = (Date.now() * mtn.speed * 0.05) % width;
+
+                ctx.save();
+                // Determine color based on depth
+                // Light: Blueish/White. Dark: Dark Blue/Black
+                let color;
+                if (theme === 'light') {
+                    color = idx === 0 ? '#cbd5e1' : (idx === 1 ? '#94a3b8' : '#64748b'); // Slate 300/400/500
+                } else {
+                    color = idx === 0 ? '#1e293b' : (idx === 1 ? '#0f172a' : '#020617'); // Slate 800/900/950
+                }
+                ctx.fillStyle = color;
+
+                // Draw shape twice for loop
+                [0, 1].forEach(offset => {
+                    ctx.translate(offset * width - parallaxX, 0);
+                    ctx.beginPath();
+                    ctx.moveTo(mtn.points[0].x, mtn.points[0].y);
+                    for (let p of mtn.points) ctx.lineTo(p.x, p.y);
+                    ctx.fill();
+                    ctx.translate(-(offset * width - parallaxX), 0); // Reset
+                });
+                ctx.restore();
+            });
+
+            // Snow
+            ctx.fillStyle = 'white';
+            snowParticles.forEach(p => {
+                if (isAnimating) {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    if (p.y > height) {
+                        p.y = -5;
+                        p.x = Math.random() * width;
+                    }
+                }
+                ctx.globalAlpha = p.opacity;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Human Silhouette (Tiny hiker)
+            // Only draw if mountains are tall enough/visible
+            const hikerX = width * 0.7;
+            const hikerY = height - 50; // Approximated ground
+
+            ctx.fillStyle = theme === 'light' ? '#000' : '#000';
+            // Head
+            ctx.beginPath(); ctx.arc(hikerX, hikerY - 20, 3, 0, Math.PI * 2); ctx.fill();
+            // Body
+            ctx.fillRect(hikerX - 2, hikerY - 20, 4, 12);
+            // Legs
+            ctx.beginPath(); ctx.moveTo(hikerX, hikerY - 8); ctx.lineTo(hikerX - 4, hikerY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(hikerX, hikerY - 8); ctx.lineTo(hikerX + 4, hikerY); ctx.stroke();
+            // Walking Stick
+            ctx.beginPath(); ctx.moveTo(hikerX + 4, hikerY - 12); ctx.lineTo(hikerX + 8, hikerY); ctx.strokeStyle = theme === 'light' ? '#555' : '#888'; ctx.stroke();
+        };
+
+        const drawZen = () => {
+            // Colors
+            const isDark = theme === 'dark';
+            const petalColor1 = isDark ? '#e879f9' : '#fbcfe8';
+            const petalColor2 = isDark ? '#22d3ee' : '#f472b6';
+
+            // 1. Draw Cached Static Tree (Zero Cost)
+            if (zenTreeCache) {
+                ctx.drawImage(zenTreeCache, 0, 0);
+            }
+
+            // 2. Animate Dynamic Particles (Low Cost)
+            // Batch shadow setting
+            if (isDark) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = petalColor1;
+            }
+
+            const time = Date.now() * 0.001;
+
+            zenPetals.forEach(p => {
+                if (isAnimating) {
+                    if (p.falling) {
+                        p.y += p.vy;
+                        p.x += p.vx + Math.sin(time * 2 + p.rotation) * 0.5;
+                        p.rotation += 0.02;
+                        if (p.y > height) {
+                            p.y = -10;
+                            // Reset to top canopy
+                            const theta = Math.random() * Math.PI; // Top semi-circle approximation
+                            const r = Math.random();
+                            p.x = width / 2 + (Math.random() - 0.5) * width * 0.6;
+                        }
+                    } else {
+                        // Static leaves sway with tree
+                        p.x += Math.sin(time) * 0.1;
+                    }
+                }
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+
+                ctx.fillStyle = p.falling ? (p.vx > 0 ? petalColor1 : petalColor2) : petalColor1;
+
+                // Simpler shape: Ellipse-like using arc or simple curve
+                ctx.beginPath();
+                const s = p.size;
+                ctx.ellipse(0, 0, s, s / 1.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+            ctx.shadowBlur = 0;
+        };
+
+        const drawForge = () => {
+            const isDark = theme === 'dark';
+            const sparkColor = isDark ? '#f59e0b' : '#c2410c'; // Amber vs Dark Orange
+
+            // 1. Draw Gears
+            forgeGears.forEach(gear => {
+                if (isAnimating) gear.angle += gear.speed;
+
+                ctx.save();
+                ctx.translate(gear.x, gear.y);
+                ctx.rotate(gear.angle);
+                // Draw cached sprite centered
+                const size = gear.radius * 2 + 20;
+                ctx.drawImage(gear.cache, -size / 2, -size / 2);
+                ctx.restore();
+
+                // Chance to spawn spark from this gear
+                if (isAnimating && Math.random() > 0.97) {
+                    forgeSparks.push({
+                        x: gear.x + (Math.random() - 0.5) * gear.radius,
+                        y: gear.y + (Math.random() - 0.5) * gear.radius,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4,
+                        life: 1.0,
+                        maxLife: 1.0,
+                        color: sparkColor
+                    });
+                }
+            });
+
+            // 2. Draw Sparks
+            // optimization: remove 'lighter' composite mode for performance
+            // ctx.globalCompositeOperation = 'lighter'; 
+            for (let i = forgeSparks.length - 1; i >= 0; i--) {
+                const s = forgeSparks[i];
+                if (isAnimating) {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.vy += 0.2; // Gravity
+                    s.life -= 0.02;
+                }
+
+                if (s.life <= 0) {
+                    forgeSparks.splice(i, 1);
+                    continue;
+                }
+
+                ctx.globalAlpha = s.life;
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
+
+            // 3. Draw Steam (Rising smoke)
+            if (isAnimating && Math.random() > 0.97) {
+                forgeSteam.push({
+                    x: Math.random() * width,
+                    y: height + 20,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: -Math.random() * 1 - 0.5,
+                    size: Math.random() * 30 + 20,
+                    opacity: 0.4
+                });
+            }
+
+            const steamColor = isDark ? '255, 255, 255' : '100, 116, 139'; // White vs Slate
+
+            for (let i = forgeSteam.length - 1; i >= 0; i--) {
+                const s = forgeSteam[i];
+                if (isAnimating) {
+                    s.y += s.vy;
+                    s.x += s.vx;
+                    s.size += 0.1;
+                    s.opacity -= 0.002;
+                }
+
+                if (s.opacity <= 0) {
+                    forgeSteam.splice(i, 1);
+                    continue;
+                }
+
+                ctx.fillStyle = `rgba(${steamColor}, ${s.opacity})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        };
+
         const draw = () => {
             ctx.clearRect(0, 0, width, height);
 
@@ -857,6 +1513,14 @@ export default function AnimatedBackground() {
                 drawCircuit();
             } else if (activeMode === 'netscape') {
                 drawNetscape();
+            } else if (activeMode === 'jungle') {
+                drawJungle();
+            } else if (activeMode === 'mountains') {
+                drawMountains();
+            } else if (activeMode === 'zen') {
+                drawZen();
+            } else if (activeMode === 'forge') {
+                drawForge();
             }
 
             animationFrameId = requestAnimationFrame(draw);

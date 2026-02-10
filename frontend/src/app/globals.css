@@ -103,6 +103,12 @@
   /* Slate 100 */
   --bg-card: rgba(255, 255, 255, 0.75);
 
+  --bg-anim-circuit: #f1f5f9;
+  --bg-anim-netscape: #fff7ed;
+  --bg-anim-jungle: #ecfccb;
+  --bg-anim-mountains: linear-gradient(to bottom, #bae6fd, #e0f2fe);
+  --bg-anim-zen: linear-gradient(to bottom, #fdf2f8, #fce7f3);
+
   /* Text Colors */
   --text-primary: #0F172A;
   /* Slate 900 - Sharp Black */
