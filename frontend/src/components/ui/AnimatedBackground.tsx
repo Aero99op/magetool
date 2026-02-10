@@ -873,40 +873,7 @@ export default function AnimatedBackground() {
     }, [theme, isAnimating, activeMode]);
 
     // --- Dynamic Background CSS ---
-    // This allows the canvas to sit on top of a base color which matches the mode
-    const getBackgroundStyle = () => {
-        // Debug
-        // console.log('Background Calc:', { activeMode, theme });
-
-        if (activeMode === 'anime') {
-            return theme === 'light' ? '#ffffff' : '#000000';
-        }
-        if (activeMode === 'blackhole') {
-            return theme === 'light' ? '#f0f9ff' : '#000000';
-        }
-        if (activeMode === 'rain') {
-            // Dark rain needs a dark background
-            return theme === 'light'
-                ? 'linear-gradient(180deg, #94a3b8 0%, #cbd5e1 50%, #f1f5f9 100%)'
-                : 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%)';
-        }
-        // dataflow
-        if (activeMode === 'dataflow') {
-            return theme === 'light'
-                ? '#ffffff' // Pure white
-                : 'radial-gradient(circle at 50% 0%, #111113 0%, #030304 100%)';
-        }
-        if (activeMode === 'circuit') {
-            return theme === 'light' ? '#f1f5f9' : '#0f172a'; // Slate backgrounds
-        }
-        if (activeMode === 'netscape') {
-            return theme === 'light' ? '#fff7ed' : '#1a0b2e'; // Warm white or deep purple
-        }
-
-        // Fallback checks
-        if (theme === 'light') return '#ffffff';
-        return '#000000';
-    };
+    // Moved to CSS variables in globals.css for instant theme switching
 
     return (
         <canvas
@@ -919,7 +886,7 @@ export default function AnimatedBackground() {
                 height: '100vh',
                 zIndex: -1,
                 pointerEvents: 'none',
-                background: getBackgroundStyle(),
+                background: `var(--bg-anim-${activeMode})`,
                 transition: 'background 0.5s ease-in-out'
             }}
         />
