@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Monitor, Moon, Sun, Sparkles, Zap, Aperture, Activity, Check, Cpu, Grid, Trees, Mountain, Flower2, Cog } from 'lucide-react';
+import { X, Monitor, Moon, Sun, Sparkles, Zap, Aperture, Activity, Check, Cpu, Grid, Trees, Mountain, Flower2, Cog, Ship, Plane, Diamond, Droplets, Bug, TrainFront } from 'lucide-react';
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type AnimationMode = 'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge';
+type AnimationMode = 'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge' | 'seaside' | 'galactic' | 'planes' | 'kites' | 'ink' | 'spiderweb' | 'vande-bharat';
 type Theme = 'light' | 'dark';
 
 
@@ -223,6 +223,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             mode="forge" current={animLight} onClick={handleLightAnimChange}
                                             label="Steam" desc="Industry" icon={Cog} color="#d97706"
                                         />
+                                        <ModeButton
+                                            mode="seaside" current={animLight} onClick={handleLightAnimChange}
+                                            label="Seaside" desc="Travel" icon={Ship} color="#0ea5e9"
+                                        />
+                                        <ModeButton
+                                            mode="galactic" current={animLight} onClick={handleLightAnimChange}
+                                            label="Galactic" desc="Space" icon={Sparkles} color="#6d28d9"
+                                        />
+                                        <ModeButton
+                                            mode="planes" current={animLight} onClick={handleLightAnimChange}
+                                            label="Planes" desc="Paper" icon={Plane} color="#94a3b8"
+                                        />
+                                        <ModeButton
+                                            mode="kites" current={animLight} onClick={handleLightAnimChange}
+                                            label="Kites" desc="Festival" icon={Diamond} color="#ef4444"
+                                        />
+                                        <ModeButton
+                                            mode="ink" current={animLight} onClick={handleLightAnimChange}
+                                            label="Ink" desc="Flow" icon={Droplets} color="#ec4899"
+                                        />
+                                        <ModeButton
+                                            mode="spiderweb" current={animLight} onClick={handleLightAnimChange}
+                                            label="Web" desc="Connect" icon={Bug} color="#64748b"
+                                        />
+                                        <ModeButton
+                                            mode="vande-bharat" current={animLight} onClick={handleLightAnimChange}
+                                            label="Vande Bharat" desc="Train" icon={TrainFront} color="#2563eb"
+                                        />
                                     </div>
                                 </div>
 
@@ -271,6 +299,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                         <ModeButton
                                             mode="forge" current={animDark} onClick={handleDarkAnimChange}
                                             label="Foundry" desc="Metal" icon={Cog} color="#94a3b8"
+                                        />
+                                        <ModeButton
+                                            mode="seaside" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Coast" desc="Night" icon={Ship} color="#1e293b"
+                                        />
+                                        <ModeButton
+                                            mode="galactic" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Galactic" desc="Space" icon={Sparkles} color="#4c1d95"
+                                        />
+                                        <ModeButton
+                                            mode="planes" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Planes" desc="Flight" icon={Plane} color="#cbd5e1"
+                                        />
+                                        <ModeButton
+                                            mode="kites" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Kites" desc="Sky" icon={Diamond} color="#f87171"
+                                        />
+                                        <ModeButton
+                                            mode="ink" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Ink" desc="Fluid" icon={Droplets} color="#db2777"
+                                        />
+                                        <ModeButton
+                                            mode="spiderweb" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Web" desc="Network" icon={Bug} color="#94a3b8"
+                                        />
+                                        <ModeButton
+                                            mode="vande-bharat" current={animDark} onClick={handleDarkAnimChange}
+                                            label="Vande Bharat" desc="Journey" icon={TrainFront} color="#ea580c"
                                         />
                                     </div>
                                 </div>

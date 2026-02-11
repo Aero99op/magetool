@@ -107,7 +107,8 @@ export default function AnimatedBackground() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isAnimating, setIsAnimating] = useState(true);
-    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge'>('dataflow');
+    const [activeMode, setActiveMode] = useState<'rain' | 'dataflow' | 'anime' | 'blackhole' | 'circuit' | 'netscape' | 'jungle' | 'mountains' | 'zen' | 'forge' | 'seaside' | 'galactic' | 'planes' | 'kites' | 'ink' | 'spiderweb' | 'vande-bharat'>('dataflow');
+    const mousePos = useRef({ x: 0, y: 0 });
 
     // --- State Initialization ---
     useEffect(() => {
@@ -146,7 +147,15 @@ export default function AnimatedBackground() {
             attributeFilter: ['data-theme', 'data-animate', 'data-anim-light', 'data-anim-dark']
         });
 
-        return () => observer.disconnect();
+        const handleMouseMove = (e: MouseEvent) => {
+            mousePos.current = { x: e.clientX, y: e.clientY };
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
     }, []);
 
     useEffect(() => {
@@ -287,6 +296,160 @@ export default function AnimatedBackground() {
         let forgeGears: ForgeGear[] = [];
         let forgeSparks: ForgeSpark[] = [];
         let forgeSteam: ForgeSteam[] = [];
+
+        // Seaside Types
+        interface SeasideWave {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+            speed: number;
+            amplitude: number;
+            phase: number;
+            color: string;
+            layer: number; // 0=far, 1=mid, 2=close
+        }
+
+        interface SeasideBird {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            size: number;
+            wingPhase: number;
+            flapSpeed: number;
+            type: 'gull' | 'generic';
+        }
+
+        interface SeasideStar {
+            x: number;
+            y: number;
+            size: number;
+            brightness: number;
+            twinkleSpeed: number;
+            phase: number;
+        }
+
+        let seasideWaves: SeasideWave[] = [];
+        let seasideBirds: SeasideBird[] = [];
+        let seasideStars: SeasideStar[] = [];
+        let seasideTravelerImg: HTMLImageElement | null = null;
+        let seasideBgDayImg: HTMLImageElement | null = null;
+        let seasideBgNightImg: HTMLImageElement | null = null;
+
+        // Galactic Types
+        interface GalacticStar {
+            x: number;
+            y: number;
+            size: number;
+            brightness: number;
+            twinkleSpeed: number;
+            phase: number;
+            layer: 0 | 1; // 0=far, 1=near
+        }
+
+        interface GalacticNebula {
+            x: number;
+            y: number;
+            size: number;
+            color: string;
+            opacity: number;
+            driftX: number;
+            driftY: number;
+        }
+
+        interface ShootingStar {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            length: number;
+            opacity: number;
+            active: boolean;
+        }
+
+        let galacticStars: GalacticStar[] = [];
+        let galacticNebulae: GalacticNebula[] = [];
+        let shootingStars: ShootingStar[] = [];
+
+        // Paper Planes Types
+        interface PaperPlane {
+            x: number;
+            y: number;
+            z: number; // Scale/Speed factor
+            vx: number;
+            vy: number;
+            angle: number;
+            turnSpeed: number;
+            color: string;
+            trail: { x: number, y: number }[];
+        }
+        let planes: PaperPlane[] = [];
+
+        // Kites Types
+        interface Kite {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            angle: number;
+            swaySpeed: number;
+            swayOffset: number;
+            color: string;
+            stringLength: number;
+            cut: boolean; // if true, falls rapidly
+        }
+        let kites: Kite[] = [];
+
+        // Ink Drop Types
+        interface InkDrop {
+            x: number;
+            y: number;
+            r: number;
+            color: string;
+            opacity: number;
+            growthRate: number;
+        }
+        let inkDrops: InkDrop[] = [];
+
+        // Spiderweb Types
+        interface WebNode {
+            x: number;
+            y: number;
+            vx: number;
+            vy: number;
+            baseX: number;
+            baseY: number;
+        }
+        let webNodes: WebNode[] = [];
+
+        // Vande Bharat Types
+        interface TrainCar {
+            x: number;
+            type: 'engine' | 'coach';
+            windows: { x: number, width: number, lit: boolean }[];
+        }
+        interface CityBuilding {
+            x: number;
+            width: number;
+            height: number;
+            layer: 0 | 1 | 2; // 0=far, 2=close
+            type: 'modern' | 'commercial' | 'apartment' | 'tower';
+            windows: { x: number, y: number, w: number, h: number }[];
+            details?: { x: number, y: number, w: number, h: number, color: string }[];
+        }
+        interface PowerLine {
+            x: number; // Pole position
+            bird?: { y: number, flyAway: boolean, vx: number, vy: number };
+        }
+
+        let vbTrain: TrainCar[] = [];
+        let vbBuildings: CityBuilding[] = [];
+        let vbPowerLines: PowerLine[] = [];
+        let vbTime = 0; // 0 to 1 for day/night cycle
+        let vbTrackOffset = 0;
+
+
 
         // --- Helpers ---
         const generateZenTree = (w: number, h: number, isDark: boolean): HTMLCanvasElement => {
@@ -767,6 +930,256 @@ export default function AnimatedBackground() {
             });
         };
 
+        const initSeaside = () => {
+            // Load Images if not loaded
+            if (!seasideTravelerImg) {
+                seasideTravelerImg = new Image();
+                seasideTravelerImg.src = '/assets/seaside/traveler.png'; // Placeholder path
+            }
+            if (!seasideBgDayImg) {
+                seasideBgDayImg = new Image();
+                seasideBgDayImg.src = '/assets/seaside/bg_day.png';
+            }
+            if (!seasideBgNightImg) {
+                seasideBgNightImg = new Image();
+                seasideBgNightImg.src = '/assets/seaside/bg_night.png';
+            }
+
+            // Init Waves
+            seasideWaves = [];
+            const waveCount = 5;
+            for (let i = 0; i < waveCount; i++) {
+                seasideWaves.push({
+                    x: 0,
+                    y: height * (0.6 + i * 0.08), // Start at 60% height
+                    width: width,
+                    height: height * 0.2,
+                    speed: 0.02 + i * 0.01,
+                    amplitude: 10 + i * 5,
+                    phase: Math.random() * Math.PI * 2,
+                    color: '', // Set in draw
+                    layer: i
+                });
+            }
+
+            // Init Birds (Day) or Stars (Night)
+            seasideBirds = [];
+            if (theme === 'light') {
+                for (let i = 0; i < 8; i++) {
+                    seasideBirds.push({
+                        x: Math.random() * width,
+                        y: Math.random() * (height * 0.4),
+                        vx: (Math.random() * 1 + 0.5) * (Math.random() > 0.5 ? 1 : -1),
+                        vy: (Math.random() - 0.5) * 0.2,
+                        size: Math.random() * 5 + 5,
+                        wingPhase: Math.random() * Math.PI * 2,
+                        flapSpeed: 0.1 + Math.random() * 0.1,
+                        type: 'gull'
+                    });
+                }
+            }
+
+            seasideStars = [];
+            if (theme === 'dark') {
+                for (let i = 0; i < 100; i++) {
+                    seasideStars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * (height * 0.6), // Top 60%
+                        size: Math.random() * 2 + 0.5,
+                        brightness: Math.random(),
+                        twinkleSpeed: 0.01 + Math.random() * 0.02,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+        };
+
+        const initGalactic = () => {
+            galacticStars = [];
+            const starCount = isMobile ? 100 : 300;
+            for (let i = 0; i < starCount; i++) {
+                galacticStars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5 + 0.5,
+                    brightness: Math.random(),
+                    twinkleSpeed: Math.random() * 0.03 + 0.01,
+                    phase: Math.random() * Math.PI * 2,
+                    layer: Math.random() > 0.8 ? 1 : 0
+                });
+            }
+
+            galacticNebulae = [];
+            const nebulaCount = 4;
+            const colors = ['#4c1d95', '#be185d', '#1e3a8a', '#0f766e']; // Deep Purple, Pink, Blue, Teal
+            for (let i = 0; i < nebulaCount; i++) {
+                galacticNebulae.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.max(width, height) * (0.4 + Math.random() * 0.4),
+                    color: colors[i % colors.length],
+                    opacity: 0.1 + Math.random() * 0.1,
+                    driftX: (Math.random() - 0.5) * 0.05,
+                    driftY: (Math.random() - 0.5) * 0.05
+                });
+            }
+
+            shootingStars = [];
+        };
+
+        const initPlanes = () => {
+            planes = [];
+            const planeCount = isMobile ? 15 : 30;
+            for (let i = 0; i < planeCount; i++) {
+                const z = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
+                planes.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    z,
+                    vx: (Math.random() * 2 + 1) * z,
+                    vy: (Math.random() * 1 - 0.5) * z,
+                    angle: 0,
+                    turnSpeed: (Math.random() - 0.5) * 0.02,
+                    color: i % 3 === 0 ? '#e2e8f0' : '#f8fafc', // Slate 200/50
+                    trail: []
+                });
+            }
+        };
+
+        const initKites = () => {
+            kites = [];
+            const kiteCount = isMobile ? 12 : 25;
+            const colors = ['#ef4444', '#f59e0b', '#84cc16', '#06b6d4', '#8b5cf6', '#ec4899']; // Red, Amber, Lime, Cyan, Violet, Pink
+
+            for (let i = 0; i < kiteCount; i++) {
+                kites.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height * 0.6, // Top 60%
+                    vx: 0,
+                    vy: 0,
+                    angle: -Math.PI / 4, // Tilted
+                    swaySpeed: Math.random() * 0.02 + 0.01,
+                    swayOffset: Math.random() * Math.PI * 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    stringLength: Math.random() * 100 + 50,
+                    cut: false
+                });
+            }
+        };
+
+        const initInk = () => {
+            inkDrops = [];
+            // Start with one
+            spawnInkDrop();
+        };
+
+        const initSpiderweb = () => {
+            webNodes = [];
+            const cols = Math.ceil(width / 80);
+            const rows = Math.ceil(height / 80);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = c * 80 + (Math.random() - 0.5) * 40;
+                    const y = r * 80 + (Math.random() - 0.5) * 40;
+                    webNodes.push({
+                        x, y,
+                        vx: 0, vy: 0,
+                        baseX: x, baseY: y
+                    });
+                }
+            }
+        };
+
+        const initVandeBharat = () => {
+            vbTrain = [];
+            // Engine + 3 Coaches
+            // Engine at front (Right side)
+            const startX = width * 0.6;
+            vbTrain.push({ x: startX, type: 'engine', windows: [{ x: 20, width: 40, lit: true }] });
+
+            // Coaches trailing behind (Left side)
+            for (let i = 1; i <= 3; i++) {
+                vbTrain.push({
+                    x: startX - i * 155, type: 'coach', windows: [
+                        { x: 10, width: 30, lit: true }, { x: 50, width: 30, lit: true }, { x: 90, width: 30, lit: true }
+                    ]
+                });
+            }
+
+            vbBuildings = [];
+            // Optimization: Reduce layers on mobile
+            const layerCount = isMobile ? 2 : 3;
+
+            for (let l = 0; l < layerCount; l++) {
+                let cx = 0;
+                while (cx < width * 2) {
+                    const w = 60 + Math.random() * 120;
+                    const h = 100 + Math.random() * 250 + l * 80;
+
+                    const types: CityBuilding['type'][] = ['modern', 'commercial', 'apartment', 'tower'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+
+                    // Init windows based on type
+                    const wins: { x: number, y: number, w: number, h: number }[] = [];
+                    const details: { x: number, y: number, w: number, h: number, color: string }[] = [];
+
+                    if (type === 'modern') {
+                        // strips of glass
+                        for (let wy = 10; wy < h; wy += 30) {
+                            wins.push({ x: 5, y: wy, w: w - 10, h: 20 });
+                        }
+                    } else if (type === 'commercial') {
+                        // Grid
+                        for (let wy = 10; wy < h - 10; wy += 25) {
+                            for (let wx = 10; wx < w - 10; wx += 25) {
+                                if (Math.random() > 0.2) wins.push({ x: wx, y: wy, w: 15, h: 15 });
+                            }
+                        }
+                    } else if (type === 'apartment') {
+                        // Balconies + Windows
+                        for (let wy = 20; wy < h - 20; wy += 40) {
+                            for (let wx = 10; wx < w - 20; wx += 30) {
+                                wins.push({ x: wx + 5, y: wy, w: 10, h: 15 }); // door/window
+                                details.push({ x: wx, y: wy + 15, w: 20, h: 5, color: '#333' }); // balcony
+                            }
+                        }
+                    } else {
+                        // Tower - vertical lines
+                        for (let wx = 10; wx < w - 10; wx += 15) {
+                            wins.push({ x: wx, y: 10, w: 5, h: h - 20 });
+                        }
+                    }
+
+                    vbBuildings.push({
+                        x: cx,
+                        width: w,
+                        height: h,
+                        layer: l as 0 | 1 | 2,
+                        type: type,
+                        windows: wins,
+                        details: details
+                    });
+                    cx += w + (Math.random() * 30 - 5);
+                }
+            }
+
+            // Maglev - No overhead wires
+            vbPowerLines = [];
+            vbTime = 0; // Start at Day
+        };
+
+        const spawnInkDrop = () => {
+            const colors = ['#ec4899', '#8b5cf6', '#3b82f6', '#14b8a6', '#f59e0b']; // Pink, Violet, Blue, Teal, Amber
+            inkDrops.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                r: 0,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                opacity: 0.8 + Math.random() * 0.2,
+                growthRate: Math.random() * 2 + 1
+            });
+        };
+
         const init = () => {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -784,6 +1197,13 @@ export default function AnimatedBackground() {
                 case 'mountains': initMountains(); break;
                 case 'zen': initZen(); break;
                 case 'forge': initForge(); break;
+                case 'seaside': initSeaside(); break;
+                case 'galactic': initGalactic(); break;
+                case 'planes': initPlanes(); break;
+                case 'kites': initKites(); break;
+                case 'ink': initInk(); break;
+                case 'spiderweb': initSpiderweb(); break;
+                case 'vande-bharat': initVandeBharat(); break;
             }
         };
 
@@ -1525,6 +1945,872 @@ export default function AnimatedBackground() {
             }
         };
 
+
+        const drawSeaside = () => {
+            const isDark = theme === 'dark';
+
+            // 1. Draw Background
+            const bgImg = isDark ? seasideBgNightImg : seasideBgDayImg;
+            if (bgImg && bgImg.complete) {
+                // Cover behavior
+                const ratio = Math.max(width / bgImg.width, height / bgImg.height);
+                const w = bgImg.width * ratio;
+                const h = bgImg.height * ratio;
+                const x = (width - w) / 2;
+                const y = (height - h) / 2;
+                ctx.drawImage(bgImg, x, y, w, h);
+            } else {
+                // Fallback gradient if image not loaded
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                if (isDark) {
+                    grad.addColorStop(0, '#0f172a'); // sky
+                    grad.addColorStop(0.6, '#1e293b'); // horizon
+                    grad.addColorStop(1, '#0f172a'); // sea
+                } else {
+                    grad.addColorStop(0, '#38bdf8'); // sky
+                    grad.addColorStop(0.6, '#bae6fd'); // horizon
+                    grad.addColorStop(1, '#0ea5e9'); // sea
+                }
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            // 2. Stars (Night)
+            if (isDark) {
+                ctx.fillStyle = 'white';
+                seasideStars.forEach(star => {
+                    if (isAnimating) {
+                        star.phase += star.twinkleSpeed;
+                        star.brightness = 0.5 + Math.sin(star.phase) * 0.5;
+                    }
+                    ctx.globalAlpha = star.brightness;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            // 3. Waves (Procedural sine waves for "Lively" feel over static bg)
+            const waveColor = isDark ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.3)';
+
+            seasideWaves.forEach(wave => {
+                if (isAnimating) {
+                    wave.phase += wave.speed;
+                }
+
+                ctx.fillStyle = waveColor;
+                ctx.beginPath();
+                ctx.moveTo(0, height);
+
+                for (let x = 0; x <= width; x += 10) {
+                    const y = wave.y + Math.sin(x * 0.01 + wave.phase) * wave.amplitude;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(width, height);
+                ctx.lineTo(0, height);
+                ctx.fill();
+            });
+
+            // 4. Traveler
+            if (seasideTravelerImg && seasideTravelerImg.complete && seasideTravelerImg.naturalWidth > 0) {
+                // Calculate position: Center bottom, quite large
+                // Let's make him stand "near seaside"
+                const scale = Math.min(width, height) * 0.0008; // responsive scale
+                const tW = seasideTravelerImg.width * scale;
+                const tH = seasideTravelerImg.height * scale;
+                const tX = width / 2 - tW / 2;
+                const tY = height - tH * 0.95; // Slightly cut off bottom for depth or full footing
+
+                // Breathing animation
+                const breathY = isAnimating ? Math.sin(Date.now() * 0.002) * 5 : 0;
+
+                ctx.save();
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 10;
+                ctx.drawImage(seasideTravelerImg, tX, tY + breathY, tW, tH);
+                ctx.restore();
+            }
+
+            // 5. Birds (Day)
+            if (!isDark) {
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                seasideBirds.forEach(bird => {
+                    if (isAnimating) {
+                        bird.x += bird.vx;
+                        bird.y += bird.vy;
+                        bird.wingPhase += bird.flapSpeed;
+
+                        if (bird.x > width + 20) bird.x = -20;
+                        if (bird.x < -20) bird.x = width + 20;
+                    }
+
+                    const wingY = Math.sin(bird.wingPhase) * 5;
+                    ctx.beginPath();
+                    ctx.moveTo(bird.x - bird.size, bird.y + wingY);
+                    ctx.quadraticCurveTo(bird.x, bird.y - 5, bird.x + bird.size, bird.y + wingY);
+                    ctx.stroke();
+                });
+            }
+        };
+
+        const drawGalactic = () => {
+            // Deep Space Background
+            const bgGrad = ctx.createRadialGradient(width / 2, height / 2, width * 0.2, width / 2, height / 2, width * 1.5);
+            bgGrad.addColorStop(0, '#1e1b4b'); // Indigo 950
+            bgGrad.addColorStop(0.5, '#0f172a'); // Slate 900
+            bgGrad.addColorStop(1, '#020617'); // Slate 950
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // Nebulae
+            galacticNebulae.forEach(neb => {
+                if (isAnimating) {
+                    neb.x += neb.driftX;
+                    neb.y += neb.driftY;
+                    if (neb.x > width + neb.size) neb.x = -neb.size;
+                    if (neb.x < -neb.size) neb.x = width + neb.size;
+                    if (neb.y > height + neb.size) neb.y = -neb.size;
+                    if (neb.y < -neb.size) neb.y = height + neb.size;
+                }
+                ctx.save();
+                ctx.globalAlpha = neb.opacity;
+                ctx.fillStyle = neb.color;
+                ctx.filter = 'blur(60px)';
+                ctx.beginPath();
+                ctx.arc(neb.x, neb.y, neb.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Stars
+            ctx.fillStyle = 'white';
+            galacticStars.forEach(star => {
+                if (isAnimating) {
+                    star.phase += star.twinkleSpeed;
+                    star.brightness = 0.5 + Math.sin(star.phase) * 0.5;
+                }
+                ctx.globalAlpha = star.layer === 1 ? star.brightness : star.brightness * 0.5;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Shooting Stars
+            if (isAnimating && Math.random() > 0.98 && shootingStars.length < 3) {
+                shootingStars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height * 0.5,
+                    vx: (Math.random() - 0.5) * 10 + 5, // Fast
+                    vy: Math.random() * 5 + 2,
+                    length: Math.random() * 50 + 30,
+                    opacity: 1,
+                    active: true
+                });
+            }
+
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const s = shootingStars[i];
+                if (isAnimating) {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.opacity -= 0.02;
+                }
+                if (s.opacity <= 0 || s.x < 0 || s.x > width || s.y > height) {
+                    shootingStars.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(s.x, s.y);
+                ctx.lineTo(s.x - s.vx * 2, s.y - s.vy * 2); // Tail
+                ctx.stroke();
+
+                // Head glow
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'white';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        };
+
+        const drawPlanes = () => {
+            // Sky Background
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+            if (theme === 'light') {
+                bgGrad.addColorStop(0, '#e0f2fe'); // Sky 100
+                bgGrad.addColorStop(1, '#bae6fd'); // Sky 200
+            } else {
+                bgGrad.addColorStop(0, '#0f172a'); // Slate 900
+                bgGrad.addColorStop(1, '#1e293b'); // Slate 800
+            }
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            planes.forEach(plane => {
+                if (isAnimating) {
+                    // Flight Logic
+                    plane.angle += plane.turnSpeed;
+                    if (Math.random() < 0.05) plane.turnSpeed = (Math.random() - 0.5) * 0.02; // Change turn
+
+                    plane.vx = Math.cos(plane.angle) * 3 * plane.z;
+                    plane.vy = Math.sin(plane.angle) * 3 * plane.z;
+
+                    plane.x += plane.vx;
+                    plane.y += plane.vy;
+
+                    // Screen Wrap
+                    if (plane.x > width + 50) plane.x = -50;
+                    if (plane.x < -50) plane.x = width + 50;
+                    if (plane.y > height + 50) plane.y = -50;
+                    if (plane.y < -50) plane.y = height + 50;
+
+                    // Trail
+                    plane.trail.push({ x: plane.x, y: plane.y });
+                    if (plane.trail.length > 20) plane.trail.shift();
+                }
+
+                // Draw Plane
+                ctx.save();
+                ctx.translate(plane.x, plane.y);
+                ctx.rotate(plane.angle);
+                ctx.scale(plane.z, plane.z);
+
+                // Body
+                ctx.fillStyle = plane.color;
+                ctx.beginPath();
+                ctx.moveTo(15, 0);   // Nose
+                ctx.lineTo(-10, 10); // Left Wing
+                ctx.lineTo(-5, 0);   // Center Back
+                ctx.lineTo(-10, -10); // Right Wing
+                ctx.closePath();
+                ctx.fill();
+
+                // Crease
+                ctx.strokeStyle = theme === 'light' ? '#cbd5e1' : '#475569';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(15, 0);
+                ctx.lineTo(-5, 0);
+                ctx.stroke();
+
+                ctx.restore();
+
+                // Draw Trail
+                if (plane.trail.length > 2) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = theme === 'light' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)';
+                    ctx.lineWidth = 2 * plane.z;
+                    ctx.moveTo(plane.trail[0].x, plane.trail[0].y);
+                    for (let i = 1; i < plane.trail.length; i++) {
+                        ctx.lineTo(plane.trail[i].x, plane.trail[i].y);
+                    }
+                    ctx.stroke();
+                }
+            });
+        };
+
+        const drawKites = () => {
+            // Sunny/Blue Sky
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+            if (theme === 'light') {
+                bgGrad.addColorStop(0, '#e0f2fe'); // Clean blue
+                bgGrad.addColorStop(1, '#bae6fd');
+            } else {
+                // Twilight for kites? Or just dark blue
+                bgGrad.addColorStop(0, '#1e1b4b');
+                bgGrad.addColorStop(1, '#312e81');
+            }
+            // Use simple fill for now or reuse rect
+            ctx.fillStyle = theme === 'light' ? '#e0f2fe' : '#1e1b4b'; // Fallback
+            ctx.fillRect(0, 0, width, height);
+
+            kites.forEach(kite => {
+                if (isAnimating) {
+                    if (kite.cut) {
+                        // Falling logic
+                        kite.y += 3;
+                        kite.x += Math.sin(kite.y * 0.1) * 2;
+                        kite.angle += 0.2;
+                        if (kite.y > height) {
+                            // Reset
+                            kite.y = height + 100; // Stay off screen or respawn?
+                            // Respawn
+                            kite.cut = false;
+                            kite.y = Math.random() * height * 0.6;
+                            kite.x = Math.random() * width;
+                            kite.angle = -Math.PI / 4;
+                        }
+                    } else {
+                        // Swaying logic
+                        kite.x += Math.sin(Date.now() * 0.001 + kite.swayOffset) * 0.5;
+                        kite.y += Math.cos(Date.now() * 0.001 + kite.swayOffset) * 0.3;
+                        kite.angle = -Math.PI / 4 + Math.sin(Date.now() * 0.002 + kite.swayOffset) * 0.1;
+
+                        // Randomly cut
+                        if (Math.random() > 0.9995) kite.cut = true;
+                    }
+                }
+
+                ctx.save();
+                ctx.translate(kite.x, kite.y);
+                ctx.rotate(kite.angle);
+
+                // Draw Rhombus
+                ctx.fillStyle = kite.color;
+                ctx.beginPath();
+                ctx.moveTo(0, -20);
+                ctx.lineTo(15, 0);
+                ctx.lineTo(0, 20);
+                ctx.lineTo(-15, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                // Cross spars
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 20); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.stroke();
+
+                // Tail
+                ctx.strokeStyle = kite.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 20);
+                // Wavy tail
+                const tailTime = Date.now() * 0.01;
+                for (let i = 0; i < 4; i++) {
+                    ctx.quadraticCurveTo(
+                        Math.sin(tailTime + i) * 10,
+                        20 + i * 10 + 5,
+                        0,
+                        20 + (i + 1) * 10
+                    );
+                }
+                ctx.stroke();
+
+                ctx.restore();
+
+                // String (if not cut)
+                if (!kite.cut) {
+                    ctx.strokeStyle = theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(kite.x, kite.y);
+                    // Curve down to "ground" or just off screen
+                    // Simple line for now
+                    ctx.lineTo(kite.x - 20, kite.y + kite.stringLength);
+                    ctx.stroke();
+                }
+            });
+        };
+
+        const drawInk = () => {
+            // Paper-like background
+            ctx.fillStyle = theme === 'light' ? '#f8fafc' : '#0f172a';
+            ctx.fillRect(0, 0, width, height);
+
+            if (isAnimating && Math.random() > 0.95 && inkDrops.length < 15) {
+                spawnInkDrop();
+            }
+
+            // Blur filter for ink effect
+            // NOTE: Filter is expensive, use sparingly or low values if slow
+            ctx.filter = 'blur(8px)';
+
+            for (let i = inkDrops.length - 1; i >= 0; i--) {
+                const drop = inkDrops[i];
+                if (isAnimating) {
+                    drop.r += drop.growthRate;
+                    drop.opacity -= 0.002;
+                    drop.growthRate *= 0.99; // slows down expansion
+                }
+
+                if (drop.opacity <= 0) {
+                    inkDrops.splice(i, 1);
+                    continue;
+                }
+
+                ctx.beginPath();
+                ctx.arc(drop.x, drop.y, drop.r, 0, Math.PI * 2);
+                ctx.fillStyle = drop.color;
+                ctx.globalAlpha = drop.opacity;
+                ctx.fill();
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.filter = 'none';
+        };
+
+        const drawSpiderweb = () => {
+            // Dark elegant background
+            ctx.fillStyle = theme === 'light' ? '#f1f5f9' : '#020617';
+            ctx.fillRect(0, 0, width, height);
+
+            const connectionDist = 120;
+            const mouseDist = 200;
+
+            webNodes.forEach(node => {
+                // Return to base logic
+                if (isAnimating) {
+                    const dx = node.x - node.baseX;
+                    const dy = node.y - node.baseY;
+                    node.vx -= dx * 0.05; // spring
+                    node.vy -= dy * 0.05;
+                    node.vx *= 0.8; // friction
+                    node.vy *= 0.8;
+
+                    // Mouse Interaction
+                    const mdx = mousePos.current.x - node.x;
+                    const mdy = mousePos.current.y - node.y;
+                    const dist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    if (dist < mouseDist) {
+                        const force = (mouseDist - dist) / mouseDist;
+                        node.vx -= mdx * force * 0.05; // Repel or Attract? Let's Push away for web feel
+                        node.vy -= mdy * force * 0.05;
+                    }
+
+                    node.x += node.vx;
+                    node.y += node.vy;
+                }
+
+                // Draw Connections
+                webNodes.forEach(other => {
+                    const dx = node.x - other.x;
+                    const dy = node.y - other.y;
+                    const distSq = dx * dx + dy * dy;
+                    if (distSq < connectionDist * connectionDist) {
+                        const alpha = 1 - Math.sqrt(distSq) / connectionDist;
+                        ctx.beginPath();
+                        ctx.strokeStyle = theme === 'light' ? `rgba(71,85,105,${alpha})` : `rgba(203,213,225,${alpha * 0.5})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(node.x, node.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                });
+
+                // Node
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = theme === 'light' ? '#64748b' : '#94a3b8';
+                ctx.fill();
+            });
+
+            // Draw connection to mouse
+            webNodes.forEach(node => {
+                const dx = node.x - mousePos.current.x;
+                const dy = node.y - mousePos.current.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < mouseDist) {
+                    const alpha = 1 - dist / mouseDist;
+                    ctx.beginPath();
+                    ctx.strokeStyle = theme === 'light' ? `rgba(59,130,246,${alpha})` : `rgba(139,92,246,${alpha})`; // Blue/Purple accent
+                    ctx.lineWidth = 1.5;
+                    ctx.moveTo(node.x, node.y);
+                    ctx.lineTo(mousePos.current.x, mousePos.current.y);
+                    ctx.stroke();
+                }
+            });
+        };
+
+        const drawVandeBharat = () => {
+            // --- TIME CYCLE & OPTIMIZATION ---
+            if (isAnimating) {
+                if (theme === 'light') {
+                    // Day (0.1) -> Dusk (0.45) -> Reset
+                    if (vbTime < 0.9 && vbTime > 0.45) vbTime = 0.9;
+                    vbTime += 0.0002; // Slower day cycle
+                    if (vbTime > 0.45) vbTime = 0.9;
+                } else {
+                    // Dusk (0.45) -> Night (0.8) -> Sunrise
+                    if (vbTime < 0.45 || vbTime > 0.95) vbTime = 0.45;
+                    vbTime += 0.0002;
+                    if (vbTime > 0.95) vbTime = 0.45;
+                }
+            }
+
+            // --- SKY GRADIENT (Atmospheric Scattering) ---
+            const getColor = (t: number) => {
+                if (t < 0.3) return { t: '#0ea5e9', m: '#bae6fd', b: '#f0f9ff' }; // Clear Day
+                if (t < 0.5) return { t: '#1e3a8a', m: '#a21caf', b: '#f97316' }; // Deep Sunset
+                if (t < 0.8) return { t: '#020617', m: '#172554', b: '#1e1b4b' }; // Deep Night
+                return { t: '#0f172a', m: '#581c87', b: '#f472b6' }; // Sunrise
+            };
+            const colors = getColor(vbTime);
+            // Optimization: Detect if gradient needs update (skip every other frame on mobile?)
+            // For "Super Polish", we render every frame but maybe reduce resolution impact by caching?
+            // Canvas gradients are usually fast enough.
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+            bgGrad.addColorStop(0, colors.t);
+            bgGrad.addColorStop(0.5, colors.m);
+            bgGrad.addColorStop(1, colors.b);
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // --- CELESTIAL BODY (Sun/Moon Glow) ---
+            const sunY = height * 0.2 + Math.sin(vbTime * Math.PI * 2) * (height * 0.15);
+            const sunX = width * 0.2 + (vbTime - 0.1) * width * 1.5; // Move across
+
+            ctx.save();
+            ctx.shadowBlur = theme === 'dark' ? 50 : 100;
+            ctx.shadowColor = theme === 'dark' ? '#fefce8' : '#fcd34d';
+            ctx.fillStyle = theme === 'dark' ? '#fef08a' : '#fef3c7';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, theme === 'dark' ? 30 : 60, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // --- STARS (Night only) ---
+            if (theme === 'dark' || vbTime > 0.6) {
+                ctx.fillStyle = '#ffffff';
+                // Static stars (could optimize by pre-rendering)
+                for (let i = 0; i < 50; i++) {
+                    if ((i * 1337) % 100 > 90) continue; // Sparse
+                    const sx = (i * 123456) % width;
+                    const sy = (i * 789012) % (height * 0.6);
+                    const twinkle = Math.random() > 0.95 ? 1.5 : 0.8;
+                    ctx.globalAlpha = Math.random() * 0.8;
+                    ctx.fillRect(sx, sy, twinkle, twinkle);
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            // --- PARALLAX BUILDINGS (High Fidelity) ---
+            // Render back to front
+            vbBuildings.forEach(b => {
+                if (isAnimating) {
+                    const speed = (b.layer + 1) * 0.5; // Parallax
+                    b.x -= speed;
+                    if (b.x + b.width < -100) {
+                        b.x = width + Math.random() * 100;
+                        // Randomize new building props could happen here
+                    }
+                }
+
+                // Lighting based on layer
+                const distFactor = (3 - b.layer) / 3; // 1 = close, 0.33 = far
+                const ambience = vbTime > 0.4 && vbTime < 0.9 ? 0.2 : 1.0;
+
+                // Base Colors
+                const hue = 220; // Slate/Blueish
+                const sat = 20 * distFactor;
+                const lum = (20 + (b.layer * 10)) * ambience;
+                const colorFront = `hsl(${hue}, ${sat}%, ${lum}%)`;
+                const colorSide = `hsl(${hue}, ${sat}%, ${lum * 0.6}%)`; // Darker side
+                const colorRoof = `hsl(${hue}, ${sat}%, ${lum * 1.2}%)`;
+
+                // --- 3D Projection ---
+                const sideDepth = 20 + b.layer * 10;
+
+                // Side Face (Visible because buildings move Left, we see Right side)
+                ctx.fillStyle = colorSide;
+                ctx.beginPath();
+                ctx.moveTo(b.x + b.width, height - 100 - b.height);
+                ctx.lineTo(b.x + b.width + sideDepth, height - 100 - b.height - 15); // Isometric-ish
+                ctx.lineTo(b.x + b.width + sideDepth, height);
+                ctx.lineTo(b.x + b.width, height);
+                ctx.fill();
+
+                // Roof
+                ctx.fillStyle = colorRoof;
+                ctx.beginPath();
+                ctx.moveTo(b.x, height - 100 - b.height);
+                ctx.lineTo(b.x + 10, height - 100 - b.height - 15); // Shift perspective
+                ctx.lineTo(b.x + b.width + sideDepth, height - 100 - b.height - 15);
+                ctx.lineTo(b.x + b.width, height - 100 - b.height);
+                ctx.fill();
+
+                // Front Face
+                ctx.fillStyle = colorFront;
+                ctx.fillRect(b.x, height - 100 - b.height, b.width, b.height + 100);
+
+                // --- ARCHITECTURAL DETAILS ---
+                // Windows (Lit at night)
+                const windowsLit = vbTime > 0.45 && vbTime < 0.85;
+
+                b.windows.forEach(w => {
+                    // Reflection gradient for windows
+                    if (windowsLit) {
+                        // Random flicker
+                        if (Math.random() > 0.98) return;
+                        ctx.fillStyle = 'rgba(254, 240, 138, 0.8)'; // Warm light
+                        ctx.shadowColor = '#fef08a';
+                        ctx.shadowBlur = 4;
+                    } else {
+                        // Day reflection
+                        ctx.fillStyle = `hsla(210, 40%, ${30 + b.layer * 10}%, 0.8)`;
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fillRect(b.x + w.x, height - 100 - b.height + w.y, w.w, w.h);
+                    ctx.shadowBlur = 0;
+                });
+
+                // Extra Details if close layer
+                if (b.details && b.layer === 2) {
+                    b.details.forEach(d => {
+                        ctx.fillStyle = d.color;
+                        ctx.fillRect(b.x + d.x, height - 100 - b.height + d.y, d.w, d.h);
+                    });
+                }
+            });
+
+            // --- ATMOSPHERIC FOG ---
+            // Blends the buildings into the ground
+            const fogH = 200;
+            const fogGrad = ctx.createLinearGradient(0, height - fogH, 0, height);
+            const fogColor = vbTime > 0.45 && vbTime < 0.85 ? '2, 6, 23' : '200, 220, 255';
+            fogGrad.addColorStop(0, `rgba(${fogColor}, 0)`);
+            fogGrad.addColorStop(0.5, `rgba(${fogColor}, 0.3)`);
+            fogGrad.addColorStop(1, `rgba(${fogColor}, 0.8)`);
+            ctx.fillStyle = fogGrad;
+            ctx.fillRect(0, height - fogH, width, fogH);
+
+            // --- MAGLEV ENVIRONMENT (No Wires) ---
+            // Sky is clear.
+
+            // --- MAGNETIC TRACK (Maglev) ---
+            const trackY = height - 80;
+
+            // Base Platform (Concrete/Metallic)
+            const platGrad = ctx.createLinearGradient(0, trackY, 0, height);
+            platGrad.addColorStop(0, '#334155');
+            platGrad.addColorStop(1, '#0f172a');
+            ctx.fillStyle = platGrad;
+            ctx.fillRect(0, trackY, width, 80);
+
+            // Magnetic Rails (Glowing Blue/Cyan lines)
+            const drawMaglevRail = (y: number, color: string) => {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = color;
+                ctx.fillStyle = color;
+                ctx.fillRect(0, y, width, 4); // Glowing strip
+                ctx.shadowBlur = 0;
+
+                // Metallic guard
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(0, y + 4, width, 2);
+            };
+
+            // Two guide rails
+            drawMaglevRail(trackY + 15, '#06b6d4'); // Cyan glow
+            drawMaglevRail(trackY + 65, '#3b82f6'); // Blue glow
+
+            // Cross-ties (Magnetic Coils)
+            if (isAnimating) vbTrackOffset = (vbTrackOffset - 25) % 100;
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.3)'; // Faint energy pulses
+            for (let x = vbTrackOffset; x < width; x += 100) {
+                ctx.fillRect(x, trackY + 20, 40, 40);
+            }
+
+            // --- VANDE BHARAT TRAIN (Polished Metallic) ---
+            const isSaffron = theme === 'dark';
+            // Palette
+            // Saffron: Deep Orange / Black / Grey
+            // Classic: White / Blue / Grey
+            const primaryColor = isSaffron ? '#ea580c' : '#ffffff';
+            const secondaryColor = isSaffron ? '#171717' : '#2563eb';
+            const stripeColor = isSaffron ? '#737373' : '#60a5fa';
+
+            vbTrain.forEach((car, i) => {
+                const bounce = Math.sin(Date.now() / 40 + i * 1.5) * 1.5; // Heavy bounce
+                const cy = height - 95 + bounce; // Lifted slightly off track
+
+                // Train Body Shape
+                const carH = 60;
+                const carW = 160;
+
+                // --- METALLIC SHADER GRADIENT ---
+                // Simulating sky reflection on top, horizon line, and ground reflection
+                const bodyGrad = ctx.createLinearGradient(car.x, cy - carH, car.x, cy);
+                if (isSaffron) {
+                    // Premium Saffron (Rich, Deep, Metallic)
+                    bodyGrad.addColorStop(0, '#ffedd5'); // Gold/White Highlight
+                    bodyGrad.addColorStop(0.2, '#f97316'); // Vibrant Orange
+                    bodyGrad.addColorStop(0.5, '#c2410c'); // Deep Saffron
+                    bodyGrad.addColorStop(0.51, '#7c2d12'); // Sharp Horizon Line (Dark)
+                    bodyGrad.addColorStop(1, '#431407'); // Shadow
+                } else {
+                    bodyGrad.addColorStop(0, '#ffffff'); // Sky Refl
+                    bodyGrad.addColorStop(0.4, '#f1f5f9'); // Body
+                    bodyGrad.addColorStop(0.5, '#e2e8f0'); // Horizon
+                    bodyGrad.addColorStop(0.51, '#94a3b8'); // Horizon Shadow line
+                    bodyGrad.addColorStop(1, '#64748b'); // Ground Refl
+                }
+                ctx.fillStyle = bodyGrad;
+
+                // Engine Nose Aerodynamics
+                if (car.type === 'engine') {
+                    ctx.beginPath();
+                    ctx.moveTo(car.x, cy);
+                    ctx.lineTo(car.x, cy - carH);
+                    ctx.lineTo(car.x + 100, cy - carH);
+                    // Bullet nose
+                    ctx.bezierCurveTo(car.x + 140, cy - carH, car.x + 180, cy - (carH / 2), car.x + 160, cy);
+                    ctx.lineTo(car.x, cy);
+                    ctx.fill();
+
+                    // Windshield (Black Glass with reflection)
+                    const glassGrad = ctx.createLinearGradient(car.x + 110, cy - carH, car.x + 150, cy - 20);
+                    glassGrad.addColorStop(0, '#000000');
+                    glassGrad.addColorStop(0.3, '#333');
+                    glassGrad.addColorStop(0.6, '#000');
+                    glassGrad.addColorStop(0.8, '#555'); // Glint
+                    ctx.fillStyle = glassGrad;
+
+                    ctx.beginPath();
+                    ctx.moveTo(car.x + 110, cy - carH + 2);
+                    ctx.bezierCurveTo(car.x + 135, cy - carH + 5, car.x + 155, cy - 40, car.x + 150, cy - 20);
+                    ctx.lineTo(car.x + 110, cy - 20);
+                    ctx.fill();
+
+                    // Headlight (LED Matrix)
+                    if (theme === 'dark' || vbTime > 0.45) {
+                        ctx.save();
+                        // Bloom
+                        ctx.shadowColor = '#fff';
+                        ctx.shadowBlur = 20;
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.moveTo(car.x + 148, cy - 15);
+                        ctx.lineTo(car.x + 152, cy - 20);
+                        ctx.lineTo(car.x + 145, cy - 20);
+                        ctx.fill();
+
+                        // Beam
+                        const beamGrad = ctx.createLinearGradient(car.x + 150, cy - 15, width, cy + 50);
+                        beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                        beamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        ctx.fillStyle = beamGrad;
+                        ctx.beginPath();
+                        ctx.moveTo(car.x + 150, cy - 15);
+                        ctx.lineTo(width, cy - 50);
+                        ctx.lineTo(width, cy + 100);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+
+                } else {
+                    // Coach Body
+                    ctx.fillRect(car.x, cy - carH, carW, carH);
+                }
+
+                // Stripe (Dynamic Swoosh)
+                ctx.fillStyle = stripeColor;
+                if (car.type === 'engine') {
+                    ctx.beginPath();
+                    ctx.moveTo(car.x, cy - 20);
+                    ctx.lineTo(car.x + 100, cy - 20);
+                    ctx.quadraticCurveTo(car.x + 120, cy - 15, car.x + 130, cy);
+                    ctx.lineTo(car.x, cy);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(car.x, cy - 20, carW, 20);
+                }
+
+                // Doors (Recessed 3D)
+                const drawDoor = (dx: number) => {
+                    // Inset Shadow
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.fillRect(dx, cy - carH + 5, 20, carH - 10);
+                    // Door Panel
+                    ctx.fillStyle = bodyGrad; // Match body
+                    ctx.fillRect(dx + 2, cy - carH + 7, 16, carH - 14);
+                    // Window in door
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(dx + 4, cy - carH + 12, 12, 15);
+                };
+                drawDoor(car.x + 10);
+                if (car.type !== 'engine') drawDoor(car.x + carW - 30);
+
+                // Windows (Continuous Glass Strip look for modern feeling)
+                // Actually Vande Bharat has individual windows but flush.
+                car.windows.forEach(w => {
+                    ctx.fillStyle = '#000000'; // Premium Jet Black
+                    // Window Glass
+                    ctx.fillRect(car.x + w.x, cy - 45, w.width, 18);
+
+                    // Reflection on Glass
+                    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    ctx.beginPath();
+                    ctx.moveTo(car.x + w.x + 10, cy - 45);
+                    ctx.lineTo(car.x + w.x + w.width, cy - 45);
+                    ctx.lineTo(car.x + w.x + w.width - 20, cy - 27);
+                    ctx.lineTo(car.x + w.x, cy - 27);
+                    ctx.fill();
+
+                    // Interior Light
+                    if (theme === 'dark' || vbTime > 0.45) {
+                        ctx.fillStyle = 'rgba(253, 224, 71, 0.4)'; // Warm interior
+                        ctx.fillRect(car.x + w.x, cy - 45, w.width, 18);
+                    }
+                });
+
+                // Underframe / Bogies (Complex 3D)
+                const drawBogie = (bx: number) => {
+                    // Dark metallic undercarriage
+                    ctx.fillStyle = '#1c1917';
+                    ctx.fillRect(bx - 20, cy, 60, 15);
+
+                    // 3D Springs/Suspension
+                    ctx.fillStyle = '#444';
+                    ctx.fillRect(bx - 10, cy + 2, 8, 10);
+                    ctx.fillRect(bx + 20, cy + 2, 8, 10);
+
+                    // Wheels (Rotating with Motion Blur feel)
+                    const wheelTime = Date.now() / 50;
+                    const drawSingleWheel = (ox: number) => {
+                        ctx.save();
+                        ctx.translate(bx + ox, cy + 8);
+                        ctx.rotate(wheelTime);
+
+                        // Tire
+                        ctx.fillStyle = '#262626';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 9, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Chrome Hubcap
+                        const hub = ctx.createRadialGradient(-2, -2, 0, 0, 0, 8);
+                        hub.addColorStop(0, '#e5e5e5');
+                        hub.addColorStop(1, '#525252');
+                        ctx.fillStyle = hub;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.restore();
+                    };
+                    drawSingleWheel(0);
+                    drawSingleWheel(30);
+                };
+                drawBogie(car.x + 30);
+                drawBogie(car.x + 110);
+
+                // No Pantograph (Maglev Mode)
+
+                // Connection Gangway
+                if (i < vbTrain.length - 1) {
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(car.x + 155, cy - 40, 10, 30);
+                    // Bellows texture
+                    ctx.fillStyle = '#333';
+                    for (let k = 0; k < 5; k++) {
+                        ctx.fillRect(car.x + 155, cy - 40 + (k * 6), 10, 1);
+                    }
+                }
+
+            });
+        };
+
         const draw = () => {
             ctx.clearRect(0, 0, width, height);
 
@@ -1548,6 +2834,20 @@ export default function AnimatedBackground() {
                 drawZen();
             } else if (activeMode === 'forge') {
                 drawForge();
+            } else if (activeMode === 'seaside') {
+                drawSeaside();
+            } else if (activeMode === 'galactic') {
+                drawGalactic();
+            } else if (activeMode === 'planes') {
+                drawPlanes();
+            } else if (activeMode === 'kites') {
+                drawKites();
+            } else if (activeMode === 'ink') {
+                drawInk();
+            } else if (activeMode === 'spiderweb') {
+                drawSpiderweb();
+            } else if (activeMode === 'vande-bharat') {
+                drawVandeBharat();
             }
 
             animationFrameId = requestAnimationFrame(draw);
@@ -1577,9 +2877,6 @@ export default function AnimatedBackground() {
         };
     }, [theme, isAnimating, activeMode]);
 
-    // --- Dynamic Background CSS ---
-    // Moved to CSS variables in globals.css for instant theme switching
-
     return (
         <canvas
             ref={canvasRef}
@@ -1597,3 +2894,5 @@ export default function AnimatedBackground() {
         />
     );
 }
+
+

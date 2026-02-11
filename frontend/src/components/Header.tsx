@@ -158,12 +158,26 @@ export default function Header() {
     }, []);
 
     // Scroll Effect
+    // Scroll Effect
     useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+
+        const updateScrollDir = () => {
+            const scrollY = window.scrollY;
+            setScrolled(scrollY > 20);
+            ticking = false;
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        const onScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(updateScrollDir);
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', onScroll);
+        return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
     const toggleTheme = () => {
