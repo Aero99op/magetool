@@ -4,10 +4,10 @@ import ContentSection from '@/components/ui/ContentSection';
 import { toolContent } from '@/data/tool-content';
 
 export const metadata: Metadata = {
-    title: 'Document Converter - PDF to Word, DOCX Free Online | Magetool',
-    description: 'Free online document converter. Convert PDF to Word, DOCX to PDF, TXT to PDF and more. Fast, secure, no signup required.',
-    keywords: ['pdf to word', 'document converter', 'convert pdf', 'pdf to docx', 'word to pdf', 'docx converter', 'free document converter'],
-    openGraph: { title: 'Free PDF to Word Converter Online | Magetool', description: 'Convert documents between PDF, Word, TXT formats.', url: 'https://magetool.in/documents/converter' },
+    title: 'Document Converter - PDF, Word, PPTX Free Online | Magetool',
+    description: 'Free online document converter. Convert PDF to Word, DOCX to PDF, PPTX to PDF, PDF to PowerPoint and more. Fast, secure, no signup required.',
+    keywords: ['pdf to word', 'document converter', 'convert pdf', 'pdf to docx', 'word to pdf', 'docx converter', 'pptx to pdf', 'pdf to pptx', 'powerpoint converter', 'free document converter'],
+    openGraph: { title: 'Free PDF, Word & PowerPoint Converter Online | Magetool', description: 'Convert documents between PDF, Word, PowerPoint, TXT formats.', url: 'https://magetool.in/documents/converter' },
     alternates: { canonical: '/documents/converter' },
 };
 

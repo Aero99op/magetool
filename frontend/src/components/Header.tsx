@@ -122,6 +122,7 @@ const navItems: NavItem[] = [
             { name: 'Text Editor', href: '/documents/text-editor' },
             { name: 'File Size Adjuster', href: '/documents/size-adjuster' },
             { name: 'Hash Verifier', href: '/documents/hash-verifier' },
+            { name: 'PPT Watermark Remover', href: '/documents/ppt-watermark-remove' },
         ],
     },
 ];

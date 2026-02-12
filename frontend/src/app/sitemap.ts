@@ -50,6 +50,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { path: '/documents/metadata', priority: 0.75 },        // "pdf metadata editor"
         { path: '/documents/hash-verifier', priority: 0.75 },   // "hash verifier"
         { path: '/documents/size-adjuster', priority: 0.8 },    // "document size adjuster"
+        { path: '/documents/ppt-watermark-remove', priority: 0.85 }, // "remove watermark ppt"
 
         // ============ VIDEO TOOLS (13) ============
         { path: '/videos', priority: 0.9 },

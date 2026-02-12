@@ -1,0 +1,13 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting python-pptx
+  Downloading python_pptx-1.0.2-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: Pillow>=3.3.2 in c:\users\spand\appdata\roaming\python\python313\site-packages (from python-pptx) (11.3.0)
+Collecting XlsxWriter>=0.5.7 (from python-pptx)
+  Downloading xlsxwriter-3.2.9-py3-none-any.whl.metadata (2.7 kB)
+Requirement already satisfied: lxml>=3.1.0 in c:\users\spand\appdata\roaming\python\python313\site-packages (from python-pptx) (6.0.2)
+Requirement already satisfied: typing-extensions>=4.9.0 in c:\users\spand\appdata\roaming\python\python313\site-packages (from python-pptx) (4.14.1)
+Downloading python_pptx-1.0.2-py3-none-any.whl (472 kB)
+Downloading xlsxwriter-3.2.9-py3-none-any.whl (175 kB)
+Installing collected packages: XlsxWriter, python-pptx
+
+Successfully installed XlsxWriter-3.2.9 python-pptx-1.0.2

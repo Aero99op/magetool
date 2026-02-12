@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import {
     FileText, FilePlus, FileX, Archive, Lock,
-    Unlock, Image, FileJson, Edit, Maximize, Shield
+    Unlock, Image, FileJson, Edit, Maximize, Shield, Droplets
 } from 'lucide-react';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 import PremiumCard from '@/components/ui/PremiumCard';
@@ -20,6 +20,7 @@ const tools = [
     { name: 'Metadata Editor', href: '/documents/metadata', icon: Edit, description: 'Edit file metadata' },
     { name: 'File Size Adjuster', href: '/documents/size-adjuster', icon: Maximize, description: 'Resize file capacity' },
     { name: 'Hash Verifier', href: '/documents/hash-verifier', icon: Shield, description: 'Verify file integrity (SHA256)' },
+    { name: 'PPT Watermark Remover', href: '/documents/ppt-watermark-remove', icon: Droplets, description: 'Remove watermarks from PPT' },
 ];
 
 export default function DocumentsPageClient() {

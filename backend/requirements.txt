@@ -63,6 +63,7 @@ weasyprint>=60.0.0
 mammoth>=1.6.0
 odfpy>=1.4.0
 openpyxl>=3.1.0
+python-pptx>=0.6.21
 
 # ==========================================
 # OCR (Optical Character Recognition)

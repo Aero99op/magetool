@@ -254,7 +254,7 @@ const ALLOWED_EXTENSIONS: Record<string, Set<string>> = {
     image: new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'tiff', 'tif', 'ico', 'svg', 'heic', 'heif']),
     video: new Set(['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', 'm4v']),
     audio: new Set(['mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'wma', 'opus']),
-    document: new Set(['pdf', 'docx', 'doc', 'txt', 'rtf', 'odt', 'md', 'json', 'csv', 'xml', 'xlsx', 'xls', 'html']),
+    document: new Set(['pdf', 'docx', 'doc', 'pptx', 'ppt', 'txt', 'rtf', 'odt', 'md', 'json', 'csv', 'xml', 'xlsx', 'xls', 'html']),
 };
 
 export interface FileValidationResult {
@@ -1031,6 +1031,9 @@ export const documentApi = {
 
     sizeAdjust: (file: File, mode: string, targetSize: number, onProgress?: (e: AxiosProgressEvent) => void) =>
         uploadFile('/api/document/size-adjust', file, { mode, target_size: targetSize }, onProgress, 'document'),
+
+    pptWatermarkRemove: (file: File, detectionMode: string = 'auto', onProgress?: (e: AxiosProgressEvent) => void) =>
+        uploadFile('/api/document/ppt-watermark-remove', file, { detection_mode: detectionMode }, onProgress, 'document'),
 };
 
 // Export utilities

@@ -294,6 +294,51 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
                 text += page.extract_text() + "\n"
             output_path.write_text(text, encoding="utf-8")
 
+        # ==========================================
+        # ANY TO PPTX (LibreOffice)
+        # ==========================================
+        elif output_format == "pptx" and input_ext in ["pdf", "docx", "doc", "odt", "rtf", "txt", "html"]:
+            import subprocess
+            import shutil
+            
+            libreoffice_cmd = None
+            for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
+                if shutil.which(cmd):
+                    libreoffice_cmd = cmd
+                    break
+            
+            if not libreoffice_cmd:
+                raise Exception("LibreOffice not installed. Required for PowerPoint conversion.")
+            
+            temp_output_dir = input_path.parent
+            
+            logger.info(f"Starting LibreOffice conversion: {input_path} -> PPTX")
+            
+            env = os.environ.copy()
+            env["HOME"] = "/tmp"
+            
+            result = subprocess.run([
+                libreoffice_cmd,
+                "--headless",
+                "--invisible",
+                "--nologo",
+                "--nofirststartwizard",
+                "--norestore",
+                "--convert-to", "pptx",
+                "--outdir", str(temp_output_dir),
+                str(input_path)
+            ], capture_output=True, text=True, timeout=180, env=env)
+            
+            expected_output = temp_output_dir / (input_path.stem + ".pptx")
+            
+            if expected_output.exists() and expected_output.stat().st_size > 0:
+                shutil.move(str(expected_output), str(output_path))
+                logger.info(f"LibreOffice PPTX conversion successful: {task_id}")
+            else:
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.error(f"LibreOffice PPTX output not found. stderr: {error_msg}")
+                raise Exception(f"PPTX conversion failed: {error_msg}")
+
         else:
             # Fallback for direct copies or unhandled pairs
             import shutil
@@ -1138,6 +1183,175 @@ async def adjust_file_size(
 
 
 # ============================================================================
+# PPT WATERMARK REMOVER
+# ============================================================================
+
+def process_ppt_watermark_remove(task_id: str, input_path: Path, original_filename: str, **params):
+    """Background task: Remove watermarks from PowerPoint presentations"""
+    detection_mode = params.get("detection_mode", "auto")
+    try:
+        update_task(task_id, status=TaskStatus.PROCESSING, progress_percent=10)
+        
+        from pptx import Presentation
+        from pptx.util import Emu
+        from pptx.dml.color import RGBColor
+        import copy
+        
+        prs = Presentation(str(input_path))
+        removed_count = 0
+        
+        update_task(task_id, progress_percent=20)
+        
+        def is_watermark_shape(shape):
+            """Detect if a shape is likely a watermark"""
+            # Check shape name
+            name = (shape.name or "").lower()
+            if any(kw in name for kw in ["watermark", "wm", "draft", "confidential", "sample", "copy"]):
+                return True
+            
+            # Check if shape has very low opacity (semi-transparent overlay)
+            try:
+                if hasattr(shape, 'fill') and shape.fill is not None:
+                    fill = shape.fill
+                    if hasattr(fill, 'fore_color') and fill.fore_color is not None:
+                        # Check alpha/transparency via XML
+                        sp_elem = shape._element
+                        # Look for alpha modulation indicating transparency
+                        alpha_elems = sp_elem.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}alpha')
+                        for alpha_elem in alpha_elems:
+                            val = alpha_elem.get('val')
+                            if val:
+                                alpha_val = int(val) / 100000  # Convert from EMU percentage
+                                if alpha_val < 0.5:  # Less than 50% opacity
+                                    return True
+            except Exception:
+                pass
+            
+            # Check for text-based watermarks (large, rotated, semi-transparent text)
+            if shape.has_text_frame:
+                text = shape.text_frame.text.strip().lower()
+                watermark_texts = ["draft", "confidential", "sample", "copy", "watermark", 
+                                   "do not copy", "internal", "preliminary", "proof"]
+                if text in watermark_texts:
+                    return True
+                
+                # Check if text is rotated (common for diagonal watermarks)
+                try:
+                    rotation = shape.rotation
+                    if rotation and abs(rotation) > 20:
+                        # Large rotated text = likely watermark
+                        if len(text) < 30:  # Short text that's heavily rotated
+                            # Also check transparency
+                            sp_elem = shape._element
+                            alpha_elems = sp_elem.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}alpha')
+                            if alpha_elems:
+                                return True
+                except Exception:
+                    pass
+            
+            # Check for centered, full-slide-covering shapes (background watermarks)
+            try:
+                slide_width = prs.slide_width
+                slide_height = prs.slide_height
+                if (shape.width and shape.height and slide_width and slide_height):
+                    width_ratio = shape.width / slide_width
+                    height_ratio = shape.height / slide_height
+                    # Shape covers most of the slide = likely a watermark overlay
+                    if width_ratio > 0.7 and height_ratio > 0.7:
+                        # Check if it has very low opacity
+                        sp_elem = shape._element
+                        alpha_elems = sp_elem.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/main}alpha')
+                        if alpha_elems:
+                            return True
+            except Exception:
+                pass
+            
+            return False
+        
+        def remove_watermarks_from_shapes(shapes_parent):
+            """Remove watermark shapes from a shape collection's XML parent"""
+            nonlocal removed_count
+            sp_tree = shapes_parent._element
+            shapes_to_remove = []
+            
+            for shape in shapes_parent:
+                if is_watermark_shape(shape):
+                    shapes_to_remove.append(shape._element)
+            
+            for sp_elem in shapes_to_remove:
+                sp_tree.remove(sp_elem)
+                removed_count += 1
+        
+        # Process based on detection mode
+        total_slides = len(prs.slides)
+        
+        if detection_mode in ["auto", "template"]:
+            # Check slide masters
+            update_task(task_id, progress_percent=30)
+            for master in prs.slide_masters:
+                remove_watermarks_from_shapes(master.shapes)
+                # Check slide layouts within master
+                for layout in master.slide_layouts:
+                    remove_watermarks_from_shapes(layout.shapes)
+        
+        if detection_mode in ["auto", "content"]:
+            # Check individual slides
+            for i, slide in enumerate(prs.slides):
+                remove_watermarks_from_shapes(slide.shapes)
+                progress = 40 + int((i + 1) / max(total_slides, 1) * 40)
+                update_task(task_id, progress_percent=progress)
+        
+        update_task(task_id, progress_percent=85)
+        
+        # Save the modified presentation
+        output_path = get_output_path(task_id, "pptx")
+        prs.save(str(output_path))
+        
+        update_task(task_id, progress_percent=95)
+        
+        from services.tasks import get_output_filename
+        output_filename = get_output_filename(original_filename, suffix="clean", extension="pptx")
+        
+        update_task(
+            task_id,
+            status=TaskStatus.COMPLETE,
+            progress_percent=100,
+            output_filename=output_filename,
+            output_path=output_path,
+            file_size=output_path.stat().st_size,
+        )
+        
+        logger.info(f"PPT watermark remove complete: {task_id} - removed {removed_count} watermark(s)")
+        
+    except Exception as e:
+        logger.error(f"PPT watermark remove failed: {task_id} - {e}")
+        update_task(task_id, status=TaskStatus.FAILED, error_message=str(e))
+
+
+@router.post("/document/ppt-watermark-remove")
+async def ppt_watermark_remove(
+    file: UploadFile = File(...),
+    detection_mode: str = Form(default="auto"),
+):
+    """Remove watermarks from PowerPoint presentations"""
+    task_id = create_task(file.filename, "ppt_watermark_remove")
+    
+    input_ext = Path(file.filename).suffix.lstrip(".") or "pptx"
+    input_path = get_input_path(task_id, input_ext)
+    await save_upload_file(file, input_path)
+    
+    update_task(
+        task_id,
+        status=TaskStatus.UPLOADED,
+        progress_percent=100,
+        input_path=input_path,
+        params={"detection_mode": detection_mode}
+    )
+    
+    return {"task_id": task_id, "message": "File uploaded successfully"}
+
+
+# ============================================================================
 # PROCESSOR REGISTRATION
 # Register handlers for deferred processing via /start endpoint
 # ============================================================================
@@ -1147,6 +1361,7 @@ register_processor("pdf_merge", process_pdf_merge)
 register_processor("pdf_compress", process_pdf_compress)
 register_processor("pdf_protect", process_pdf_protect)
 register_processor("pdf_unlock", process_pdf_unlock)
+register_processor("ppt_watermark_remove", process_ppt_watermark_remove)
 # Note: to_image, data_convert, size_adjust still use inline functions
 
 

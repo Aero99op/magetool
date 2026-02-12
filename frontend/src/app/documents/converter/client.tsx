@@ -9,6 +9,7 @@ import ToolContent from '@/components/ToolContent';
 const OUTPUT_FORMATS = [
     { value: 'pdf', label: 'PDF (.pdf)' },
     { value: 'docx', label: 'Word (.docx)' },
+    { value: 'pptx', label: 'PowerPoint (.pptx)' },
     { value: 'txt', label: 'Text (.txt)' },
     { value: 'json', label: 'JSON (.json)' },
     { value: 'csv', label: 'CSV (.csv)' },
@@ -16,7 +17,7 @@ const OUTPUT_FORMATS = [
 ];
 
 const ACCEPT_FORMATS = {
-    'application/*': ['.pdf', '.docx', '.doc', '.txt', '.json', '.csv', '.xml', '.xlsx', '.xls', '.md', '.rtf'],
+    'application/*': ['.pdf', '.docx', '.doc', '.pptx', '.ppt', '.txt', '.json', '.csv', '.xml', '.xlsx', '.xls', '.md', '.rtf'],
     'text/*': ['.txt', '.json', '.csv', '.xml', '.md'],
 };
 
@@ -83,11 +84,11 @@ export default function DocumentConverterClient() {
     return (
         <ToolLayout
             title="Document Converter"
-            subtitle="Convert documents between PDF, Word, TXT, and more"
+            subtitle="Convert documents between PDF, Word, PowerPoint, TXT, and more"
             acceptFormats={ACCEPT_FORMATS}
             maxFileSize={50}
             maxFiles={1}
-            supportedFormatsText="Supported: PDF, DOCX, TXT, JSON, CSV, XML | Max: 50MB"
+            supportedFormatsText="Supported: PDF, DOCX, PPTX, TXT, JSON, CSV, XML | Max: 50MB"
             onFilesSelected={handleFilesSelected}
             onProcessClick={handleProcess}
             configPanel={
@@ -109,7 +110,7 @@ export default function DocumentConverterClient() {
             downloadUrl={downloadUrl}
             downloadFileName={downloadFileName}
             downloadFileSize={downloadFileSize}
-            toolContent={<ToolContent overview="Convert documents between formats. PDF to Word, DOCX to PDF, and more." features={["Multi-Format: PDF, DOCX, TXT, JSON, CSV, XML.", "Fast Conversion: Process in seconds.", "Privacy First: Files auto-deleted.", "No Signup: Instant access."]} howTo={[{ step: "Upload Document", description: "Select file to convert." }, { step: "Choose Format", description: "Select output format." }, { step: "Convert", description: "Process the conversion." }, { step: "Download", description: "Save converted file." }]} />}
+            toolContent={<ToolContent overview="Convert documents between formats. PDF to Word, DOCX to PDF, PPTX to PDF, and more." features={["Multi-Format: PDF, DOCX, PPTX, TXT, JSON, CSV, XML.", "Fast Conversion: Process in seconds.", "Privacy First: Files auto-deleted.", "No Signup: Instant access."]} howTo={[{ step: "Upload Document", description: "Select file to convert." }, { step: "Choose Format", description: "Select output format." }, { step: "Convert", description: "Process the conversion." }, { step: "Download", description: "Save converted file." }]} />}
         />
     );
 }
