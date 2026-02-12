@@ -11,7 +11,6 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 python-multipart>=0.0.6
 pydantic>=2.5.0
-pydantic>=2.5.0
 pydantic-settings>=2.1.0
 setuptools<70.0.0
 wheel
@@ -64,6 +63,7 @@ mammoth>=1.6.0
 odfpy>=1.4.0
 openpyxl>=3.1.0
 python-pptx>=0.6.21
+pdf2image>=1.17.0
 
 # ==========================================
 # OCR (Optical Character Recognition)
