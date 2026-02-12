@@ -295,9 +295,59 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             output_path.write_text(text, encoding="utf-8")
 
         # ==========================================
-        # ANY TO PPTX (LibreOffice)
+        # PDF TO PPTX (python-pptx + pdf2image)
         # ==========================================
-        elif output_format == "pptx" and input_ext in ["pdf", "docx", "doc", "odt", "rtf", "txt", "html"]:
+        elif output_format == "pptx" and input_ext == "pdf":
+            from pptx import Presentation
+            from pptx.util import Inches, Emu
+            import tempfile
+            
+            logger.info(f"Starting PDF to PPTX conversion: {input_path}")
+            
+            # Convert PDF pages to images
+            try:
+                from pdf2image import convert_from_path
+                images = convert_from_path(str(input_path), dpi=200)
+            except ImportError:
+                raise Exception("pdf2image not installed. Required for PDF to PPTX conversion.")
+            except Exception as e:
+                raise Exception(f"Failed to convert PDF pages to images: {e}")
+            
+            if not images:
+                raise Exception("No pages found in PDF")
+            
+            # Create presentation with slide dimensions matching first page aspect ratio
+            prs = Presentation()
+            img_w, img_h = images[0].size
+            slide_width = Inches(10)
+            slide_height = int(slide_width * img_h / img_w)
+            prs.slide_width = slide_width
+            prs.slide_height = slide_height
+            
+            # Blank slide layout
+            blank_layout = prs.slide_layouts[6]  # Blank layout
+            
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                for i, img in enumerate(images):
+                    img_path = Path(tmp_dir) / f"page_{i}.png"
+                    img.save(str(img_path), "PNG")
+                    
+                    slide = prs.slides.add_slide(blank_layout)
+                    slide.shapes.add_picture(
+                        str(img_path),
+                        Emu(0), Emu(0),
+                        prs.slide_width, prs.slide_height
+                    )
+                    
+                    update_task(task_id, progress_percent=30 + int((i + 1) / len(images) * 50))
+            
+            prs.save(str(output_path))
+            logger.info(f"PDF to PPTX conversion successful: {task_id} ({len(images)} slides)")
+
+        # ==========================================
+        # DOCX/DOC/etc TO PPTX (LibreOffice)
+        # ==========================================
+        elif output_format == "pptx" and input_ext in ["docx", "doc", "odt", "rtf", "txt", "html"]:
             import subprocess
             import shutil
             
