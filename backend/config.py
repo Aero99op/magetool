@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     ENABLE_KEEP_ALIVE: bool = False
     KEEP_ALIVE_URL: str | None = None
     KEEP_ALIVE_INTERVAL: int = 14  # minutes (Render sleeps after 15, verify for others)
+
+    # Security (Gareeb Shield)
+    API_SECRET: str = "magetool-secret-fallback-123"  # Default fallback, override in production!
     
     class Config:
         env_file = ".env"

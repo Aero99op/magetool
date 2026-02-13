@@ -237,6 +237,8 @@ const api = axios.create({
     timeout: 300000, // 5 minutes for large file uploads
     headers: {
         'Content-Type': 'application/json',
+        // GAREEB SHIELD: Secret Header to bypass backend lock
+        'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
     },
 });
 
@@ -423,6 +425,7 @@ export const uploadFile = async (
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
                 },
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
@@ -510,6 +513,7 @@ export const uploadFiles = async (
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
                 },
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,

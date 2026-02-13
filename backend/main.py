@@ -232,6 +232,55 @@ async def limit_concurrent_tasks(request: Request, call_next):
             _active_tasks_per_ip[ip] = max(0, _active_tasks_per_ip[ip] - 1)
 
 
+
+# ==========================================
+# SECURITY: SECRET HEADER & WAF
+# ==========================================
+import re
+
+@app.middleware("http")
+async def security_guard_middleware(request: Request, call_next):
+    """
+    GAREEB SHIELD: 
+    1. Verify Secret Header (prevent direct access)
+    2. WAF: Block malicious payloads
+    """
+    # 1. Secret Header Check (Skip for health checks, root, AND DOWNLOADS)
+    # Browser downloads (<a href>) cannot send custom headers, so we rely on UUID security there.
+    if request.url.path.startswith("/api/") and request.method != "OPTIONS":
+        if not request.url.path.startswith("/api/download/"):
+            # Allow requests if they have the valid secret
+            # OR if they come from localhost (for dev)
+            # BUT for robust security, we enforce it everywhere if configured
+            client_secret = request.headers.get("X-Magetool-Secret")
+            if client_secret != settings.API_SECRET:
+                 # Log the attempt
+                 logger.warning(f"⛔ Blocked unauthorized access to {request.url.path} from {get_remote_address(request)}")
+                 return JSONResponse(status_code=403, content={"error": "Unauthorized: Missing or invalid security token"})
+
+    # 2. APPLICATION WAF (Web Application Firewall)
+    # Recursively check query params for SQLi / XSS patterns
+    malicious_patterns = [
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",       # SQLi comments
+        r"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))", # SQLi meta-char
+        r"w*((%27)|('))((%6F)|o|(%4F))((%72)|r|(%52))", # SQLi: ' OR
+        r"((%27)|('))union",                    # SQLi: UNION
+        r"\/etc\/passwd",                       # Path Traversal
+        r"\.\.\/",                              # Path Traversal
+        r"<script>",                            # XSS
+    ]
+    
+    # Check Query Params
+    query_string = str(request.query_params)
+    for pattern in malicious_patterns:
+        if re.search(pattern, query_string, re.IGNORECASE):
+            logger.warning(f"🔥 WAF BLOCKED malicious query param from {get_remote_address(request)}")
+            return JSONResponse(status_code=403, content={"error": "Malicious payload detected"})
+
+    response = await call_next(request)
+    return response
+
+
 # ==========================================
 # SECURITY HEADERS MIDDLEWARE
 # ==========================================
