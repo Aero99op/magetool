@@ -30,7 +30,7 @@ task_store: Dict[str, Dict[str, Any]] = {}
 
 def create_task(original_filename: str, task_type: str) -> str:
     """Create a new task and return its ID"""
-    task_id = str(uuid.uuid4())[:8]  # Short ID for readability
+    task_id = uuid.uuid4().hex  # Full 32-char hex — impossible to brute-force
     
     task_store[task_id] = {
         "task_id": task_id,

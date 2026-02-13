@@ -258,7 +258,7 @@ async def create_secure_file_path(
     extension = get_file_extension(sanitized)
     
     # Generate unique filename to prevent overwrites
-    unique_id = str(uuid.uuid4())[:8]
+    unique_id = uuid.uuid4().hex  # Full 32-char hex for unpredictable filenames
     safe_filename = f"{Path(sanitized).stem}_{unique_id}.{extension}" if extension else f"{sanitized}_{unique_id}"
     
     # Ensure destination directory exists

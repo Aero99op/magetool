@@ -6,6 +6,8 @@ Enterprise-grade file utility API with comprehensive security
 import logging
 import time
 import asyncio
+from collections import defaultdict
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime
@@ -13,7 +15,6 @@ from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 
 # Rate limiting
@@ -173,12 +174,62 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://magetool.site", "https://magetool-api.onrender.com", "http://localhost:3000"] + settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://.*\.pages\.dev|https://.*\.netlify\.app|https://.*\.vercel\.app|https://magetool\.site|https://.*\.hf\.space|https://.*\.northflank\.app|https://.*\.zeabur\.app|https://.*\.onrender\.com",
+    allow_origin_regex=r"https://magetool(-[a-z0-9]+)?\.pages\.dev|https://magetool(-[a-z0-9]+)?\.netlify\.app|https://magetool(-[a-z0-9]+)?\.vercel\.app|https://(www\.)?magetool\.site|https://(www\.)?magetool\.in|https://spandan1234-magetool[a-z0-9-]*\.hf\.space|https://.*\.northflank\.app|https://magetool[a-z0-9-]*\.onrender\.com|https://magetool[a-z0-9-]*\.zeabur\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["Content-Disposition", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
 )
+
+
+# ==========================================
+# BODY SIZE LIMITER MIDDLEWARE
+# ==========================================
+@app.middleware("http")
+async def limit_request_body(request: Request, call_next):
+    """Reject requests with body > 500MB before they consume resources"""
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > 500 * 1024 * 1024:  # 500MB hard limit
+                return JSONResponse(
+                    status_code=413,
+                    content={"error": "File too large", "max_size": "500MB"}
+                )
+        except ValueError:
+            pass
+    return await call_next(request)
+
+
+# ==========================================
+# CONCURRENT TASK LIMITER MIDDLEWARE
+# ==========================================
+_active_tasks_per_ip: dict[str, int] = defaultdict(int)
+_task_lock = threading.Lock()
+
+@app.middleware("http")
+async def limit_concurrent_tasks(request: Request, call_next):
+    """Limit max 5 concurrent POST tasks per IP to prevent resource abuse"""
+    is_api_post = request.method == "POST" and "/api/" in request.url.path
+    
+    if not is_api_post:
+        return await call_next(request)
+    
+    ip = get_remote_address(request)
+    with _task_lock:
+        if _active_tasks_per_ip[ip] >= 5:
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Too many concurrent tasks. Please wait for current tasks to finish."}
+            )
+        _active_tasks_per_ip[ip] += 1
+    
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        with _task_lock:
+            _active_tasks_per_ip[ip] = max(0, _active_tasks_per_ip[ip] - 1)
 
 
 # ==========================================
@@ -272,8 +323,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 # ==========================================
 # STATIC FILES & ROUTERS
 # ==========================================
-# Mount static files for temp directory (for downloads)
-app.mount("/temp", StaticFiles(directory=str(settings.TEMP_DIR)), name="temp")
+# SECURITY: Public /temp mount REMOVED — all downloads go through secure /api/download/{task_id} route
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
