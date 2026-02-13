@@ -561,7 +561,12 @@ export const uploadFiles = async (
 // Check task status (uses server affinity)
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const serverUrl = getServerForTask(taskId);
-    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, { timeout: 120000 });  // 2 min timeout
+    const response = await axios.get(`${serverUrl}/api/status/${taskId}`, {
+        timeout: 120000,
+        headers: {
+            'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+        }
+    });
     return response.data;
 };
 
@@ -569,7 +574,12 @@ export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
 export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
     const serverUrl = getServerForTask(taskId);
     try {
-        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, { timeout: 120000 });  // 2 min timeout
+        const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, {
+            timeout: 120000,
+            headers: {
+                'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+            }
+        });
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
