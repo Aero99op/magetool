@@ -1875,9 +1875,7 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                 save_format = "JPEG" if ext in ["jpg", "jpeg"] else "WEBP"
                 
                 # 1. Try Highest Quality first
-                # Check if file fits target even at max quality (or if we need to pad)
                 buffer = io.BytesIO()
-                # For expansion requests, we want max quality
                 img.save(buffer, format=save_format, quality=95, optimize=True)
                 size_at_max = buffer.tell()
                 
@@ -1886,12 +1884,14 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                 if size_at_max <= target_size:
                     # Fits easily! We can use this base and pad.
                     best_buffer = buffer
+                    logger.info(f"Target {target_size} > MaxQ {size_at_max}. Using MaxQ & Padding.")
                 else:
                     # Max quality is too big, need to compress
                     
                     # 2. Binary Search for optimal quality (1-95)
                     low = 1
                     high = 95
+                    best_quality = 1
                     
                     while low <= high:
                         mid = (low + high) // 2
@@ -1901,13 +1901,19 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                         
                         if size <= target_size:
                             best_buffer = buffer
+                            best_quality = mid
                             low = mid + 1 # Try to squeeze more quality
                         else:
                             high = mid - 1 # Needs more compression
                     
+                    # 2b. Iterative Refinement (Fine-tune quality)
+                    # Binary search might settle on Q=80 (30KB) when Q=81 is (41KB) > 40KB.
+                    # But maybe Q=80 with less optimization or different subsampling is 35KB?
+                    # For now, let's just stick to the binary search result.
+                    
                     # 3. Resizing Fallback
-                    # If even quality=1 is too big, or binary search failed
                     if best_buffer is None:
+                        logger.info("Binary search failed to fit. Starting resize fallback.")
                         w, h = img.size
                         fallback_quality = 75
                         
@@ -1933,16 +1939,22 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                 
                 update_task(task_id, progress_percent=70)
                 
-                # 4. Precise Padding
-                # Now we have a buffer <= target_size. 
-                # We append null bytes to reach exactly the target size (or very close).
+                # 4. Precise Padding (The Fix)
+                # Ensure we actually append bytes if we are under target
                 if best_buffer:
                     current_size = best_buffer.tell()
                     if current_size < target_size:
                         padding_needed = target_size - current_size
-                        # Append null bytes to the end of format (safe for JPG/PNG/WEBP usually)
-                        best_buffer.seek(0, 2) # Seek to end
+                        logger.info(f"Padding needed: {padding_needed} bytes to reach {target_size}")
+                        
+                        # Append null bytes
+                        best_buffer.seek(0, 2) # Go to end
                         best_buffer.write(b'\0' * padding_needed)
+                        
+                        # Verify
+                        end_pos = best_buffer.tell()
+                        if end_pos != target_size:
+                            logger.warning(f"Padding mismatch! Expected {target_size}, got {end_pos}")
                 
                 # Save result
                 best_buffer.seek(0)
@@ -1954,6 +1966,7 @@ def process_image_size_adjust(task_id: str, input_path: Path, original_filename:
                 original_size = input_path.stat().st_size
                 if original_size <= target_size:
                     # Already smaller, just copy
+                    import shutil
                     shutil.copy(input_path, output_path)
                 else:
                     # Calculate scale factor
