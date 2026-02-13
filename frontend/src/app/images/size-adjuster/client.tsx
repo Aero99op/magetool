@@ -149,12 +149,14 @@ export default function ImageSizeAdjusterClient() {
                                 step="any"
                                 style={{
                                     flex: 1,
-                                    padding: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid var(--glass-border)',
+                                    padding: '16px',
+                                    background: 'var(--input-bg)',
+                                    border: '1px solid var(--input-border)',
                                     borderRadius: '8px',
                                     color: 'var(--text-primary)',
-                                    fontSize: '1rem'
+                                    fontSize: '1.2rem',
+                                    fontWeight: '500',
+                                    minWidth: '0'
                                 }}
                             />
                             <select
