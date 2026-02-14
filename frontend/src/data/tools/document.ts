@@ -218,5 +218,24 @@ export const documentTools = {
             { title: "Convert", description: "Download images." }
         ],
         faqs: []
+    },
+    'structure-visualizer': {
+        title: "Structure Visualizer",
+        description: "Turn text, JSON, or ideas into visual diagrams instantly. Create Tree views, Mindmaps, Flowcharts, and more from simple text.",
+        features: [
+            "Support for 20+ Diagram Types",
+            "Auto-detects indentation structure",
+            "JSON to Class/Object Diagram",
+            "Export to SVG/PNG"
+        ],
+        benefits: [
+            { title: "Visualize Ideas", description: "Instantly see the structure of your thoughts or code." }
+        ],
+        howTo: [
+            { title: "Input Text", description: "Paste indented text or JSON." },
+            { title: "Select Type", description: "Choose from Tree, Mindmap, Pie, etc." },
+            { title: "Visualize", description: "See the result instantly." }
+        ],
+        faqs: []
     }
 };

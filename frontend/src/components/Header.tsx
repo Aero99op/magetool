@@ -46,7 +46,7 @@ const navItems: NavItem[] = [
         color: 'var(--neon-blue)',
         tools: [
             { name: 'Design Studio', href: '/images/design-studio' },
-            { name: 'Advanced Photo Editor', href: '/images/advanced-editor' },
+            { name: 'Advanced Photo Editor', href: '/images/editor' },
             { name: 'Format Converter', href: '/images/converter' },
             { name: 'Cropper', href: '/images/cropper' },
             { name: 'Resizer', href: '/images/resizer' },
@@ -123,6 +123,7 @@ const navItems: NavItem[] = [
             { name: 'File Size Adjuster', href: '/documents/size-adjuster' },
             { name: 'Hash Verifier', href: '/documents/hash-verifier' },
             { name: 'PPT Watermark Remover', href: '/documents/ppt-watermark-remove' },
+            { name: 'Structure Visualizer', href: '/documents/structure-visualizer' },
         ],
     },
 ];
