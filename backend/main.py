@@ -237,6 +237,8 @@ async def limit_concurrent_tasks(request: Request, call_next):
 # SECURITY: SECRET HEADER & WAF
 # ==========================================
 import re
+import jwt
+
 
 @app.middleware("http")
 async def security_guard_middleware(request: Request, call_next):
@@ -245,15 +247,30 @@ async def security_guard_middleware(request: Request, call_next):
     1. Verify Secret Header (prevent direct access)
     2. WAF: Block malicious payloads
     """
-    # 1. Secret Header Check (Skip for health checks, root, AND DOWNLOADS)
+    # 1. Secret Header OR JWT Token Check
     # Browser downloads (<a href>) cannot send custom headers, so we rely on UUID security there.
     if request.url.path.startswith("/api/") and request.method != "OPTIONS":
         if not request.url.path.startswith("/api/download/"):
-            # Allow requests if they have the valid secret
-            # OR if they come from localhost (for dev)
-            # BUT for robust security, we enforce it everywhere if configured
+            # A) Check Legacy Secret Header (Admin / Internal / Backward Compatibility)
             client_secret = request.headers.get("X-Magetool-Secret")
-            if client_secret != settings.API_SECRET:
+            is_valid_secret = client_secret == settings.API_SECRET
+
+            # B) Check JWT Token (User / Frontend)
+            is_valid_token = False
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+                try:
+                    # Verify signature using the SAME secret
+                    jwt.decode(token, settings.API_SECRET, algorithms=["HS256"])
+                    is_valid_token = True
+                except jwt.ExpiredSignatureError:
+                    logger.warning(f"⛔ Blocked expired token from {get_remote_address(request)}")
+                except jwt.InvalidTokenError:
+                    logger.warning(f"⛔ Blocked invalid token from {get_remote_address(request)}")
+
+            # Reject if NEITHER is valid
+            if not is_valid_secret and not is_valid_token:
                  # Log the attempt
                  logger.warning(f"⛔ Blocked unauthorized access to {request.url.path} from {get_remote_address(request)}")
                  return JSONResponse(status_code=403, content={"error": "Unauthorized: Missing or invalid security token"})

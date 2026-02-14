@@ -1,0 +1,13 @@
+{
+    "name": "magetool-auth-worker",
+    "version": "1.0.0",
+    "description": "Auth worker for Magetool",
+    "main": "src/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "deploy": "wrangler deploy"
+    },
+    "dependencies": {
+        "@tsndr/cloudflare-worker-jwt": "^2.5.3"
+    }
+}

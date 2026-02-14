@@ -1,0 +1,9 @@
+name = "magetool-auth"
+main = "src/index.js"
+compatibility_date = "2024-02-14"
+
+# Do not put the actual secret here!
+# Set it via: npx wrangler secret put API_SECRET
+
+[vars]
+ENVIRONMENT = "production"

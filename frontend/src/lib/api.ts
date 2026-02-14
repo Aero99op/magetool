@@ -232,14 +232,70 @@ function getServerForTask(taskId: string): string {
 const API_BASE_URL = API_SERVERS[0];
 
 // Create axios instance with defaults
+// ==========================================
+// AUTHENTICATION: Token Management (Cloudflare Worker)
+// ==========================================
+let cachedToken: string | null = null;
+let tokenExpiration: number = 0;
+
+/**
+ * Get a valid JWT token from the Auth Worker
+ */
+export const getToken = async (): Promise<string> => {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Return cached token if still valid (with 30s buffer)
+    if (cachedToken && now < tokenExpiration - 30) {
+        return cachedToken;
+    }
+
+    try {
+        const workerUrl = process.env.NEXT_PUBLIC_AUTH_WORKER_URL;
+        if (!workerUrl) {
+            console.warn("[Auth] No Auth Worker URL configured! Falling back to legacy secret if available.");
+            return '';
+        }
+
+        const response = await axios.get(`${workerUrl}/token`);
+        if (response.data && response.data.token) {
+            cachedToken = response.data.token;
+            // Decode token to find expiration (or just assume 5 mins)
+            // For simplicity, we set it to now + 290 seconds (conservative 5 mins)
+            tokenExpiration = now + 290;
+            return cachedToken as string;
+        }
+    } catch (error) {
+        console.error("[Auth] Failed to fetch token:", error);
+    }
+    return '';
+};
+
+// Create axios instance with defaults
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 300000, // 5 minutes for large file uploads
     headers: {
         'Content-Type': 'application/json',
-        // GAREEB SHIELD: Secret Header to bypass backend lock
-        'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
     },
+});
+
+// REQUEST INTERCEPTOR: Inject Token
+api.interceptors.request.use(async (config) => {
+    // 1. Try to get a token
+    const token = await getToken();
+
+    // 2. If token exists, use it
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    // 3. Fallback: Use Legacy Secret if token failed (for dev/backward compatibility)
+    else if (process.env.NEXT_PUBLIC_API_SECRET) {
+        config.headers['X-Magetool-Secret'] = process.env.NEXT_PUBLIC_API_SECRET;
+    }
+
+    return config;
+}, (error) => {
+    return Promise.reject(error);
 });
 
 // ==========================================
@@ -561,11 +617,14 @@ export const uploadFiles = async (
 // Check task status (uses server affinity)
 export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const serverUrl = getServerForTask(taskId);
+    const token = await getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    else if (process.env.NEXT_PUBLIC_API_SECRET) headers['X-Magetool-Secret'] = process.env.NEXT_PUBLIC_API_SECRET;
+
     const response = await axios.get(`${serverUrl}/api/status/${taskId}`, {
         timeout: 120000,
-        headers: {
-            'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
-        }
+        headers
     });
     return response.data;
 };
@@ -574,11 +633,14 @@ export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
 export const startProcessing = async (taskId: string): Promise<{ task_id: string; status: string; message: string }> => {
     const serverUrl = getServerForTask(taskId);
     try {
+        const token = await getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        else if (process.env.NEXT_PUBLIC_API_SECRET) headers['X-Magetool-Secret'] = process.env.NEXT_PUBLIC_API_SECRET;
+
         const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, {
             timeout: 120000,
-            headers: {
-                'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
-            }
+            headers
         });
         return response.data;
     } catch (error) {
