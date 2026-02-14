@@ -238,7 +238,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         // GAREEB SHIELD: Secret Header to bypass backend lock
-        'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+        'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
     },
 });
 
@@ -425,7 +425,7 @@ export const uploadFile = async (
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
                 },
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
@@ -513,7 +513,7 @@ export const uploadFiles = async (
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
                 },
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
@@ -564,7 +564,7 @@ export const getTaskStatus = async (taskId: string): Promise<TaskResponse> => {
     const response = await axios.get(`${serverUrl}/api/status/${taskId}`, {
         timeout: 120000,
         headers: {
-            'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+            'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
         }
     });
     return response.data;
@@ -577,7 +577,7 @@ export const startProcessing = async (taskId: string): Promise<{ task_id: string
         const response = await axios.post(`${serverUrl}/api/start/${taskId}`, {}, {
             timeout: 120000,
             headers: {
-                'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || 'magetool-secret-fallback-123',
+                'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
             }
         });
         return response.data;

@@ -43,6 +43,16 @@ async def save_upload_file(upload_file: UploadFile, destination: Path):
         return total_size
     finally:
         await upload_file.close()
+        
+        # GAREEB SHIELD: Validate file content (Magic Bytes)
+        try:
+            from services.validation import validate_file_content
+            validate_file_content(destination)
+        except Exception as e:
+             # Clean up if invalid
+             if destination.exists():
+                 destination.unlink()
+             raise e
 
 
 def process_image_convert(task_id: str, input_path: Path, original_filename: str, **params):
