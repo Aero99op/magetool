@@ -16,6 +16,9 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// Global State (Persists across some requests in the same isolate)
+const ipMap = new Map();
+
 export default {
     async fetch(request, env, ctx) {
         if (request.method === 'OPTIONS') {
@@ -28,6 +31,35 @@ export default {
         if (url.pathname !== '/token') {
             return new Response('Not Found', { status: 404, headers: corsHeaders });
         }
+
+        // RATE LIMITING (In-Memory "Poor Man's" Limiter)
+        // Limits: 10 requests per minute per IP
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const limit = 10;
+        const now = Date.now();
+
+        // Cleanup old entries every request (simple garbage collection)
+        for (const [key, timestamp] of ipMap.entries()) {
+            if (now - timestamp > 60000) ipMap.delete(key);
+        }
+
+        // Count requests for this IP
+        let count = 0;
+        for (const [key, timestamp] of ipMap.entries()) {
+            if (key.startsWith(ip) && now - timestamp < 60000) {
+                count++;
+            }
+        }
+
+        if (count >= limit) {
+            return new Response(JSON.stringify({ error: "Rate limit exceeded. Slow down!" }), {
+                status: 429,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        // Record this request
+        ipMap.set(`${ip}-${now}-${Math.random()}`, now);
 
         // STRICT ORIGIN CHECK
         // Only allow requests from our frontend
@@ -53,10 +85,10 @@ export default {
 
         // GENERATE TOKEN
         // Valid for 5 minutes (300 seconds)
-        const now = Math.floor(Date.now() / 1000);
+        const tokenTime = Math.floor(Date.now() / 1000);
         const payload = {
-            iat: now,
-            exp: now + 300, // 5 mins expiration
+            iat: tokenTime,
+            exp: tokenTime + 300, // 5 mins expiration
             role: 'user',   // standard user role
         };
 
