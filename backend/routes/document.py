@@ -398,6 +398,51 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
                 logger.error(f"LibreOffice PPTX output not found. stderr: {error_msg}")
                 raise Exception(f"PPTX conversion failed: {error_msg}")
 
+        # ==========================================
+        # DOC/ODT/RTF/TXT/HTML TO DOCX (LibreOffice)
+        # ==========================================
+        elif output_format == "docx" and input_ext in ["doc", "odt", "rtf", "txt", "html"]:
+            import subprocess
+            import shutil
+            
+            libreoffice_cmd = None
+            for cmd in ["libreoffice", "soffice", "/usr/bin/libreoffice", "/usr/bin/soffice"]:
+                if shutil.which(cmd):
+                    libreoffice_cmd = cmd
+                    break
+            
+            if not libreoffice_cmd:
+                raise Exception("LibreOffice not installed. Required for DOCX conversion.")
+            
+            temp_output_dir = input_path.parent
+            
+            logger.info(f"Starting LibreOffice conversion: {input_path} -> DOCX")
+            
+            env = os.environ.copy()
+            env["HOME"] = "/tmp"
+            
+            result = subprocess.run([
+                libreoffice_cmd,
+                "--headless",
+                "--invisible",
+                "--nologo",
+                "--nofirststartwizard",
+                "--norestore",
+                "--convert-to", "docx",
+                "--outdir", str(temp_output_dir),
+                str(input_path)
+            ], capture_output=True, text=True, timeout=180, env=env)
+            
+            expected_output = temp_output_dir / (input_path.stem + ".docx")
+            
+            if expected_output.exists() and expected_output.stat().st_size > 0:
+                shutil.move(str(expected_output), str(output_path))
+                logger.info(f"LibreOffice DOCX conversion successful: {task_id}")
+            else:
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.error(f"LibreOffice DOCX output not found. stderr: {error_msg}")
+                raise Exception(f"DOCX conversion failed: {error_msg}")
+        
         else:
             # Fallback for direct copies or unhandled pairs
             import shutil
