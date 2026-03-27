@@ -3,6 +3,8 @@ Document processing routes
 """
 
 import logging
+import re
+import shutil
 import json
 import csv
 import io
@@ -94,7 +96,7 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             env["HOME"] = "/tmp"  # Fix for Docker/non-root user
             
             result = subprocess.run([
-                libreoffice_cmd,
+                str(libreoffice_cmd),
                 "--headless",
                 "--invisible",
                 "--nologo",
@@ -196,7 +198,7 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
                 env["HOME"] = "/tmp"  # Fix for Docker/non-root user
                 
                 result = subprocess.run([
-                    libreoffice_cmd,
+                    str(libreoffice_cmd),
                     "--headless",
                     "--invisible",
                     "--nologo",
@@ -377,7 +379,7 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             env["HOME"] = "/tmp"
             
             result = subprocess.run([
-                libreoffice_cmd,
+                str(libreoffice_cmd),
                 "--headless",
                 "--invisible",
                 "--nologo",
@@ -422,7 +424,7 @@ def process_document_convert(task_id: str, input_path: Path, original_filename: 
             env["HOME"] = "/tmp"
             
             result = subprocess.run([
-                libreoffice_cmd,
+                str(libreoffice_cmd),
                 "--headless",
                 "--invisible",
                 "--nologo",
@@ -534,20 +536,71 @@ def process_pdf_split(task_id: str, input_path: Path, original_filename: str, **
         
         update_task(task_id, progress_percent=30)
         
-        # Parse page ranges (e.g., "1-5, 10, 15-20")
-        page_numbers = []
-        for part in pages.split(","):
-            part = part.strip()
-            if "-" in part:
-                start, end = part.split("-")
-                page_numbers.extend(range(int(start) - 1, int(end)))
-            else:
-                page_numbers.append(int(part) - 1)
+        # Robust PDF Page Range Parsing
+        # First, clean up spaces around dashes to prevent split errors
+        clean_pages = re.sub(r'\s*([-–—])\s*', r'\1', pages)
         
-        # Add selected pages
-        for page_num in page_numbers:
-            if 0 <= page_num < len(reader.pages):
-                writer.add_page(reader.pages[page_num])
+        page_indices = set()  # Use set to de-duplicate automatically
+        try:
+            # Split by common delimiters (comma, semicolon, pipe, slash, space)
+            parts = re.split(r'[|,;/ \s]+', clean_pages)
+            
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                
+                # Handle various dash types (hyphen, en-dash, em-dash)
+                if '-' in part or '–' in part or '—' in part:
+                    # Use regex to split by any of these dashes
+                    range_parts = re.split(r'[-–—]', part)
+                    if len(range_parts) == 2:
+                        try:
+                            start_str, end_str = range_parts
+                            start = int(start_str.strip())
+                            end = int(end_str.strip())
+                            
+                            # Standard range (1-5) or Reverse range (5-1)
+                            # User said "respect structural order", so we'll treat 5-1 as pages 1-5 indices
+                            if start <= end:
+                                nums = range(start - 1, end)
+                            else:
+                                nums = range(end - 1, start)
+                            
+                            page_indices.update(nums)
+                        except ValueError:
+                            raise ValueError(f"Invalid range values: {part}")
+                    else:
+                        raise ValueError(f"Invalid range format: {part}")
+                else:
+                    # Single page
+                    try:
+                        page_indices.add(int(part) - 1)
+                    except ValueError:
+                        raise ValueError(f"Invalid page number: {part}")
+            
+            # Final validation before processing
+            if not page_indices:
+                raise ValueError("No valid page numbers provided")
+                
+            max_page = len(reader.pages)
+            # Sort page indices to "respect structural page order" as requested
+            sorted_pages = sorted(list(page_indices))
+            
+            for p in sorted_pages:
+                if p < 0 or p >= max_page:
+                    raise ValueError(f"Page number {p+1} is out of bounds (PDF has {max_page} pages)")
+                    
+        except ValueError as ve:
+            raise Exception(str(ve))
+        except Exception as e:
+            raise Exception(f"Failed to parse page numbers: {e}")
+            
+        update_task(task_id, progress_percent=50)
+        
+        # Add selected pages in structural order
+        for page_num in sorted_pages:
+            writer.add_page(reader.pages[page_num])
         
         update_task(task_id, progress_percent=70)
         
@@ -569,7 +622,7 @@ def process_pdf_split(task_id: str, input_path: Path, original_filename: str, **
             file_size=output_path.stat().st_size,
         )
         
-        logger.info(f"PDF split complete: {task_id}")
+        logger.info(f"PDF split complete: {task_id} ({len(sorted_pages)} pages extracted in structural order)")
         
     except Exception as e:
         logger.error(f"PDF split failed: {task_id} - {e}")
@@ -699,7 +752,7 @@ def process_pdf_compress(task_id: str, input_path: Path, original_filename: str,
             update_task(task_id, progress_percent=40)
             
             result = subprocess.run([
-                gs_cmd,
+                str(gs_cmd),
                 "-sDEVICE=pdfwrite",
                 f"-dPDFSETTINGS={gs_quality}",
                 "-dNOPAUSE",
@@ -1155,7 +1208,7 @@ async def edit_metadata(
                 "success": True,
                 "filename": file.filename,
                 "metadata": {
-                    "size_bytes": len(content),
+                    "size_bytes": len(bytes(content)),
                     "type": ext,
                     "note": "Detailed metadata extraction only supported for PDF files"
                 }
@@ -1302,7 +1355,7 @@ def process_ppt_watermark_remove(task_id: str, input_path: Path, original_filena
         import copy
         
         prs = Presentation(str(input_path))
-        removed_count = 0
+        state = {"removed_count": 0}  # Mutable container to allow mutation from nested functions
         
         update_task(task_id, progress_percent=20)
         
@@ -1374,7 +1427,6 @@ def process_ppt_watermark_remove(task_id: str, input_path: Path, original_filena
         
         def remove_watermarks_from_shapes(shapes_parent):
             """Remove watermark shapes from a shape collection's XML parent"""
-            nonlocal removed_count
             sp_tree = shapes_parent._element
             shapes_to_remove = []
             
@@ -1384,7 +1436,7 @@ def process_ppt_watermark_remove(task_id: str, input_path: Path, original_filena
             
             for sp_elem in shapes_to_remove:
                 sp_tree.remove(sp_elem)
-                removed_count += 1
+                state["removed_count"] += 1
         
         # Process based on detection mode
         total_slides = len(prs.slides)
@@ -1425,7 +1477,7 @@ def process_ppt_watermark_remove(task_id: str, input_path: Path, original_filena
             file_size=output_path.stat().st_size,
         )
         
-        logger.info(f"PPT watermark remove complete: {task_id} - removed {removed_count} watermark(s)")
+        logger.info(f"PPT watermark remove complete: {task_id} - removed {state['removed_count']} watermark(s)")
         
     except Exception as e:
         logger.error(f"PPT watermark remove failed: {task_id} - {e}")
@@ -1513,7 +1565,7 @@ def process_pdf_from_images(task_id: str, input_path: Path, original_filename: s
         resample_filter = settings["resample"]
         
         total_images = len(input_paths)
-        temp_jpeg_paths = []
+        temp_jpeg_paths: List[str] = []
         
         # Phase 1: Convert all images to optimized temp JPEGs (STREAMING)
         # This avoids holding all PIL Image objects in memory
@@ -1592,7 +1644,8 @@ def process_pdf_from_images(task_id: str, input_path: Path, original_filename: s
             
             # Prepare append list - open lazily
             append_images = []
-            for temp_path in temp_jpeg_paths[1:]:
+            for i in range(1, len(temp_jpeg_paths)):
+                temp_path = temp_jpeg_paths[i]
                 append_img = Image.open(temp_path)
                 append_img.load()
                 append_images.append(append_img)
