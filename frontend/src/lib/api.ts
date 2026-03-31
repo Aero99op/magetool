@@ -478,11 +478,20 @@ export const uploadFile = async (
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
         try {
+            // Build auth headers (JWT token + legacy secret fallback)
+            const authHeaders: Record<string, string> = {
+                'Content-Type': 'multipart/form-data',
+            };
+            const token = await getToken();
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+            if (process.env.NEXT_PUBLIC_API_SECRET) {
+                authHeaders['X-Magetool-Secret'] = process.env.NEXT_PUBLIC_API_SECRET;
+            }
+
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
-                },
+                headers: authHeaders,
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
             });
@@ -499,17 +508,23 @@ export const uploadFile = async (
 
             if (error instanceof AxiosError) {
                 // Determine if we should retry
-                // Added 404 - if endpoint missing on one server, try another
+                // 403 = CORS/auth fail on this server (may work on another)
+                // 404 = endpoint missing on one server, try another
+                // 500+ = server error
+                const status = error.response?.status;
                 const shouldRetry =
-                    error.response?.status === 404 || // Endpoint not found - try another server
-                    (error.response?.status && error.response.status >= 500) || // Server error
+                    status === 403 || // CORS/Auth fail - try another server
+                    status === 404 || // Endpoint not found - try another server
+                    (status && status >= 500) || // Server error
                     error.code === 'ERR_NETWORK' ||
                     error.code === 'ECONNABORTED'; // Connection error
 
                 if (shouldRetry) {
-                    // Only mark unhealthy for 500+ or network errors, NOT for 404
-                    // 404 means endpoint missing, but server might be fine for other endpoints
-                    if (error.response?.status !== 404) {
+                    // Mark unhealthy for 500+ or network errors
+                    // 403/404 means server may work for other things
+                    if (status && status >= 500) {
+                        markServerUnhealthy(serverUrl);
+                    } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
                         markServerUnhealthy(serverUrl);
                     }
                     if (attempt < 2) {
@@ -566,11 +581,20 @@ export const uploadFiles = async (
         console.log(`[LoadBalancer] Attempt ${attempt + 1}: Using server ${serverUrl}`);
 
         try {
+            // Build auth headers (JWT token + legacy secret fallback)
+            const authHeaders: Record<string, string> = {
+                'Content-Type': 'multipart/form-data',
+            };
+            const token = await getToken();
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+            if (process.env.NEXT_PUBLIC_API_SECRET) {
+                authHeaders['X-Magetool-Secret'] = process.env.NEXT_PUBLIC_API_SECRET;
+            }
+
             const response = await axios.post(`${serverUrl}${endpoint}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'X-Magetool-Secret': process.env.NEXT_PUBLIC_API_SECRET || '',
-                },
+                headers: authHeaders,
                 timeout: 600000,  // 10 minutes for large uploads
                 onUploadProgress,
             });
@@ -586,16 +610,18 @@ export const uploadFiles = async (
             console.warn(`[LoadBalancer] Attempt ${attempt + 1} failed on ${serverUrl}`);
 
             if (error instanceof AxiosError) {
-                // Added 404 - if endpoint missing on one server, try another
+                const status = error.response?.status;
                 const shouldRetry =
-                    error.response?.status === 404 || // Endpoint not found - try another server
-                    (error.response?.status && error.response.status >= 500) ||
+                    status === 403 || // CORS/Auth fail - try another server
+                    status === 404 || // Endpoint not found - try another server
+                    (status && status >= 500) ||
                     error.code === 'ERR_NETWORK' ||
                     error.code === 'ECONNABORTED';
 
                 if (shouldRetry) {
-                    // Only mark unhealthy for 500+ or network errors, NOT for 404
-                    if (error.response?.status !== 404) {
+                    if (status && status >= 500) {
+                        markServerUnhealthy(serverUrl);
+                    } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
                         markServerUnhealthy(serverUrl);
                     }
                     if (attempt < 2) {

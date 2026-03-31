@@ -6,7 +6,6 @@ Enterprise-grade file utility API with comprehensive security
 import logging
 import time
 import asyncio
-from collections import defaultdict
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -58,22 +57,23 @@ async def cleanup_old_files():
                 
             now = time.time()
             expiry_seconds = settings.FILE_EXPIRY_MINUTES * 60
-            deleted_count = 0
-            freed_bytes = 0
+            deleted_count: int = 0
+            freed_bytes: int = 0
             
             for file_path in settings.TEMP_DIR.glob("*"):
                 if file_path.is_file():
                     file_age = now - file_path.stat().st_mtime
                     if file_age > expiry_seconds:
-                        file_size = file_path.stat().st_size
+                        file_size: int = file_path.stat().st_size
                         file_path.unlink()
-                        deleted_count += 1
-                        freed_bytes += file_size
+                        deleted_count = deleted_count + 1
+                        freed_bytes = freed_bytes + file_size
             
             if deleted_count > 0:
+                freed_mb: float = freed_bytes / (1024 * 1024)
                 logger.info(
                     f"Cleanup complete: deleted {deleted_count} files, "
-                    f"freed {freed_bytes / (1024 * 1024):.2f} MB"
+                    f"freed {freed_mb:.2f} MB"
                 )
                 
         except Exception as e:
@@ -173,8 +173,16 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # ==========================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://magetool.site", "https://magetool-api.onrender.com", "http://localhost:3000"] + settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://magetool(-[a-z0-9]+)?\.pages\.dev|https://magetool(-[a-z0-9]+)?\.netlify\.app|https://magetool(-[a-z0-9]+)?\.vercel\.app|https://(www\.)?magetool\.site|https://(www\.)?magetool\.in|https://spandan1234-magetool[a-z0-9-]*\.hf\.space|https://.*\.northflank\.app|https://magetool[a-z0-9-]*\.onrender\.com|https://magetool[a-z0-9-]*\.zeabur\.app",
+    allow_origins=[
+        "https://magetool.site",
+        "https://www.magetool.site",
+        "https://magetool.in",
+        "https://www.magetool.in",
+        "https://magetool-api.onrender.com",
+        "https://p01--magetool--c6b4tq5mg4jv.code.run",  # Northflank exact
+        "http://localhost:3000",
+    ] + settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://magetool(-[a-z0-9]+)?\.pages\.dev|https://magetool(-[a-z0-9]+)?\.netlify\.app|https://magetool(-[a-z0-9]+)?\.vercel\.app|https://(www\.)?magetool\.site|https://(www\.)?magetool\.in|https://spandan1234-magetool[a-z0-9-]*\.hf\.space|https://.*\.northflank\.app|https://[a-z0-9]+--magetool--[a-z0-9]+\.code\.run|https://magetool[a-z0-9-]*\.onrender\.com|https://magetool[a-z0-9-]*\.zeabur\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -204,7 +212,7 @@ async def limit_request_body(request: Request, call_next):
 # ==========================================
 # CONCURRENT TASK LIMITER MIDDLEWARE
 # ==========================================
-_active_tasks_per_ip: dict[str, int] = defaultdict(int)
+_active_tasks_per_ip: dict[str, int] = {}
 _task_lock = threading.Lock()
 
 @app.middleware("http")
@@ -217,19 +225,20 @@ async def limit_concurrent_tasks(request: Request, call_next):
     
     ip = get_remote_address(request)
     with _task_lock:
-        if _active_tasks_per_ip[ip] >= 5:
+        current_count: int = _active_tasks_per_ip.get(ip, 0)
+        if current_count >= 5:
             return JSONResponse(
                 status_code=429,
                 content={"error": "Too many concurrent tasks. Please wait for current tasks to finish."}
             )
-        _active_tasks_per_ip[ip] += 1
+        _active_tasks_per_ip[ip] = current_count + 1
     
     try:
         response = await call_next(request)
         return response
     finally:
         with _task_lock:
-            _active_tasks_per_ip[ip] = max(0, _active_tasks_per_ip[ip] - 1)
+            _active_tasks_per_ip[ip] = max(0, _active_tasks_per_ip.get(ip, 1) - 1)
 
 
 

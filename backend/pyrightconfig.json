@@ -1,0 +1,20 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonVersion": "3.10",
+  "root": ".",
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "venv",
+    "__pycache__",
+    "temp",
+    "tests"
+  ],
+  "extraPaths": [
+    "."
+  ],
+  "reportMissingImports": "warning",
+  "typeCheckingMode": "basic"
+}
