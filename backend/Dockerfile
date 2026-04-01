@@ -57,7 +57,11 @@ RUN useradd --create-home --shell /bin/bash appuser
 # Copy requirements from preparer stage
 COPY --from=preparer /requirements.txt ./
 
-# Install Python dependencies
+# Pre-install basicsr separately with PEP517 to avoid nvidia-cublas conflict
+# basicsr's legacy setup.py pulls conflicting CUDA deps on CPU environments
+RUN pip install --no-cache-dir --use-pep517 "basicsr==1.4.2"
+
+# Install remaining Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
