@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ========================================================
-echo   🚀 MAGETOOL: ISOLATED HF DEPLOYMENT (CLEAN MODE)
+echo   🚀 MAGETOOL: ISOLATED HF DEPLOYMENT (STABLE MODE)
 echo ========================================================
 echo.
 
@@ -27,8 +27,8 @@ if "%HF_TOKEN%"=="" (
 :: --- COPY BACKEND FILES ONLY ---
 echo.
 echo [STEP 2] Copying backend files to isolated folder...
-:: Use Robocopy to copy ONLY the backend folder content (excluding large/unnecessary dirs)
-robocopy "." "!DEPLOY_DIR!" /E /XD venv __pycache__ .pytest_cache .git temp .vscode .mypy_cache /XF .DS_Store Thumbs.db
+:: Use Robocopy with /NP (No Progress) /NJH (No Job Header) /NJS (No Job Summary)
+robocopy "." "!DEPLOY_DIR!" /E /XD venv __pycache__ .pytest_cache .git temp .vscode .mypy_cache /XF .DS_Store Thumbs.db /NP /NJH /NJS /NDL /NFL
 if %errorlevel% gtr 7 (
     echo [ERROR] Copy failed! Check permissions.
     pause
@@ -46,23 +46,17 @@ git checkout -b main
 git add .
 git commit -m "Clean Backend Production Build"
 
-:: --- SETUP REMOTES ---
-echo.
-echo [STEP 4] Setting up HF Git Remotes...
-for %%S in (%SPACES%) do (
-    echo Adding remote: %%S
-    git remote add %%S https://%HF_USER%:%HF_TOKEN%@huggingface.co/spaces/%HF_USER%/%%S
-)
-
 :: --- DEPLOY ---
 echo.
-echo [STEP 5] Pushing to HF Spaces (TRIGGERING BUILDS)...
+echo [STEP 4] Pushing to HF Spaces (DIRECT MODE)...
 for %%S in (%SPACES%) do (
     echo.
     echo --------------------------------------------------------
     echo 🆙 Deploying to: %%S
     echo --------------------------------------------------------
-    git push %%S main --force
+    :: Use direct URL for push to avoid remote management issues
+    git push https://!HF_USER!:!HF_TOKEN!@huggingface.co/spaces/!HF_USER!/%%S main --force
+    
     if !errorlevel! neq 0 (
         echo [WARNING] Push to %%S failed!
     ) else (
@@ -71,13 +65,12 @@ for %%S in (%SPACES%) do (
 )
 
 popd
-:: CLEANUP (Optional: Remark out if you want to inspect)
-:: rd /s /q "!DEPLOY_DIR!"
+:: Cleanup
+rd /s /q "!DEPLOY_DIR!"
 
 echo.
 echo ========================================================
 echo   ✅ ALL DEPLOYMENTS TRIGGERED!
-echo   Isolated from root Git issues (APKs/large binaries).
 echo   Go to Hugging Face dashboard to monitor builds.
 echo ========================================================
 pause
