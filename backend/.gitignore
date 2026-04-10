@@ -32,3 +32,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Security Audit (Local Only)
+RedTeam_Report.txt
+doomsday_audit.ps1
