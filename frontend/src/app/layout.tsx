@@ -101,6 +101,15 @@ export default function RootLayout({
                     src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7253353658623253"
                     crossOrigin="anonymous"
                 />
+                
+                {/* Cloudflare Web Analytics Beacon */}
+                {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN && (
+                    <script
+                        defer
+                        src="https://static.cloudflareinsights.com/beacon.min.js"
+                        data-cf-beacon={`{"token": "${process.env.NEXT_PUBLIC_CF_BEACON_TOKEN}"}`}
+                    />
+                )}
             </head>
             <body>
                 {/* Theme initialization - runs before React to prevent flash */}

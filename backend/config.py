@@ -87,6 +87,15 @@ class Settings(BaseSettings):
         # Ensure temp directory exists
         self.TEMP_DIR.mkdir(parents=True, exist_ok=True)
         
+        # Security Warning for Fallback Secret
+        if self.API_SECRET == "magetool-secret-fallback-123":
+            print("\n" + "="*60)
+            print("!!! CRITICAL SECURITY WARNING !!!")
+            print("You are using the default API_SECRET fallback!")
+            print("Set 'API_SECRET' in your environment variables to secure the API.")
+            print("Ensure NEXT_PUBLIC_API_SECRET in the frontend matches it.")
+            print("="*60 + "\n")
+        
         # ----------------------------------------------------
         # Auto-Enable Keep-Alive for Unlimited Hosting (HF, Northflank)
         # ----------------------------------------------------

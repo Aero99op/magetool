@@ -4,21 +4,24 @@ Health check endpoints for monitoring
 
 import shutil
 import subprocess
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from config import get_settings
+from limiter import limiter
 
 router = APIRouter()
 settings = get_settings()
 
 
 @router.get("/health/live")
-async def liveness_check():
+@limiter.limit("20/minute")
+async def liveness_check(request: Request):
     """Liveness probe - is the service running?"""
     return {"status": "alive"}
 
 
 @router.get("/health/ready")
-async def readiness_check():
+@limiter.limit("10/minute")
+async def readiness_check(request: Request):
     """Readiness probe - can the service handle requests?"""
     checks = {
         "api": True,
@@ -63,7 +66,8 @@ async def readiness_check():
 
 
 @router.get("/metrics")
-async def metrics():
+@limiter.limit("30/minute")
+async def metrics(request: Request):
     """Prometheus-compatible metrics endpoint"""
     from services.tasks import task_store
     

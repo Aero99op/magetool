@@ -17,9 +17,9 @@ from fastapi.responses import JSONResponse
 from starlette.responses import Response
 
 # Rate limiting
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from config import get_settings, Settings
 
@@ -38,11 +38,7 @@ logger = logging.getLogger("magetool")
 # ==========================================
 # RATE LIMITER SETUP
 # ==========================================
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["100/minute"],
-    storage_uri="memory://",
-)
+from limiter import limiter
 
 
 # Background cleanup task
@@ -163,8 +159,11 @@ app = FastAPI(
 )
 
 # ==========================================
-# RATE LIMITER REGISTRATION
+# MIDDLEWARE REGISTRATION
 # ==========================================
+# Add SlowAPI middleware for rate limiting enforcement
+app.add_middleware(SlowAPIMiddleware)
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -182,7 +181,7 @@ app.add_middleware(
         "https://p01--magetool--c6b4tq5mg4jv.code.run",  # Northflank exact
         "http://localhost:3000",
     ] + settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://magetool(-[a-z0-9]+)?\.pages\.dev|https://magetool(-[a-z0-9]+)?\.netlify\.app|https://magetool(-[a-z0-9]+)?\.vercel\.app|https://(www\.)?magetool\.site|https://(www\.)?magetool\.in|https://spandan1234-magetool[a-z0-9-]*\.hf\.space|https://.*\.northflank\.app|https://[a-z0-9]+--magetool--[a-z0-9]+\.code\.run|https://magetool[a-z0-9-]*\.onrender\.com|https://magetool[a-z0-9-]*\.zeabur\.app",
+    allow_origin_regex=r"^https://magetool(-[a-z0-9]+)?\.pages\.dev$|^https://magetool(-[a-z0-9]+)?\.netlify\.app$|^https://magetool(-[a-z0-9]+)?\.vercel\.app$|^https://(www\.)?magetool\.site$|^https://(www\.)?magetool\.in$|^https://spandan1234-magetool[a-z0-9-]*\.hf\.space$|^https://.*\.northflank\.app$|^https://[a-z0-9]+--magetool--[a-z0-9]+\.code\.run$|^https://magetool[a-z0-9-]*\.onrender\.com$|^https://magetool[a-z0-9-]*\.zeabur\.app$|^http://localhost:\d+$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -256,6 +255,10 @@ async def security_guard_middleware(request: Request, call_next):
     1. Verify Secret Header (prevent direct access)
     2. WAF: Block malicious payloads
     """
+    # 0. Block Malicious HTTP Methods
+    if request.method in ["TRACE", "TRACK", "PUT"]:
+        return JSONResponse(status_code=405, content={"error": "Method Not Allowed"})
+
     # 1. Secret Header OR JWT Token Check
     # Browser downloads (<a href>) cannot send custom headers, so we rely on UUID security there.
     if request.url.path.startswith("/api/") and request.method != "OPTIONS":
@@ -294,6 +297,7 @@ async def security_guard_middleware(request: Request, call_next):
         r"\/etc\/passwd",                       # Path Traversal
         r"\.\.\/",                              # Path Traversal
         r"<script>",                            # XSS
+        r"(\;)|(\|)|(\`)|(\$)",                 # Shell injection prevention
     ]
     
     # Check Query Params
@@ -317,7 +321,7 @@ async def add_security_headers(request: Request, call_next):
     
     # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
-    # response.headers["X-Frame-Options"] = "SAMEORIGIN"  # Disabled to allow HF iframe embedding
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://*.hf.space"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
