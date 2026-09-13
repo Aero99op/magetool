@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cli-test:
+    name: Build & Test CLI (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install CLI Dependencies
+        run: |
+          cd cli
+          npm install
+
+      - name: Build CLI & Typecheck
+        run: |
+          cd cli
+          npm run build
+
+      - name: Run Test Suite
+        run: |
+          cd cli
+          npm test
+
+      - name: Run MageTool Self-Audit
+        run: |
+          cd cli
+          node bin/magetool.js audit ..

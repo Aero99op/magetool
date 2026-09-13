@@ -1,0 +1,47 @@
+{
+  "name": "magetool",
+  "version": "1.0.0",
+  "description": "Blazing-fast AI Agent & Developer Workflow Toolkit featuring Codebase Intelligence, Automated PR Review, and MCP Server integration.",
+  "author": "Wolvestorm11",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wolvestorm11/magetool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wolvestorm11/magetool/issues"
+  },
+  "homepage": "https://github.com/Wolvestorm11/magetool#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "magetool": "./bin/magetool.js"
+  },
+  "keywords": [
+    "ai",
+    "codex",
+    "mcp",
+    "model-context-protocol",
+    "code-review",
+    "security-audit",
+    "cli",
+    "developer-tools",
+    "static-analysis",
+    "automation"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/magetool.js",
+    "test": "node --test dist/tests/**/*.test.js",
+    "lint": "tsc --noEmit",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
